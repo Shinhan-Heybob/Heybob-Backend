@@ -64,7 +64,7 @@ jobs:
           sudo docker stop heybob
         fi
     - name: docker run new container
-      run: sudo docker run --rm -it -d -p 80:8080 --name heybob ${{ secrets.DOCKERHUB_USERNAME }}/heybob
+      run: sudo docker run --rm -it -p 80:8080 --name heybob ${{ secrets.DOCKERHUB_USERNAME }}/heybob
       
     - name: delete old docker image
       run: sudo docker system prune -f
