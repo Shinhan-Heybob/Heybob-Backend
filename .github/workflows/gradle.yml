@@ -27,6 +27,13 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
+    - name: application.yml 생성
+      run: |
+        mkdir -p ./src/main/resources && cd $_
+        touch ./application.yml
+        echo "${{ secrets.CD_APPLICATION }}" > ./application.yml
+        cat ./application.yml
+
     # Configure Gradle for optimal use in GitHub Actions, including caching of downloaded dependencies.
     # See: https://github.com/gradle/actions/blob/main/setup-gradle/README.md
     - name: Setup Gradle
