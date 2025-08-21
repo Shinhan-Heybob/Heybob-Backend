@@ -54,6 +54,48 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Transactional
+    @Override
+    public RefreshTokenResponseDto createAccessTokenByHeader(String authorizationHeader) {
+        String refreshToken = extractToken(authorizationHeader);
+        return createAccessToken(refreshToken);
+    }
+
+    @Override
+    public UserResponseDto signup(UserCreateRequestDto userCreateRequestDto) {
+        log.info("User Create RequestDto: {}", userCreateRequestDto);
+        verifyExistUser(userCreateRequestDto);
+
+        String encryptedPassword = passwordEncoder.encode(userCreateRequestDto.getPassword());
+
+        User createdUser = userCreateRequestDto.toEntity(userCreateRequestDto, encryptedPassword);
+
+        userRepository.save(createdUser);
+
+        return new UserResponseDto(createdUser);
+    }
+
+    @Override
+    public AuthResponseDto login(UserLoginRequestDto userLoginRequestDto) {
+        User user = userRepository.findByUniversityAndStudentId(
+                        userLoginRequestDto.getUniversity(), userLoginRequestDto.getStudentId())
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.USER_NOT_FOUND));
+
+        if (!passwordEncoder.matches(userLoginRequestDto.getPassword(), user.getPassword())) {
+            throw new HeybobException(ExceptionStatus.INVALID_PASSWORD);
+        }
+
+        UserDetails userDetails = userDetailsService.loadUserById(user.getId());
+
+        String accessToken = jwtUtil.generateAccessToken((UserPrincipalDetails) userDetails);
+        String refreshToken = jwtUtil.generateRefreshToken((UserPrincipalDetails) userDetails);
+
+        return AuthResponseDto.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
+    }
+
+    @Transactional
     public String rotateRefreshToken(UserDetails userDetails, RefreshToken refreshToken) {
         String newRefreshToken = jwtUtil.generateRefreshToken((UserPrincipalDetails) userDetails);
         refreshToken.updateToken(newRefreshToken);
@@ -72,32 +114,11 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    @Transactional
-    @Override
-    public RefreshTokenResponseDto createAccessTokenByHeader(String authorizationHeader) {
-        String refreshToken = extractToken(authorizationHeader);
-        return createAccessToken(refreshToken);
-    }
-
     private String extractToken(String authorizationHeader) {
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             return authorizationHeader.substring("Bearer ".length());
         }
         throw new HeybobException(ExceptionStatus.INVALID_TOKEN);
-    }
-
-    @Override
-    public UserResponseDto signup(UserCreateRequestDto userCreateRequestDto) {
-        log.info("User Create RequestDto: {}", userCreateRequestDto);
-        verifyExistUser(userCreateRequestDto);
-
-        String encryptedPassword = passwordEncoder.encode(userCreateRequestDto.getPassword());
-
-        User createdUser = userCreateRequestDto.toEntity(userCreateRequestDto, encryptedPassword);
-
-        userRepository.save(createdUser);
-
-        return new UserResponseDto(createdUser);
     }
 
     private void verifyExistUser(UserCreateRequestDto userCreateRequestDto) {
@@ -106,24 +127,4 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    @Override
-    public AuthResponseDto login(UserLoginRequestDto userLoginRequestDto) {
-        User user = userRepository.findByUniversityAndStudentId(
-                userLoginRequestDto.getUniversity(), userLoginRequestDto.getStudentId())
-                .orElseThrow(() -> new HeybobException(ExceptionStatus.USER_NOT_FOUND));
-
-        if (!passwordEncoder.matches(userLoginRequestDto.getPassword(), user.getPassword())) {
-            throw new HeybobException(ExceptionStatus.INVALID_PASSWORD);
-        }
-
-        UserDetails userDetails = userDetailsService.loadUserById(user.getId());
-
-        String accessToken = jwtUtil.generateAccessToken((UserPrincipalDetails) userDetails);
-        String refreshToken = jwtUtil.generateRefreshToken((UserPrincipalDetails) userDetails);
-
-        return AuthResponseDto.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .build();
-    }
 }

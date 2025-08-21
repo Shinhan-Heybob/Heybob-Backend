@@ -15,4 +15,5 @@ public interface AuthService {
     UserResponseDto signup(UserCreateRequestDto userCreateRequestDto);
 
     AuthResponseDto login(UserLoginRequestDto userLoginRequestDto);
+
 }

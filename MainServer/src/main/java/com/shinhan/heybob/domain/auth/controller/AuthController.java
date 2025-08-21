@@ -1,14 +1,17 @@
 package com.shinhan.heybob.domain.auth.controller;
 
+import com.shinhan.heybob.common.user.UserPrincipalDetails;
 import com.shinhan.heybob.domain.auth.dto.AuthLoginResponseDto;
 import com.shinhan.heybob.domain.auth.dto.AuthResponseDto;
 import com.shinhan.heybob.domain.auth.dto.UserLoginRequestDto;
 import com.shinhan.heybob.domain.auth.service.AuthService;
 import com.shinhan.heybob.domain.user.dto.UserCreateRequestDto;
+import com.sun.security.auth.UserPrincipal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,4 +40,5 @@ public class AuthController {
                 .header(HEADER_AUTH, TOKEN_TYPE + authResponseDto.getAccessToken())
                 .body(AuthLoginResponseDto.builder().refreshToken(authResponseDto.getRefreshToken()).build());
     }
+
 }
