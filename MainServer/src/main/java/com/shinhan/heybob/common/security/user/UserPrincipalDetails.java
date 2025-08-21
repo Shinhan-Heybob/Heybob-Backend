@@ -11,7 +11,7 @@ import java.util.List;
 
 @Getter
 @AllArgsConstructor
-public class UserPrincipalImpl implements UserDetails {
+public class UserPrincipalDetails implements UserDetails {
 
     private User user;
     private List<GrantedAuthority> authorities;
