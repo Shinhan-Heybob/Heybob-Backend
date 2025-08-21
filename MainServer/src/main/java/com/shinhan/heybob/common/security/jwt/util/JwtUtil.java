@@ -46,8 +46,8 @@ public class JwtUtil {
         Date expiryDate = new Date(now.getTime() + accessTokenValiditySeconds * 1000); // ms로 넣어야 함
 
         return Jwts.builder()
-                .setSubject(userPrincipalDetails.getUsername())
-                .claim("email", userPrincipalDetails.getUsername())
+                .setSubject(String.valueOf(userPrincipalDetails.getUserId()))
+                .claim("uid", userPrincipalDetails.getUserId())
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSecretKey(), SignatureAlgorithm.HS512)
@@ -59,29 +59,37 @@ public class JwtUtil {
         Date expiryDate = new Date(now.getTime() + refreshTokenValiditySeconds * 1000);
 
         return Jwts.builder()
-                .setSubject(userPrincipalDetails.getUsername())
-                .claim("email", userPrincipalDetails.getUsername())
+                .setSubject(String.valueOf(userPrincipalDetails.getUserId()))
+                .claim("uid", userPrincipalDetails.getUserId())
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSecretKey(), SignatureAlgorithm.HS512)
                 .compact();
     }
 
-    public String getUsernameFromAccessToken(String token) {
-        return extractUsername(token);
-    }
-
-    public String getUsernameFromRefreshToken(String token) {
-        return extractUsername(token);
-    }
-
-    public String extractUsername(String token) {
+    private Claims parseClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSecretKey())
                 .build()
                 .parseSignedClaims(token)
-                .getPayload().getSubject();
+                .getPayload();
+    }
 
+    public Long getUserIdFromAccessToken(String token) { return extractUserId(token); }
+    public Long getUserIdFromRefreshToken(String token) { return extractUserId(token); }
+
+    private Long extractUserId(String token) {
+        Claims claims = parseClaims(token);
+
+        // 1순위: subject
+        String sub = claims.getSubject();
+        try {
+            return Long.parseLong(sub);
+        } catch (NumberFormatException ignored) {
+            // 레거시 이메일 subject인 경우를 대비해 uid 클레임도 시도
+            Long uid = claims.get("uid", Long.class);
+            return uid; // null이면 필터에서 레거시 이메일로 폴백
+        }
     }
 
     public boolean validateAccessToken(String token) {

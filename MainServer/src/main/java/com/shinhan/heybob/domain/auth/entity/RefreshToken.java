@@ -19,15 +19,15 @@ public class RefreshToken extends BaseTime {
     @EqualsAndHashCode.Include
     private Long id;
 
-    @Column(name = "user_email", nullable = false, unique = true, updatable = false)
-    private String email;
+    @Column(name = "user_id", nullable = false, unique = true, updatable = false)
+    private Long userId;
 
     @Column(name = "user_refresh_token", length = 500, nullable = false, unique = true)
     private String token;
 
     @Builder
-    public RefreshToken(String email, String token) {
-        this.email = email;
+    public RefreshToken(Long userId, String token) {
+        this.userId = userId;
         this.token = token;
     }
 

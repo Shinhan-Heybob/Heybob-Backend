@@ -62,10 +62,10 @@ public class SecurityConfig {
                             try {
                                 String token = jwtUtil.resolveToken(request);
                                 if (token != null && jwtUtil.validateAccessToken(token)) {
-                                    String userEmail = jwtUtil.getUsernameFromAccessToken(token);
+                                    Long userId = jwtUtil.getUserIdFromAccessToken(token);
 
                                     // 로그아웃 로직
-                                    refreshTokenRepository.findByEmail(userEmail)
+                                    refreshTokenRepository.findById(userId)
                                             .ifPresent(refreshToken -> {
                                                 refreshToken.updateToken("");
                                                 refreshTokenRepository.save(refreshToken);
