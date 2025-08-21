@@ -61,5 +61,18 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    @Transactional
+    @Override
+    public RefreshTokenResponseDto createAccessTokenByHeader(String authorizationHeader) {
+        String refreshToken = extractToken(authorizationHeader);
+        return createAccessToken(refreshToken);
+    }
+
+    private String extractToken(String authorizationHeader) {
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            return authorizationHeader.substring("Bearer ".length());
+        }
+        throw new HeybobException(ExceptionStatus.INVALID_TOKEN);
+    }
 
 }
