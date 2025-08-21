@@ -29,7 +29,13 @@ public class User extends BaseTime {
     @Column(name = "user_password", nullable = false)
     private String password;
 
+    @Column(name = "user_profile_url")
+    private String profileUrl;
+
     @Column(name = "user_university", nullable = false, updatable = false)
     private String university;
+
+    @Column(name = "user_department", nullable = false, updatable = false)
+    private String department;
 
 }
