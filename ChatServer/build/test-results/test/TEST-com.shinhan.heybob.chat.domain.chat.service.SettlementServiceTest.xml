@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.shinhan.heybob.chat.domain.chat.service.SettlementServiceTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2025-08-21T08:03:47.925Z" hostname="DESKTOP-HA97GMI" time="0.071">
+  <properties/>
+  <testcase name="방_멤버_조회_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.SettlementServiceTest" time="0.004"/>
+  <testcase name="존재하지_않는_정산_조회_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.SettlementServiceTest" time="0.007"/>
+  <testcase name="정산_완료_처리_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.SettlementServiceTest" time="0.011"/>
+  <testcase name="정산_응답_업데이트_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.SettlementServiceTest" time="0.008"/>
+  <testcase name="정산_시간_만료_처리_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.SettlementServiceTest" time="0.006"/>
+  <testcase name="만료된_정산_응답_업데이트_실패()" classname="com.shinhan.heybob.chat.domain.chat.service.SettlementServiceTest" time="0.007"/>
+  <testcase name="정산_생성_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.SettlementServiceTest" time="0.008"/>
+  <testcase name="존재하지_않는_정산_응답_업데이트_실패()" classname="com.shinhan.heybob.chat.domain.chat.service.SettlementServiceTest" time="0.008"/>
+  <testcase name="정산_조회_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.SettlementServiceTest" time="0.005"/>
+  <system-out><![CDATA[2025-08-21T17:03:47.947+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.s.SettlementServiceImpl      : 정산 완료 처리: settlementId=test-settlement-001, acceptedUsers=[20000623]
+2025-08-21T17:03:47.956+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.s.SettlementServiceImpl      : 정산 응답 업데이트: settlementId=test-settlement-001, userId=20000623, responseType=accepted
+2025-08-21T17:03:47.963+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.s.SettlementServiceImpl      : 정산 시간 만료 처리: settlementId=expired-settlement-001
+2025-08-21T17:03:47.979+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.s.SettlementServiceImpl      : 정산 생성 완료: settlementId=45e9f62d-984b-44ae-8a34-42cb82cf66a8, roomId=test-room-001, requesterId=20000622
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

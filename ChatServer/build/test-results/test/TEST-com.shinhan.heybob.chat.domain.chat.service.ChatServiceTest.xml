@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.shinhan.heybob.chat.domain.chat.service.ChatServiceTest" tests="17" skipped="0" failures="0" errors="0" timestamp="2025-08-21T08:03:47.800Z" hostname="DESKTOP-HA97GMI" time="0.117">
+  <properties/>
+  <testcase name="최근_메시지_조회_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.ChatServiceTest" time="0.004"/>
+  <testcase name="정산_취소_메시지_처리_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.ChatServiceTest" time="0.004"/>
+  <testcase name="정산_메시지_UI상태_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.ChatServiceTest" time="0.007"/>
+  <testcase name="정산_승낙_메시지_처리_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.ChatServiceTest" time="0.004"/>
+  <testcase name="정산_거절_메시지_처리_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.ChatServiceTest" time="0.004"/>
+  <testcase name="JOIN_메시지_처리_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.ChatServiceTest" time="0.004"/>
+  <testcase name="특정_메시지_이전_메시지_조회_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.ChatServiceTest" time="0.004"/>
+  <testcase name="null_content_메시지_처리_예외_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.ChatServiceTest" time="0.012"/>
+  <testcase name="금융_메시지_처리_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.ChatServiceTest" time="0.005"/>
+  <testcase name="매우_긴_메시지_처리_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.ChatServiceTest" time="0.006"/>
+  <testcase name="빈_메시지_리스트_조회_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.ChatServiceTest" time="0.004"/>
+  <testcase name="빈_문자열_content_메시지_처리_예외_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.ChatServiceTest" time="0.01"/>
+  <testcase name="일반_메시지_처리_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.ChatServiceTest" time="0.007"/>
+  <testcase name="결제_확인_메시지_처리_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.ChatServiceTest" time="0.005"/>
+  <testcase name="정산_요청_메시지_처리_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.ChatServiceTest" time="0.006"/>
+  <testcase name="결제_완료_메시지_처리_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.ChatServiceTest" time="0.008"/>
+  <testcase name="LEAVE_메시지_처리_테스트()" classname="com.shinhan.heybob.chat.domain.chat.service.ChatServiceTest" time="0.004"/>
+  <system-out><![CDATA[2025-08-21T17:03:47.808+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.chat.service.ChatServiceImpl   : 금융 메시지 Redis Stream 저장: messageType=SETTLEMENT_CANCEL, messageId=cdd0357d-31dd-40c1-aa95-e7c037f213ab
+2025-08-21T17:03:47.816+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.chat.service.ChatServiceImpl   : 금융 메시지 Redis Stream 저장: messageType=PAYMENT_REQUEST, messageId=74f1f2fd-bb66-4b65-a808-cbb160cfffe3
+2025-08-21T17:03:47.821+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.chat.service.ChatServiceImpl   : 금융 메시지 Redis Stream 저장: messageType=SETTLEMENT_ACCEPT, messageId=89635831-740c-4e4e-b960-9767bde15b54
+2025-08-21T17:03:47.825+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.chat.service.ChatServiceImpl   : 금융 메시지 Redis Stream 저장: messageType=SETTLEMENT_REJECT, messageId=8d17b38b-12cb-4d19-ac7b-19c2ba517a57
+2025-08-21T17:03:47.829+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.chat.service.ChatServiceImpl   : 일반 메시지 MongoDB 직접 저장: messageType=JOIN, messageId=dc3c26cd-6cad-4dd7-9c27-0d35f9e0b404
+2025-08-21T17:03:47.847+09:00 ERROR 14672 --- [    Test worker] c.s.h.c.d.chat.service.ChatServiceImpl   : 채팅 메시지 처리 실패: roomId=test-room-001, error=잘못된 요청입니다.
+2025-08-21T17:03:47.852+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.chat.service.ChatServiceImpl   : 금융 메시지 Redis Stream 저장: messageType=PAYMENT_REQUEST, messageId=c91f1f52-c68b-4e77-ae49-fe31cf9cbf74
+2025-08-21T17:03:47.858+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.chat.service.ChatServiceImpl   : 일반 메시지 MongoDB 직접 저장: messageType=CHAT, messageId=738a2eff-36a6-4d58-be47-1643979be572
+2025-08-21T17:03:47.875+09:00 ERROR 14672 --- [    Test worker] c.s.h.c.d.chat.service.ChatServiceImpl   : 채팅 메시지 처리 실패: roomId=test-room-001, error=잘못된 요청입니다.
+2025-08-21T17:03:47.886+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.chat.service.ChatServiceImpl   : 일반 메시지 MongoDB 직접 저장: messageType=CHAT, messageId=2f906bd7-7c5a-4531-a39a-0b93d496b6e1
+2025-08-21T17:03:47.893+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.chat.service.ChatServiceImpl   : 금융 메시지 Redis Stream 저장: messageType=PAYMENT_CONFIRM, messageId=dc2ba14e-d29c-4f33-a2ca-43c3045d8346
+2025-08-21T17:03:47.900+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.chat.service.ChatServiceImpl   : 금융 메시지 Redis Stream 저장: messageType=PAYMENT_REQUEST, messageId=a91ba132-e9bf-47dc-ba60-cd619ee052ab
+2025-08-21T17:03:47.910+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.chat.service.ChatServiceImpl   : 금융 메시지 Redis Stream 저장: messageType=PAYMENT_COMPLETE, messageId=852e14af-4ea4-4821-bfae-008fe8519d62
+2025-08-21T17:03:47.916+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.chat.service.ChatServiceImpl   : 일반 메시지 MongoDB 직접 저장: messageType=LEAVE, messageId=9b7739f2-8c31-410e-98bd-76df1659fd19
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

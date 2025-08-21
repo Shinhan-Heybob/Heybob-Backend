@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.shinhan.heybob.chat.domain.chat.controller.ChatControllerTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2025-08-21T08:03:44.344Z" hostname="DESKTOP-HA97GMI" time="1.318">
+  <properties/>
+  <testcase name="정산_취소_버튼_상호작용_테스트()" classname="com.shinhan.heybob.chat.domain.chat.controller.ChatControllerTest" time="1.253"/>
+  <testcase name="정산_거절_버튼_상호작용_테스트()" classname="com.shinhan.heybob.chat.domain.chat.controller.ChatControllerTest" time="0.014"/>
+  <testcase name="정산_승낙_버튼_상호작용_테스트()" classname="com.shinhan.heybob.chat.domain.chat.controller.ChatControllerTest" time="0.012"/>
+  <testcase name="settlementId_없는_정산_상호작용_테스트()" classname="com.shinhan.heybob.chat.domain.chat.controller.ChatControllerTest" time="0.015"/>
+  <system-out><![CDATA[2025-08-21T17:03:45.496+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.controller.ChatController    : 메시지 수신: roomId=test-room-001, content=정산을 취소합니다
+2025-08-21T17:03:45.542+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.controller.ChatController    : 정산 상태 업데이트 브로드캐스트: roomId=test-room-001, settlementId=test-settlement-001
+2025-08-21T17:03:45.544+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.controller.ChatController    : 메시지 브로드캐스트 완료: roomId=test-room-001, messageId=response-003
+2025-08-21T17:03:45.629+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.controller.ChatController    : 메시지 수신: roomId=test-room-001, content=정산 거절합니다
+2025-08-21T17:03:45.630+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.controller.ChatController    : 정산 상태 업데이트 브로드캐스트: roomId=test-room-001, settlementId=test-settlement-001
+2025-08-21T17:03:45.631+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.controller.ChatController    : 메시지 브로드캐스트 완료: roomId=test-room-001, messageId=response-002
+2025-08-21T17:03:45.643+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.controller.ChatController    : 메시지 수신: roomId=test-room-001, content=정산 승낙합니다
+2025-08-21T17:03:45.643+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.controller.ChatController    : 정산 상태 업데이트 브로드캐스트: roomId=test-room-001, settlementId=test-settlement-001
+2025-08-21T17:03:45.644+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.controller.ChatController    : 메시지 브로드캐스트 완료: roomId=test-room-001, messageId=response-001
+2025-08-21T17:03:45.655+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.controller.ChatController    : 메시지 수신: roomId=test-room-001, content=정산 승낙합니다
+2025-08-21T17:03:45.655+09:00  WARN 14672 --- [    Test worker] c.s.h.c.d.c.controller.ChatController    : 정산 상호작용에 settlementId 없음: messageType=SETTLEMENT_ACCEPT
+2025-08-21T17:03:45.655+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.controller.ChatController    : 메시지 브로드캐스트 완료: roomId=test-room-001, messageId=response-004
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
