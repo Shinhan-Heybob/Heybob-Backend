@@ -1,5 +1,7 @@
 package com.shinhan.heybob.domain.user.service;
 
+import com.shinhan.heybob.common.exception.ExceptionStatus;
+import com.shinhan.heybob.common.exception.HeybobException;
 import com.shinhan.heybob.common.user.UserPrincipalDetails;
 import com.shinhan.heybob.domain.user.entity.User;
 import com.shinhan.heybob.domain.user.repository.UserRepository;
@@ -29,6 +31,6 @@ public class UserDetailServiceImpl implements UserDetailsService {
 
     private User findUserByEmailOrThrow(String userEmail) {
         return userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new Exception());
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.USER_NOT_FOUND));
     }
 }
