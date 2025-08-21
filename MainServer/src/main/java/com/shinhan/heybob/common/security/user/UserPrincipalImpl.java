@@ -1,5 +1,6 @@
 package com.shinhan.heybob.common.security.user;
 
+import com.shinhan.heybob.domain.user.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
@@ -12,7 +13,12 @@ import java.util.List;
 @AllArgsConstructor
 public class UserPrincipalImpl implements UserDetails {
 
+    private User user;
     private List<GrantedAuthority> authorities;
+
+    public Long getUserId() {
+        return user.getId();
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -21,12 +27,12 @@ public class UserPrincipalImpl implements UserDetails {
 
     @Override
     public String getPassword() {
-        return "";
+        return user.getPassword();
     }
 
     @Override
     public String getUsername() {
-        return "";
+        return user.getEmail();
     }
 
     @Override
