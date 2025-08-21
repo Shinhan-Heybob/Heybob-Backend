@@ -13,4 +13,5 @@ public class SecurityConfig {
     private final CorsConfig corsConfig;
     private final TokenAuthenticationFilter tokenAuthenticationFilter;
 
+
 }
