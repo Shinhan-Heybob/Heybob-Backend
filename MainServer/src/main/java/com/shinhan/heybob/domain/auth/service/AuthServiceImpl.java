@@ -1,0 +1,65 @@
+package com.shinhan.heybob.domain.auth.service;
+
+import com.shinhan.heybob.common.exception.ExceptionStatus;
+import com.shinhan.heybob.common.exception.HeybobException;
+import com.shinhan.heybob.common.security.jwt.util.JwtUtil;
+import com.shinhan.heybob.common.user.UserPrincipalDetails;
+import com.shinhan.heybob.domain.auth.dto.RefreshTokenResponseDto;
+import com.shinhan.heybob.domain.auth.entity.RefreshToken;
+import com.shinhan.heybob.domain.auth.repository.RefreshTokenRepository;
+import com.shinhan.heybob.domain.user.service.UserDetailsServiceImpl;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class AuthServiceImpl implements AuthService {
+
+    private final JwtUtil jwtUtil;
+    private final UserDetailsServiceImpl userDetailsService;
+    private final RefreshTokenRepository refreshTokenRepository;
+
+    @Transactional
+    @Override
+    public RefreshTokenResponseDto createAccessToken(String refreshToken) {
+        jwtUtil.validateRefreshToken(refreshToken);
+
+        Long userId = jwtUtil.getUserIdFromRefreshToken(refreshToken);
+        RefreshToken storedToken = findRefreshToken(userId);
+
+        if (!storedToken.getToken().equals(refreshToken)) {
+            throw new HeybobException(ExceptionStatus.INVALID_TOKEN);
+        }
+
+        UserDetails userDetails = userDetailsService.loadUserById(userId);
+        validateUserDetails(userDetails);
+
+        String newAccessToken = jwtUtil.generateAccessToken((UserPrincipalDetails) userDetails);
+        String newRefreshToken = rotateRefreshToken(userDetails, storedToken);
+
+        return new RefreshTokenResponseDto(newAccessToken, newRefreshToken);
+    }
+
+    @Transactional
+    public String rotateRefreshToken(UserDetails userDetails, RefreshToken refreshToken) {
+        String newRefreshToken = jwtUtil.generateRefreshToken((UserPrincipalDetails) userDetails);
+        refreshToken.updateToken(newRefreshToken);
+        refreshTokenRepository.save(refreshToken);
+        return newRefreshToken;
+    }
+
+    private RefreshToken findRefreshToken(Long userId) {
+        return refreshTokenRepository.findById(userId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.UN_AUTHENTICATION_TOKEN));
+    }
+
+    private void validateUserDetails(UserDetails userDetails) {
+        if (userDetails == null) {
+            throw new HeybobException(ExceptionStatus.USER_NOT_FOUND);
+        }
+    }
+
+
+}
