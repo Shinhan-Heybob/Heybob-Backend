@@ -4,7 +4,9 @@ import com.shinhan.heybob.common.exception.ExceptionStatus;
 import com.shinhan.heybob.common.exception.HeybobException;
 import com.shinhan.heybob.common.security.jwt.util.JwtUtil;
 import com.shinhan.heybob.common.user.UserPrincipalDetails;
+import com.shinhan.heybob.domain.auth.dto.AuthResponseDto;
 import com.shinhan.heybob.domain.auth.dto.RefreshTokenResponseDto;
+import com.shinhan.heybob.domain.auth.dto.UserLoginRequestDto;
 import com.shinhan.heybob.domain.auth.entity.RefreshToken;
 import com.shinhan.heybob.domain.auth.repository.RefreshTokenRepository;
 import com.shinhan.heybob.domain.user.dto.UserCreateRequestDto;
@@ -98,10 +100,30 @@ public class AuthServiceImpl implements AuthService {
         return new UserResponseDto(createdUser);
     }
 
-
     private void verifyExistUser(UserCreateRequestDto userCreateRequestDto) {
         if (userRepository.existsByStudentId(userCreateRequestDto.getStudentId())) {
             throw new HeybobException(ExceptionStatus.STUDENT_ID_ALREADY_EXISTS);
         }
+    }
+
+    @Override
+    public AuthResponseDto login(UserLoginRequestDto userLoginRequestDto) {
+        User user = userRepository.findByUniversityAndStudentId(
+                userLoginRequestDto.getUniversity(), userLoginRequestDto.getStudentId())
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.USER_NOT_FOUND));
+
+        if (!passwordEncoder.matches(userLoginRequestDto.getPassword(), user.getPassword())) {
+            throw new HeybobException(ExceptionStatus.INVALID_PASSWORD);
+        }
+
+        UserDetails userDetails = userDetailsService.loadUserById(user.getId());
+
+        String accessToken = jwtUtil.generateAccessToken((UserPrincipalDetails) userDetails);
+        String refreshToken = jwtUtil.generateRefreshToken((UserPrincipalDetails) userDetails);
+
+        return AuthResponseDto.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
     }
 }
