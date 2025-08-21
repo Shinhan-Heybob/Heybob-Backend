@@ -28,7 +28,11 @@ public enum ErrorCode {
     
     // MongoDB 관련 에러
     MONGODB_CONNECTION_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "CHAT_400", "MongoDB 연결 오류가 발생했습니다."),
-    MONGODB_QUERY_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "CHAT_401", "데이터베이스 조회 중 오류가 발생했습니다.");
+    MONGODB_QUERY_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "CHAT_401", "데이터베이스 조회 중 오류가 발생했습니다."),
+    
+    // 서버간 통신 에러
+    COMMUNICATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "CHAT_500", "서버간 통신 중 오류가 발생했습니다."),
+    COMMUNICATION_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "CHAT_501", "서버간 통신 타임아웃이 발생했습니다.");
     
     private final HttpStatus httpStatus;
     private final String code;

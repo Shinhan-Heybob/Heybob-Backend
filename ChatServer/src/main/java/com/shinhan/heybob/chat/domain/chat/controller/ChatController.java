@@ -5,6 +5,8 @@ import com.shinhan.heybob.chat.domain.chat.dto.ChatMessageResponse;
 import com.shinhan.heybob.chat.domain.chat.dto.SettlementData;
 import com.shinhan.heybob.chat.domain.chat.service.ChatService;
 import com.shinhan.heybob.chat.domain.chat.service.SettlementService;
+import com.shinhan.heybob.chat.domain.communication.service.MainServerCommunicationService;
+import com.shinhan.heybob.chat.domain.communication.handler.MessageHandler;
 import com.shinhan.heybob.chat.global.error.ChatException;
 import com.shinhan.heybob.chat.global.error.ErrorCode;
 import com.shinhan.heybob.chat.global.error.ErrorResponse;
@@ -25,6 +27,8 @@ public class ChatController {
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatService chatService;
     private final SettlementService settlementService;
+    private final MainServerCommunicationService mainServerCommunicationService;
+    private final MessageHandler messageHandler;
 
     @MessageMapping("/chat/{roomId}")
     public void sendMessage(
@@ -60,7 +64,7 @@ public class ChatController {
             
             // 정산 버튼 상호작용 처리
             if (isSettlementInteraction(request.getMessageType())) {
-                handleSettlementInteraction(roomId, userId, request);
+                handleSettlementInteraction(roomId, userId, userName, request);
             }
             
             // 메시지 처리 및 저장
@@ -95,7 +99,7 @@ public class ChatController {
                "SETTLEMENT_CANCEL".equals(messageType);
     }
     
-    private void handleSettlementInteraction(String roomId, String userId, ChatMessageRequest request) {
+    private void handleSettlementInteraction(String roomId, String userId, String userName, ChatMessageRequest request) {
         try {
             String settlementId = request.getSettlementId();
             if (settlementId == null) {
@@ -111,10 +115,30 @@ public class ChatController {
             };
             
             if (responseType != null) {
-                SettlementData updatedSettlement = settlementService.updateSettlementResponse(settlementId, userId, responseType);
+                // 1. 로컬 정산 상태 업데이트 (활성 정산에서)
+                SettlementData activeSettlement = messageHandler.getActiveSettlement(settlementId);
+                if (activeSettlement != null) {
+                    SettlementData.SettlementStatus userStatus = activeSettlement.getParticipantStatus().get(userId);
+                    if (userStatus != null) {
+                        userStatus.setStatus(responseType);
+                        userStatus.setResponseTime(java.time.LocalDateTime.now());
+                    }
+                    
+                    // 방의 모든 사용자에게 상태 업데이트 브로드캐스트
+                    broadcastSettlementUpdate(roomId, activeSettlement);
+                }
                 
-                // 정산 상태 업데이트를 방의 모든 사용자에게 브로드캐스트
-                broadcastSettlementUpdate(roomId, updatedSettlement);
+                // 2. Main 서버에 사용자 응답 전달
+                mainServerCommunicationService.sendSettlementResponse(
+                    settlementId, 
+                    userId, 
+                    userName, 
+                    responseType, 
+                    java.time.LocalDateTime.now().toString()
+                );
+                
+                log.info("📤 정산 응답 Main 서버 전송: settlementId={}, userId={}, response={}", 
+                    settlementId, userId, responseType);
             }
             
         } catch (Exception e) {

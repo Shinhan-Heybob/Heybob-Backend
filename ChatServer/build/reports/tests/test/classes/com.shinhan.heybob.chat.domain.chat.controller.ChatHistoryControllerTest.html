@@ -41,7 +41,7 @@
 </td>
 <td>
 <div class="infoBox" id="duration">
-<div class="counter">1.195s</div>
+<div class="counter">1.935s</div>
 <p>duration</p>
 </div>
 </td>
@@ -84,47 +84,47 @@
 </tr>
 <tr>
 <td class="success">hasMore_false_상황_테스트()</td>
-<td class="success">0.037s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">hasMore_true_상황_테스트()</td>
-<td class="success">0.036s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">다양한_메시지_타입_응답()</td>
-<td class="success">0.040s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">레거시_API_엔드포인트_테스트()</td>
-<td class="success">0.043s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">빈_히스토리_응답()</td>
-<td class="success">0.845s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">여러_파라미터_조합_테스트()</td>
-<td class="success">0.039s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">초기_채팅_히스토리_조회_성공()</td>
 <td class="success">0.045s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
+<td class="success">hasMore_true_상황_테스트()</td>
+<td class="success">0.022s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">다양한_메시지_타입_응답()</td>
+<td class="success">0.021s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">레거시_API_엔드포인트_테스트()</td>
+<td class="success">0.022s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">빈_히스토리_응답()</td>
+<td class="success">1.688s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">여러_파라미터_조합_테스트()</td>
+<td class="success">0.026s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">초기_채팅_히스토리_조회_성공()</td>
+<td class="success">0.026s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
 <td class="success">커스텀_limit_파라미터_테스트()</td>
-<td class="success">0.035s</td>
+<td class="success">0.024s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">특정_메시지_이전_히스토리_조회_성공()</td>
-<td class="success">0.037s</td>
+<td class="success">0.023s</td>
 <td class="success">passed</td>
 </tr>
 </table>
@@ -132,55 +132,56 @@
 <div class="tab">
 <h2>Standard output</h2>
 <span class="code">
-<pre>2025-08-21T17:03:45.781+09:00  INFO 14672 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
-2025-08-21T17:03:45.781+09:00  INFO 14672 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-08-21T17:03:45.787+09:00  INFO 14672 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 2 ms
-2025-08-21T17:03:46.052+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=50
-2025-08-21T17:03:46.053+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=0, lastMessageId=null, hasMore=false
-2025-08-21T17:03:46.544+09:00  INFO 14672 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
-2025-08-21T17:03:46.546+09:00  INFO 14672 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-08-21T17:03:46.546+09:00  INFO 14672 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
-2025-08-21T17:03:46.549+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=50
-2025-08-21T17:03:46.550+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=1, lastMessageId=msg001, hasMore=false
-2025-08-21T17:03:46.581+09:00  INFO 14672 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
-2025-08-21T17:03:46.582+09:00  INFO 14672 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-08-21T17:03:46.583+09:00  INFO 14672 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
-2025-08-21T17:03:46.585+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=10
-2025-08-21T17:03:46.586+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=2, lastMessageId=msg002, hasMore=true
-2025-08-21T17:03:46.617+09:00  INFO 14672 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
-2025-08-21T17:03:46.618+09:00  INFO 14672 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-08-21T17:03:46.619+09:00  INFO 14672 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
-2025-08-21T17:03:46.634+09:00  WARN 14672 --- [    Test worker] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.web.bind.MissingRequestHeaderException: Required request header 'X-User-Id' for method parameter type String is not present]
-2025-08-21T17:03:46.656+09:00  INFO 14672 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
-2025-08-21T17:03:46.657+09:00  INFO 14672 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-08-21T17:03:46.657+09:00  INFO 14672 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
-2025-08-21T17:03:46.661+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=msg100, limit=25
-2025-08-21T17:03:46.661+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=1, lastMessageId=msg050, hasMore=true
-2025-08-21T17:03:46.697+09:00  INFO 14672 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
-2025-08-21T17:03:46.698+09:00  INFO 14672 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-08-21T17:03:46.698+09:00  INFO 14672 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
-2025-08-21T17:03:46.701+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=msg003, limit=50
-2025-08-21T17:03:46.702+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=2, lastMessageId=msg002, hasMore=false
-2025-08-21T17:03:46.731+09:00  INFO 14672 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
-2025-08-21T17:03:46.731+09:00  INFO 14672 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-08-21T17:03:46.732+09:00  INFO 14672 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
-2025-08-21T17:03:46.740+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=3
-2025-08-21T17:03:46.740+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=3, lastMessageId=msg003, hasMore=true
-2025-08-21T17:03:46.776+09:00  INFO 14672 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
-2025-08-21T17:03:46.777+09:00  INFO 14672 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-08-21T17:03:46.778+09:00  INFO 14672 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
-2025-08-21T17:03:46.781+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=50
-2025-08-21T17:03:46.781+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=3, lastMessageId=msg003, hasMore=false
-2025-08-21T17:03:46.811+09:00  INFO 14672 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
-2025-08-21T17:03:46.812+09:00  INFO 14672 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-08-21T17:03:46.812+09:00  INFO 14672 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
-2025-08-21T17:03:46.816+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 레거시 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=50
-2025-08-21T17:03:46.817+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 레거시 채팅 히스토리 응답: roomId=test-room-001, count=2
-2025-08-21T17:03:46.855+09:00  INFO 14672 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
-2025-08-21T17:03:46.855+09:00  INFO 14672 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-08-21T17:03:46.857+09:00  INFO 14672 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 2 ms
-2025-08-21T17:03:46.860+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=50
-2025-08-21T17:03:46.860+09:00  INFO 14672 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=3, lastMessageId=msg003, hasMore=true
+<pre>08:53:34.709 [Test worker] INFO org.hibernate.validator.internal.util.Version -- HV000001: Hibernate Validator 8.0.2.Final
+08:53:35.671 [Test worker] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+08:53:35.672 [Test worker] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+08:53:35.677 [Test worker] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 4 ms
+08:53:35.774 [Test worker] INFO com.shinhan.heybob.chat.domain.chat.controller.ChatHistoryController -- 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=50
+08:53:35.775 [Test worker] INFO com.shinhan.heybob.chat.domain.chat.controller.ChatHistoryController -- 채팅 히스토리 응답: roomId=test-room-001, count=0, lastMessageId=null, hasMore=false
+08:53:35.959 [Test worker] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+08:53:35.960 [Test worker] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+08:53:35.960 [Test worker] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+08:53:35.962 [Test worker] INFO com.shinhan.heybob.chat.domain.chat.controller.ChatHistoryController -- 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=50
+08:53:35.963 [Test worker] INFO com.shinhan.heybob.chat.domain.chat.controller.ChatHistoryController -- 채팅 히스토리 응답: roomId=test-room-001, count=1, lastMessageId=msg001, hasMore=false
+08:53:36.003 [Test worker] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+08:53:36.003 [Test worker] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+08:53:36.004 [Test worker] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+08:53:36.006 [Test worker] INFO com.shinhan.heybob.chat.domain.chat.controller.ChatHistoryController -- 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=10
+08:53:36.006 [Test worker] INFO com.shinhan.heybob.chat.domain.chat.controller.ChatHistoryController -- 채팅 히스토리 응답: roomId=test-room-001, count=2, lastMessageId=msg002, hasMore=true
+08:53:36.027 [Test worker] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+08:53:36.027 [Test worker] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+08:53:36.028 [Test worker] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+08:53:36.050 [Test worker] WARN org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver -- Resolved [org.springframework.web.bind.MissingRequestHeaderException: Required request header 'X-User-Id' for method parameter type String is not present]
+08:53:36.065 [Test worker] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+08:53:36.065 [Test worker] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+08:53:36.065 [Test worker] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+08:53:36.067 [Test worker] INFO com.shinhan.heybob.chat.domain.chat.controller.ChatHistoryController -- 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=msg100, limit=25
+08:53:36.067 [Test worker] INFO com.shinhan.heybob.chat.domain.chat.controller.ChatHistoryController -- 채팅 히스토리 응답: roomId=test-room-001, count=1, lastMessageId=msg050, hasMore=true
+08:53:36.090 [Test worker] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+08:53:36.090 [Test worker] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+08:53:36.092 [Test worker] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 2 ms
+08:53:36.094 [Test worker] INFO com.shinhan.heybob.chat.domain.chat.controller.ChatHistoryController -- 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=msg003, limit=50
+08:53:36.094 [Test worker] INFO com.shinhan.heybob.chat.domain.chat.controller.ChatHistoryController -- 채팅 히스토리 응답: roomId=test-room-001, count=2, lastMessageId=msg002, hasMore=false
+08:53:36.113 [Test worker] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+08:53:36.115 [Test worker] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+08:53:36.115 [Test worker] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+08:53:36.117 [Test worker] INFO com.shinhan.heybob.chat.domain.chat.controller.ChatHistoryController -- 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=3
+08:53:36.118 [Test worker] INFO com.shinhan.heybob.chat.domain.chat.controller.ChatHistoryController -- 채팅 히스토리 응답: roomId=test-room-001, count=3, lastMessageId=msg003, hasMore=true
+08:53:36.136 [Test worker] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+08:53:36.136 [Test worker] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+08:53:36.137 [Test worker] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 1 ms
+08:53:36.139 [Test worker] INFO com.shinhan.heybob.chat.domain.chat.controller.ChatHistoryController -- 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=50
+08:53:36.141 [Test worker] INFO com.shinhan.heybob.chat.domain.chat.controller.ChatHistoryController -- 채팅 히스토리 응답: roomId=test-room-001, count=3, lastMessageId=msg003, hasMore=false
+08:53:36.158 [Test worker] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+08:53:36.158 [Test worker] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+08:53:36.158 [Test worker] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+08:53:36.160 [Test worker] INFO com.shinhan.heybob.chat.domain.chat.controller.ChatHistoryController -- 레거시 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=50
+08:53:36.161 [Test worker] INFO com.shinhan.heybob.chat.domain.chat.controller.ChatHistoryController -- 레거시 채팅 히스토리 응답: roomId=test-room-001, count=2
+08:53:36.181 [Test worker] INFO org.springframework.mock.web.MockServletContext -- Initializing Spring TestDispatcherServlet ''
+08:53:36.182 [Test worker] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Initializing Servlet ''
+08:53:36.182 [Test worker] INFO org.springframework.test.web.servlet.TestDispatcherServlet -- Completed initialization in 0 ms
+08:53:36.185 [Test worker] INFO com.shinhan.heybob.chat.domain.chat.controller.ChatHistoryController -- 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=50
+08:53:36.185 [Test worker] INFO com.shinhan.heybob.chat.domain.chat.controller.ChatHistoryController -- 채팅 히스토리 응답: roomId=test-room-001, count=3, lastMessageId=msg003, hasMore=true
 </pre>
 </span>
 </div>
@@ -192,7 +193,7 @@
 <input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
 </label>
 </div>Generated by 
-<a href="https://www.gradle.org">Gradle 8.14.3</a> at 2025. 8. 21. 오후 5:03:57</p>
+<a href="https://www.gradle.org">Gradle 8.14.3</a> at 2025. 8. 22. 오전 8:53:37</p>
 </div>
 </div>
 </body>

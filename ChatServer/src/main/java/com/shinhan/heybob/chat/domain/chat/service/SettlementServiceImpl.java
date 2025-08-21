@@ -1,6 +1,7 @@
 package com.shinhan.heybob.chat.domain.chat.service;
 
 import com.shinhan.heybob.chat.domain.chat.dto.SettlementData;
+import com.shinhan.heybob.chat.domain.communication.service.MainServerCommunicationService;
 import com.shinhan.heybob.chat.global.error.ChatException;
 import com.shinhan.heybob.chat.global.error.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 public class SettlementServiceImpl implements SettlementService {
     
     private final RedisTemplate<String, Object> redisTemplate;
+    private final MainServerCommunicationService mainServerCommunicationService;
     private static final String SETTLEMENT_KEY_PREFIX = "settlement:";
     
     @Override
@@ -118,8 +120,21 @@ public class SettlementServiceImpl implements SettlementService {
     
     @Override
     public List<String> getRoomMembers(String roomId) {
-        // Mock 데이터 - 나중에 메인 서버 API로 교체
-        return Arrays.asList("20000622", "20000623", "20000624");
+        try {
+            // Main 서버에서 실제 방 멤버 정보 조회
+            List<Map<String, Object>> members = mainServerCommunicationService
+                .getRoomMembers(roomId, "system")
+                .get(); // 동기 처리 (30초 타임아웃)
+            
+            return members.stream()
+                .map(member -> (String) member.get("userId"))
+                .toList();
+                
+        } catch (Exception e) {
+            log.error("Main 서버에서 방 멤버 조회 실패, Mock 데이터 사용: roomId={}", roomId, e);
+            // Fallback: Mock 데이터 사용
+            return Arrays.asList("20000622", "20000623", "20000624");
+        }
     }
     
     @Override
@@ -134,8 +149,25 @@ public class SettlementServiceImpl implements SettlementService {
                     .map(Map.Entry::getKey)
                     .toList();
             
-            // TODO: 메인 서버에 결제 처리 요청
-            log.info("정산 완료 처리: settlementId={}, acceptedUsers={}", settlementId, acceptedUsers);
+            if (!acceptedUsers.isEmpty()) {
+                // Main 서버에 실제 결제 처리 요청 (비동기)
+                mainServerCommunicationService.processSettlement(
+                    settlementId,
+                    settlement.getRoomId(),
+                    acceptedUsers,
+                    settlement.getPerPersonAmount(),
+                    settlement.getNote(),
+                    "system"
+                ).thenAccept(response -> {
+                    log.info("✅ 정산 처리 요청 전송 완료: settlementId={}, acceptedUsers={}", 
+                        settlementId, acceptedUsers);
+                }).exceptionally(throwable -> {
+                    log.error("❌ 정산 처리 요청 실패: settlementId={}", settlementId, throwable);
+                    return null;
+                });
+            } else {
+                log.info("정산 승낙한 사용자가 없음: settlementId={}", settlementId);
+            }
             
         } catch (Exception e) {
             log.error("정산 완료 처리 실패: settlementId={}", settlementId, e);
