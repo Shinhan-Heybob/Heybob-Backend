@@ -24,7 +24,7 @@ public class User extends BaseTime {
     @Column(name = "user_name", nullable = false)
     private String name;
 
-    @Column(name = "userr_email", nullable = false, unique = true, updatable = false)
+    @Column(name = "user_email", nullable = false, unique = true, updatable = false)
     private String email;
 
     @Column(name = "user_password", nullable = false)
