@@ -1,8 +1,9 @@
 package com.shinhan.heybob.common.security.jwt.util;
 
 import com.shinhan.heybob.common.security.user.UserPrincipalDetails;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.SecurityException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -81,6 +82,42 @@ public class JwtUtil {
                 .parseSignedClaims(token)
                 .getPayload().getSubject();
 
+    }
+
+    public boolean validateAccessToken(String token) {
+        return validateToken(token);
+    }
+
+    public boolean validateRefreshToken(String token) {
+        if (token == null || token.isEmpty()) return false;
+        return validateToken(token);
+    }
+
+    private boolean validateToken(String token) {
+        try {
+            Jwts.parser()
+                    .verifyWith(getSecretKey())
+                    .build()
+                    .parseSignedClaims(token);
+            return true;
+        } catch (SecurityException | MalformedJwtException e) {
+            log.error("유효하지 않은 JWT signature: " + e.getMessage());
+        } catch (ExpiredJwtException e) {
+            log.error("만료된 JWT 토큰: " + e.getMessage());
+        } catch (UnsupportedJwtException e) {
+            log.error("지원하지 않은 JWT 토큰: " +  e.getMessage());
+        } catch (IllegalArgumentException e) {
+            log.error("JWT claims이 비었습니다: " + e.getMessage());
+        }
+        return false;
+    }
+
+    public String resolveToken(HttpServletRequest request) {
+        String authorizationHeader = request.getHeader(header);
+        if (authorizationHeader != null && authorizationHeader.startsWith(tokenPrefix)) {
+            return authorizationHeader.substring(tokenPrefix.length());
+        }
+        return null;
     }
 }
 
