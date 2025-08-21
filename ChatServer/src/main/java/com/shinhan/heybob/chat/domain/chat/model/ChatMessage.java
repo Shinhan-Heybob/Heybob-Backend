@@ -22,6 +22,7 @@ public class ChatMessage {
     private MessageType messageType;
     private LocalDateTime timestamp;
     private SettlementData settlementData;  // 정산 관련 데이터
+    private Boolean emergencyFallback;  // Redis Stream 실패로 MongoDB에 직접 저장된 경우
     
     public enum MessageType {
         // 일반 메시지 (바로 MongoDB 저장)
