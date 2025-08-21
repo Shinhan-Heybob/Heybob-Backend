@@ -7,19 +7,28 @@ import com.shinhan.heybob.common.user.UserPrincipalDetails;
 import com.shinhan.heybob.domain.auth.dto.RefreshTokenResponseDto;
 import com.shinhan.heybob.domain.auth.entity.RefreshToken;
 import com.shinhan.heybob.domain.auth.repository.RefreshTokenRepository;
+import com.shinhan.heybob.domain.user.dto.UserCreateRequestDto;
+import com.shinhan.heybob.domain.user.dto.UserResponseDto;
+import com.shinhan.heybob.domain.user.entity.User;
+import com.shinhan.heybob.domain.user.repository.UserRepository;
 import com.shinhan.heybob.domain.user.service.UserDetailsServiceImpl;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthServiceImpl implements AuthService {
 
     private final JwtUtil jwtUtil;
     private final UserDetailsServiceImpl userDetailsService;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
 
     @Transactional
     @Override
@@ -75,4 +84,24 @@ public class AuthServiceImpl implements AuthService {
         throw new HeybobException(ExceptionStatus.INVALID_TOKEN);
     }
 
+    @Override
+    public UserResponseDto signup(UserCreateRequestDto userCreateRequestDto) {
+        log.info("User Create RequestDto: {}", userCreateRequestDto);
+        verifyExistUser(userCreateRequestDto);
+
+        String encryptedPassword = passwordEncoder.encode(userCreateRequestDto.getPassword());
+
+        User createdUser = userCreateRequestDto.toEntity(userCreateRequestDto, encryptedPassword);
+
+        userRepository.save(createdUser);
+
+        return new UserResponseDto(createdUser);
+    }
+
+
+    private void verifyExistUser(UserCreateRequestDto userCreateRequestDto) {
+        if (userRepository.existsByStudentId(userCreateRequestDto.getStudentId())) {
+            throw new HeybobException(ExceptionStatus.STUDENT_ID_ALREADY_EXISTS);
+        }
+    }
 }
