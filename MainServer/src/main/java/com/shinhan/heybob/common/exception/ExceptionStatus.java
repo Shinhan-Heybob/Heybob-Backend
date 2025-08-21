@@ -13,7 +13,7 @@ public enum ExceptionStatus {
 
     // USER
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "일치하는 유저 정보를 찾을 수 없습니다"),
-    EMAIL_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, 400, "이미 존재하는 이메일입니다."),
+    STUDENT_ID_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, 400, "이미 존재하는 이메일입니다."),
     INVALID_PASSWORD(HttpStatus.BAD_REQUEST, 400, "비밀번호가 유효하지 않습니다.");
 
     private final int status;

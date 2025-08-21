@@ -127,5 +127,15 @@ public class JwtUtil {
         }
         return null;
     }
+
+    public long getRemainingValidityMillis(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(getSecretKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        long remaining = claims.getExpiration().getTime() - System.currentTimeMillis();
+        return Math.max(0, remaining);
+    }
 }
 
