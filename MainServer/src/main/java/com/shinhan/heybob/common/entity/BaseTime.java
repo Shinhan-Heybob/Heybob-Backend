@@ -1,4 +1,4 @@
-package com.shinhan.heybob.common.security.entity;
+package com.shinhan.heybob.common.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;

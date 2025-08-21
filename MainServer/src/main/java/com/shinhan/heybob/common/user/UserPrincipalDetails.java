@@ -1,4 +1,4 @@
-package com.shinhan.heybob.common.security.user;
+package com.shinhan.heybob.common.user;
 
 import com.shinhan.heybob.domain.user.entity.User;
 import lombok.AllArgsConstructor;

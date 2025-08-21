@@ -1,6 +1,6 @@
 package com.shinhan.heybob.common.security.jwt.util;
 
-import com.shinhan.heybob.common.security.user.UserPrincipalDetails;
+import com.shinhan.heybob.common.user.UserPrincipalDetails;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.SecurityException;
 import jakarta.servlet.http.HttpServletRequest;
