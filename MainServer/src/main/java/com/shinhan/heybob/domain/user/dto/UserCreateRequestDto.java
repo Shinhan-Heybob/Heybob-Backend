@@ -31,6 +31,9 @@ public class UserCreateRequestDto {
     @NotBlank
     private String department;
 
+    @NotBlank(message = "개인정보 수집 및 이용에 동의해야 합니다.")
+    private Boolean agreeTerms;
+
     public User toEntity(UserCreateRequestDto userCreateRequestDto, String encryptedPassword) {
         return User.builder()
                 .name(userCreateRequestDto.getName())

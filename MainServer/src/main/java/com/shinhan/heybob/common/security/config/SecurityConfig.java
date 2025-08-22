@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -39,8 +40,8 @@ public class SecurityConfig {
                         -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
-                                .requestMatchers("/auth/login", "/auth/signin", "/auth/refresh").permitAll()
-                                .requestMatchers("/auth/logout").authenticated()
+                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                                .requestMatchers("/auth/**").permitAll()
                                 .anyRequest().authenticated()
                 )
                 .formLogin(AbstractHttpConfigurer::disable)
@@ -68,7 +69,17 @@ public class SecurityConfig {
                             }
                         })
                 )
-                .addFilterBefore(tokenAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(tokenAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((req, res, ex1) -> {
+                            // 인증 안된 사용자가 보호 API 접근: 401
+                            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        })
+                        .accessDeniedHandler((req, res, ex2) -> {
+                            // 권한 부족: 403
+                            res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        })
+                );
 
         return http.build();
     }

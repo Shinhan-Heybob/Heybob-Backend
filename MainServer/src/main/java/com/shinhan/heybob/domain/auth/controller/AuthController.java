@@ -1,17 +1,14 @@
 package com.shinhan.heybob.domain.auth.controller;
 
-import com.shinhan.heybob.common.user.UserPrincipalDetails;
 import com.shinhan.heybob.domain.auth.dto.AuthLoginResponseDto;
 import com.shinhan.heybob.domain.auth.dto.AuthResponseDto;
 import com.shinhan.heybob.domain.auth.dto.UserLoginRequestDto;
 import com.shinhan.heybob.domain.auth.service.AuthService;
 import com.shinhan.heybob.domain.user.dto.UserCreateRequestDto;
-import com.sun.security.auth.UserPrincipal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,7 +23,7 @@ public class AuthController {
     private static final String HEADER_AUTH = "Authorization";
     private static final String TOKEN_TYPE = "Bearer ";
 
-    @PostMapping("signup")
+    @PostMapping("/signup")
     public ResponseEntity<String> signup(@Valid @RequestBody UserCreateRequestDto userCreateRequestDto) {
         authService.signup(userCreateRequestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body("Signup Successful");

@@ -26,29 +26,49 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
     private final UserDetailsServiceImpl userDetailsService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        try {
-            String token = jwtUtil.resolveToken(request);
-
-            if (token != null && jwtUtil.validateAccessToken(token)) {
-                Long userId = jwtUtil.getUserIdFromAccessToken(token);
-                UserDetails userDetails = userDetailsService.loadUserById(userId);
-
-                if (userDetails != null) {
-                    UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities());
-                    authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                } else {
-                    log.error("토큰에서 추출된 userId으로 user를 찾지 못함: " + userId);
-                    SecurityContextHolder.clearContext(); // 인증 비우기
-                }
-            }
-        } catch (Exception e) {
-            log.error("사용자 인증을 설정하지 못함: " + e.getMessage());
-
-            SecurityContextHolder.clearContext();
-        }
-        filterChain.doFilter(request, response);
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) return true;
+        if (uri.equals("/auth") || uri.startsWith("/auth/")) return true;
+        return false;
     }
 
+    @Override
+    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+            throws ServletException, IOException {
+
+        final String uri = req.getRequestURI();
+        final String token = jwtUtil.resolveToken(req);
+        log.debug("[JWT] uri={} tokenPresent={}", uri, token != null);
+
+        try {
+            // 토큰이 없으면 익명으로 통과
+            if (token == null || token.isBlank()) {
+                chain.doFilter(req, res);
+                return;
+            }
+
+            // 토큰이 있으면만 검증하고, 유효하면 컨텍스트에 인증 주입
+            if (jwtUtil.validateAccessToken(token)) {
+                Long userId = jwtUtil.getUserIdFromAccessToken(token);
+                UserDetails user = userDetailsService.loadUserById(userId);
+                if (user != null) {
+                    var auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                } else {
+                    // 유저 없으면 인증 세팅 없이 그대로 통과
+                    SecurityContextHolder.clearContext();
+                }
+            } else {
+                // 무효 토큰이어도 여기서 401 쓰지 말고 통과 → 보호자원에서만 401
+                SecurityContextHolder.clearContext();
+            }
+        } catch (Exception e) {
+            log.error("[JWT] filter error on {}: {}", uri, e.getMessage(), e);
+            SecurityContextHolder.clearContext();
+            // 여기서 응답 종료/401 금지
+        }
+        chain.doFilter(req, res);
+    }
 }

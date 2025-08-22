@@ -63,6 +63,11 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public UserResponseDto signup(UserCreateRequestDto userCreateRequestDto) {
         log.info("User Create RequestDto: {}", userCreateRequestDto);
+
+        if (Boolean.FALSE.equals(userCreateRequestDto.getAgreeTerms())) {
+            throw new HeybobException(ExceptionStatus.EMPTY_AGREE_TERMS);
+        }
+
         verifyExistUser(userCreateRequestDto);
 
         String encryptedPassword = passwordEncoder.encode(userCreateRequestDto.getPassword());
