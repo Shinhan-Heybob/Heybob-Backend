@@ -6,6 +6,8 @@ import com.shinhan.heybob.chat.domain.chat.dto.ChatMessageResponse;
 import com.shinhan.heybob.chat.domain.chat.dto.SettlementData;
 import com.shinhan.heybob.chat.domain.chat.service.ChatService;
 import com.shinhan.heybob.chat.domain.chat.service.SettlementService;
+import com.shinhan.heybob.chat.domain.communication.service.MainServerCommunicationService;
+import com.shinhan.heybob.chat.domain.communication.handler.MessageHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +36,12 @@ class ChatControllerTest {
     @Mock
     private SimpMessagingTemplate messagingTemplate;
 
+    @Mock
+    private MainServerCommunicationService mainServerCommunicationService;
+
+    @Mock
+    private MessageHandler messageHandler;
+
     @InjectMocks
     private ChatController chatController;
     private String roomId;
@@ -55,11 +63,15 @@ class ChatControllerTest {
         request.setContent("정산 승낙합니다");
         request.setSettlementId(settlementId);
 
-        SettlementData updatedSettlement = createMockSettlementData(settlementId);
-        updatedSettlement.getParticipantStatus().get(userId).setStatus("accepted");
+        SettlementData activeSettlement = createMockSettlementData(settlementId);
+        
+        // Mock active settlement 조회
+        when(messageHandler.getActiveSettlement(settlementId))
+                .thenReturn(activeSettlement);
 
-        when(settlementService.updateSettlementResponse(settlementId, userId, "accepted"))
-                .thenReturn(updatedSettlement);
+        // Mock MainServerCommunicationService
+        doNothing().when(mainServerCommunicationService)
+                .sendSettlementResponse(eq(settlementId), eq(userId), eq("테스트사용자"), eq("accepted"), any());
 
         ChatMessageResponse mockResponse = ChatMessageResponse.builder()
                 .messageId("response-001")
@@ -84,9 +96,11 @@ class ChatControllerTest {
             chatController.sendMessage(roomId, request, headerAccessor);
         });
 
-        // Verify
-        verify(settlementService, times(1)).updateSettlementResponse(settlementId, userId, "accepted");
-        verify(messagingTemplate, times(1)).convertAndSend("/topic/room/" + roomId + "/settlement", updatedSettlement);
+        // Verify - 새로운 로직에 맞게 수정
+        verify(messageHandler, times(1)).getActiveSettlement(settlementId);
+        verify(mainServerCommunicationService, times(1))
+                .sendSettlementResponse(eq(settlementId), eq(userId), eq("테스트사용자"), eq("accepted"), any());
+        verify(messagingTemplate, times(1)).convertAndSend("/topic/room/" + roomId + "/settlement", activeSettlement);
         verify(chatService, times(1)).processMessage(eq(roomId), eq(userId), any(), any(), any(), eq(request));
         verify(messagingTemplate, times(1)).convertAndSend("/topic/room/" + roomId, mockResponse);
     }
@@ -101,11 +115,15 @@ class ChatControllerTest {
         request.setContent("정산 거절합니다");
         request.setSettlementId(settlementId);
 
-        SettlementData updatedSettlement = createMockSettlementData(settlementId);
-        updatedSettlement.getParticipantStatus().get(userId).setStatus("rejected");
+        SettlementData activeSettlement = createMockSettlementData(settlementId);
+        
+        // Mock active settlement 조회
+        when(messageHandler.getActiveSettlement(settlementId))
+                .thenReturn(activeSettlement);
 
-        when(settlementService.updateSettlementResponse(settlementId, userId, "rejected"))
-                .thenReturn(updatedSettlement);
+        // Mock MainServerCommunicationService
+        doNothing().when(mainServerCommunicationService)
+                .sendSettlementResponse(eq(settlementId), eq(userId), eq("테스트사용자"), eq("rejected"), any());
 
         ChatMessageResponse mockResponse = ChatMessageResponse.builder()
                 .messageId("response-002")
@@ -130,9 +148,13 @@ class ChatControllerTest {
             chatController.sendMessage(roomId, request, headerAccessor);
         });
 
-        // Verify
-        verify(settlementService, times(1)).updateSettlementResponse(settlementId, userId, "rejected");
-        verify(messagingTemplate, times(1)).convertAndSend("/topic/room/" + roomId + "/settlement", updatedSettlement);
+        // Verify - 새로운 로직에 맞게 수정
+        verify(messageHandler, times(1)).getActiveSettlement(settlementId);
+        verify(mainServerCommunicationService, times(1))
+                .sendSettlementResponse(eq(settlementId), eq(userId), eq("테스트사용자"), eq("rejected"), any());
+        verify(messagingTemplate, times(1)).convertAndSend("/topic/room/" + roomId + "/settlement", activeSettlement);
+        verify(chatService, times(1)).processMessage(eq(roomId), eq(userId), any(), any(), any(), eq(request));
+        verify(messagingTemplate, times(1)).convertAndSend("/topic/room/" + roomId, mockResponse);
     }
 
     @Test
@@ -145,10 +167,15 @@ class ChatControllerTest {
         request.setContent("정산을 취소합니다");
         request.setSettlementId(settlementId);
 
-        SettlementData updatedSettlement = createMockSettlementData(settlementId);
+        SettlementData activeSettlement = createMockSettlementData(settlementId);
+        
+        // Mock active settlement 조회
+        when(messageHandler.getActiveSettlement(settlementId))
+                .thenReturn(activeSettlement);
 
-        when(settlementService.updateSettlementResponse(settlementId, userId, "cancelled"))
-                .thenReturn(updatedSettlement);
+        // Mock MainServerCommunicationService
+        doNothing().when(mainServerCommunicationService)
+                .sendSettlementResponse(eq(settlementId), eq(userId), eq("테스트사용자"), eq("cancelled"), any());
 
         ChatMessageResponse mockResponse = ChatMessageResponse.builder()
                 .messageId("response-003")
@@ -173,9 +200,13 @@ class ChatControllerTest {
             chatController.sendMessage(roomId, request, headerAccessor);
         });
 
-        // Verify
-        verify(settlementService, times(1)).updateSettlementResponse(settlementId, userId, "cancelled");
-        verify(messagingTemplate, times(1)).convertAndSend("/topic/room/" + roomId + "/settlement", updatedSettlement);
+        // Verify - 새로운 로직에 맞게 수정
+        verify(messageHandler, times(1)).getActiveSettlement(settlementId);
+        verify(mainServerCommunicationService, times(1))
+                .sendSettlementResponse(eq(settlementId), eq(userId), eq("테스트사용자"), eq("cancelled"), any());
+        verify(messagingTemplate, times(1)).convertAndSend("/topic/room/" + roomId + "/settlement", activeSettlement);
+        verify(chatService, times(1)).processMessage(eq(roomId), eq(userId), any(), any(), any(), eq(request));
+        verify(messagingTemplate, times(1)).convertAndSend("/topic/room/" + roomId, mockResponse);
     }
 
     @Test
