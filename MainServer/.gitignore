@@ -9,4 +9,5 @@ build
 *.html
 bin
 /bin/
+out/
 out
