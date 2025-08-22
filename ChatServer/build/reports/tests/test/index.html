@@ -20,25 +20,25 @@
 <tr>
 <td>
 <div class="infoBox" id="tests">
-<div class="counter">60</div>
+<div class="counter">110</div>
 <p>tests</p>
 </div>
 </td>
 <td>
 <div class="infoBox" id="failures">
-<div class="counter">6</div>
+<div class="counter">3</div>
 <p>failures</p>
 </div>
 </td>
 <td>
 <div class="infoBox" id="ignored">
-<div class="counter">0</div>
+<div class="counter">6</div>
 <p>ignored</p>
 </div>
 </td>
 <td>
 <div class="infoBox" id="duration">
-<div class="counter">5.315s</div>
+<div class="counter">32.373s</div>
 <p>duration</p>
 </div>
 </td>
@@ -48,7 +48,7 @@
 </td>
 <td>
 <div class="infoBox failures" id="successRate">
-<div class="percent">90%</div>
+<div class="percent">97%</div>
 <p>successful</p>
 </div>
 </td>
@@ -59,6 +59,9 @@
 <ul class="tabLinks">
 <li>
 <a href="#">Failed tests</a>
+</li>
+<li>
+<a href="#">Ignored tests</a>
 </li>
 <li>
 <a href="#">Packages</a>
@@ -82,17 +85,34 @@
 <a href="classes/com.shinhan.heybob.chat.domain.chat.controller.ChatControllerTest.html">ChatControllerTest</a>.
 <a href="classes/com.shinhan.heybob.chat.domain.chat.controller.ChatControllerTest.html#정산_취소_버튼_상호작용_테스트()">정산_취소_버튼_상호작용_테스트()</a>
 </li>
+</ul>
+</div>
+<div class="tab">
+<h2>Ignored tests</h2>
+<ul class="linkList">
 <li>
-<a href="classes/com.shinhan.heybob.chat.domain.chat.service.ChatStreamServiceTest.html">Chat Stream Service Fallback 테스트</a>.
-<a href="classes/com.shinhan.heybob.chat.domain.chat.service.ChatStreamServiceTest.html#saveToStream_PartialFailureScenario()">부분 실패 시나리오 - 일부는 Redis 성공, 일부는 Fallback</a>
+<a href="classes/com.shinhan.heybob.chat.integration.ChatHistoryIntegrationTest.html">ChatHistoryIntegrationTest</a>.
+<a href="classes/com.shinhan.heybob.chat.integration.ChatHistoryIntegrationTest.html#다양한_메시지_타입_조회_테스트()">다양한_메시지_타입_조회_테스트()</a>
 </li>
 <li>
-<a href="classes/com.shinhan.heybob.chat.domain.chat.service.ChatStreamServiceTest.html">Chat Stream Service Fallback 테스트</a>.
-<a href="classes/com.shinhan.heybob.chat.domain.chat.service.ChatStreamServiceTest.html#saveToStream_RedisFail_MongoFallbackSuccess()">Redis Stream 실패 → MongoDB Fallback 성공</a>
+<a href="classes/com.shinhan.heybob.chat.integration.ChatHistoryIntegrationTest.html">ChatHistoryIntegrationTest</a>.
+<a href="classes/com.shinhan.heybob.chat.integration.ChatHistoryIntegrationTest.html#레거시_API_실제_동작_테스트()">레거시_API_실제_동작_테스트()</a>
 </li>
 <li>
-<a href="classes/com.shinhan.heybob.chat.domain.chat.service.ChatStreamServiceTest.html">Chat Stream Service Fallback 테스트</a>.
-<a href="classes/com.shinhan.heybob.chat.domain.chat.service.ChatStreamServiceTest.html#saveToStream_RegularMessage_FallbackSuccess()">Settlement Data가 없는 일반 메시지 Fallback</a>
+<a href="classes/com.shinhan.heybob.chat.integration.ChatHistoryIntegrationTest.html">ChatHistoryIntegrationTest</a>.
+<a href="classes/com.shinhan.heybob.chat.integration.ChatHistoryIntegrationTest.html#마지막_페이지_hasMore_false_테스트()">마지막_페이지_hasMore_false_테스트()</a>
+</li>
+<li>
+<a href="classes/com.shinhan.heybob.chat.integration.ChatHistoryIntegrationTest.html">ChatHistoryIntegrationTest</a>.
+<a href="classes/com.shinhan.heybob.chat.integration.ChatHistoryIntegrationTest.html#빈_방_히스토리_조회_테스트()">빈_방_히스토리_조회_테스트()</a>
+</li>
+<li>
+<a href="classes/com.shinhan.heybob.chat.integration.ChatHistoryIntegrationTest.html">ChatHistoryIntegrationTest</a>.
+<a href="classes/com.shinhan.heybob.chat.integration.ChatHistoryIntegrationTest.html#실제_데이터베이스_연동_히스토리_조회_테스트()">실제_데이터베이스_연동_히스토리_조회_테스트()</a>
+</li>
+<li>
+<a href="classes/com.shinhan.heybob.chat.integration.ChatHistoryIntegrationTest.html">ChatHistoryIntegrationTest</a>.
+<a href="classes/com.shinhan.heybob.chat.integration.ChatHistoryIntegrationTest.html#페이징_연속_조회_테스트()">페이징_연속_조회_테스트()</a>
 </li>
 </ul>
 </div>
@@ -111,13 +131,23 @@
 </thead>
 <tbody>
 <tr>
+<td class="success">
+<a href="packages/com.shinhan.heybob.chat.html">com.shinhan.heybob.chat</a>
+</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>2.675s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
 <td class="failures">
 <a href="packages/com.shinhan.heybob.chat.domain.chat.controller.html">com.shinhan.heybob.chat.domain.chat.controller</a>
 </td>
 <td>14</td>
 <td>3</td>
 <td>0</td>
-<td>4.186s</td>
+<td>6.876s</td>
 <td class="failures">78%</td>
 </tr>
 <tr>
@@ -127,18 +157,68 @@
 <td>5</td>
 <td>0</td>
 <td>0</td>
-<td>0.330s</td>
+<td>0.805s</td>
 <td class="success">100%</td>
 </tr>
 <tr>
-<td class="failures">
+<td class="success">
 <a href="packages/com.shinhan.heybob.chat.domain.chat.service.html">com.shinhan.heybob.chat.domain.chat.service</a>
 </td>
 <td>41</td>
-<td>3</td>
 <td>0</td>
-<td>0.799s</td>
-<td class="failures">92%</td>
+<td>0</td>
+<td>1.813s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">
+<a href="packages/com.shinhan.heybob.chat.domain.communication.handler.html">com.shinhan.heybob.chat.domain.communication.handler</a>
+</td>
+<td>5</td>
+<td>0</td>
+<td>0</td>
+<td>0.174s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">
+<a href="packages/com.shinhan.heybob.chat.domain.communication.service.html">com.shinhan.heybob.chat.domain.communication.service</a>
+</td>
+<td>7</td>
+<td>0</td>
+<td>0</td>
+<td>0.189s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">
+<a href="packages/com.shinhan.heybob.chat.domain.communication.util.html">com.shinhan.heybob.chat.domain.communication.util</a>
+</td>
+<td>11</td>
+<td>0</td>
+<td>0</td>
+<td>15.181s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">
+<a href="packages/com.shinhan.heybob.chat.global.util.html">com.shinhan.heybob.chat.global.util</a>
+</td>
+<td>12</td>
+<td>0</td>
+<td>0</td>
+<td>0.441s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="skipped">
+<a href="packages/com.shinhan.heybob.chat.integration.html">com.shinhan.heybob.chat.integration</a>
+</td>
+<td>14</td>
+<td>0</td>
+<td>6</td>
+<td>4.219s</td>
+<td class="skipped">100%</td>
 </tr>
 </tbody>
 </table>
@@ -158,13 +238,23 @@
 </thead>
 <tbody>
 <tr>
+<td class="success">
+<a href="classes/com.shinhan.heybob.chat.ChatApplicationTests.html">com.shinhan.heybob.chat.ChatApplicationTests</a>
+</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>2.675s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
 <td class="failures">
 <a href="classes/com.shinhan.heybob.chat.domain.chat.controller.ChatControllerTest.html">com.shinhan.heybob.chat.domain.chat.controller.ChatControllerTest</a>
 </td>
 <td>4</td>
 <td>3</td>
 <td>0</td>
-<td>2.251s</td>
+<td>3.880s</td>
 <td class="failures">25%</td>
 </tr>
 <tr>
@@ -174,7 +264,7 @@
 <td>10</td>
 <td>0</td>
 <td>0</td>
-<td>1.935s</td>
+<td>2.996s</td>
 <td class="success">100%</td>
 </tr>
 <tr>
@@ -184,7 +274,7 @@
 <td>5</td>
 <td>0</td>
 <td>0</td>
-<td>0.330s</td>
+<td>0.805s</td>
 <td class="success">100%</td>
 </tr>
 <tr>
@@ -194,7 +284,7 @@
 <td>8</td>
 <td>0</td>
 <td>0</td>
-<td>0.127s</td>
+<td>0.221s</td>
 <td class="success">100%</td>
 </tr>
 <tr>
@@ -204,18 +294,18 @@
 <td>17</td>
 <td>0</td>
 <td>0</td>
-<td>0.072s</td>
+<td>0.111s</td>
 <td class="success">100%</td>
 </tr>
 <tr>
-<td class="failures">
+<td class="success">
 <a href="classes/com.shinhan.heybob.chat.domain.chat.service.ChatStreamServiceTest.html">com.shinhan.heybob.chat.domain.chat.service.ChatStreamServiceTest</a>
 </td>
 <td>7</td>
-<td>3</td>
 <td>0</td>
-<td>0.556s</td>
-<td class="failures">57%</td>
+<td>0</td>
+<td>1.311s</td>
+<td class="success">100%</td>
 </tr>
 <tr>
 <td class="success">
@@ -224,7 +314,87 @@
 <td>9</td>
 <td>0</td>
 <td>0</td>
-<td>0.044s</td>
+<td>0.170s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">
+<a href="classes/com.shinhan.heybob.chat.domain.communication.handler.MessageHandlerTest.html">com.shinhan.heybob.chat.domain.communication.handler.MessageHandlerTest</a>
+</td>
+<td>5</td>
+<td>0</td>
+<td>0</td>
+<td>0.174s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">
+<a href="classes/com.shinhan.heybob.chat.domain.communication.service.MainServerCommunicationServiceTest.html">com.shinhan.heybob.chat.domain.communication.service.MainServerCommunicationServiceTest</a>
+</td>
+<td>7</td>
+<td>0</td>
+<td>0</td>
+<td>0.189s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">
+<a href="classes/com.shinhan.heybob.chat.domain.communication.util.RetryMechanismTest.html">com.shinhan.heybob.chat.domain.communication.util.RetryMechanismTest</a>
+</td>
+<td>11</td>
+<td>0</td>
+<td>0</td>
+<td>15.181s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">
+<a href="classes/com.shinhan.heybob.chat.global.util.FallbackMetricsTest.html">com.shinhan.heybob.chat.global.util.FallbackMetricsTest</a>
+</td>
+<td>12</td>
+<td>0</td>
+<td>0</td>
+<td>0.441s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">
+<a href="classes/com.shinhan.heybob.chat.integration.BasicWebSocketTest.html">com.shinhan.heybob.chat.integration.BasicWebSocketTest</a>
+</td>
+<td>2</td>
+<td>0</td>
+<td>0</td>
+<td>1.792s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="skipped">
+<a href="classes/com.shinhan.heybob.chat.integration.ChatHistoryIntegrationTest.html">com.shinhan.heybob.chat.integration.ChatHistoryIntegrationTest</a>
+</td>
+<td>6</td>
+<td>0</td>
+<td>6</td>
+<td>0s</td>
+<td class="skipped">-</td>
+</tr>
+<tr>
+<td class="success">
+<a href="classes/com.shinhan.heybob.chat.integration.SettlementIntegrationTest.html">com.shinhan.heybob.chat.integration.SettlementIntegrationTest</a>
+</td>
+<td>4</td>
+<td>0</td>
+<td>0</td>
+<td>0.077s</td>
+<td class="success">100%</td>
+</tr>
+<tr>
+<td class="success">
+<a href="classes/com.shinhan.heybob.chat.integration.SettlementWebSocketTest.html">com.shinhan.heybob.chat.integration.SettlementWebSocketTest</a>
+</td>
+<td>2</td>
+<td>0</td>
+<td>0</td>
+<td>2.350s</td>
 <td class="success">100%</td>
 </tr>
 </tbody>
@@ -238,7 +408,7 @@
 <input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
 </label>
 </div>Generated by 
-<a href="https://www.gradle.org">Gradle 8.14.3</a> at 2025. 8. 22. 오전 8:53:37</p>
+<a href="https://www.gradle.org">Gradle 8.14.3</a> at 2025. 8. 22. 오전 9:15:31</p>
 </div>
 </div>
 </body>

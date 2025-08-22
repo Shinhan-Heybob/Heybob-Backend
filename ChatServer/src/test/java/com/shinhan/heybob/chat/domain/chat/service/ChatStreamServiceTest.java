@@ -101,8 +101,9 @@ class ChatStreamServiceTest {
     void saveToStream_RedisFail_MongoFallbackSuccess() {
         // Given
         RuntimeException redisException = new RuntimeException("Redis connection failed");
-        when(streamOperations.add(anyString(), any(Map.class))).thenThrow(redisException);
-        when(chatRepository.save(any(ChatMessage.class))).thenReturn(any(ChatMessage.class));
+        doThrow(redisException).when(streamOperations).add(anyString(), any(Map.class));
+        
+        when(chatRepository.save(any(ChatMessage.class))).thenAnswer(invocation -> invocation.getArgument(0));
         
         // When
         chatStreamService.saveToStream(testMessage);
@@ -173,9 +174,13 @@ class ChatStreamServiceTest {
             .settlementData(null) // 일반 메시지는 정산 데이터 없음
             .build();
         
+        // Mock 초기화 - setUp에서 설정한 것을 리셋
+        reset(streamOperations, chatRepository, fallbackMetrics);
+        
         RuntimeException redisException = new RuntimeException("Redis connection failed");
-        when(streamOperations.add(anyString(), any(Map.class))).thenThrow(redisException);
-        when(chatRepository.save(any(ChatMessage.class))).thenReturn(any(ChatMessage.class));
+        doThrow(redisException).when(streamOperations).add(anyString(), any(Map.class));
+        
+        when(chatRepository.save(any(ChatMessage.class))).thenAnswer(invocation -> invocation.getArgument(0));
         
         // When
         chatStreamService.saveToStream(regularMessage);
@@ -278,12 +283,15 @@ class ChatStreamServiceTest {
             .timestamp(LocalDateTime.now())
             .build();
         
+        // Mock 초기화
+        reset(streamOperations, chatRepository, fallbackMetrics);
+        
         // 첫 번째 메시지는 성공, 두 번째는 실패하도록 설정
         when(streamOperations.add(anyString(), any(Map.class)))
             .thenReturn(null) // 첫 번째 호출은 성공
             .thenThrow(new RuntimeException("Redis connection failed for this message")); // 두 번째 호출은 실패
         
-        when(chatRepository.save(any(ChatMessage.class))).thenReturn(any(ChatMessage.class));
+        when(chatRepository.save(any(ChatMessage.class))).thenAnswer(invocation -> invocation.getArgument(0));
         
         // When
         chatStreamService.saveToStream(successMessage); // 성공해야 함

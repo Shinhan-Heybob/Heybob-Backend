@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StreamOperations;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -55,6 +56,7 @@ class MainServerCommunicationServiceTest {
             .messageType(ServerMessage.MessageType.GET_ROOM_MEMBERS)
             .sourceServer("CHAT")
             .targetServer("MAIN")
+            .timestamp(LocalDateTime.now())
             .build();
         
         when(streamOperations.add(anyString(), any(Map.class))).thenReturn(null);
@@ -83,6 +85,7 @@ class MainServerCommunicationServiceTest {
             .messageType(ServerMessage.MessageType.PROCESS_SETTLEMENT)
             .sourceServer("CHAT")
             .targetServer("MAIN")
+            .timestamp(LocalDateTime.now())
             .build();
         
         RuntimeException redisException = new RuntimeException("Redis connection failed");
@@ -224,6 +227,7 @@ class MainServerCommunicationServiceTest {
         ServerMessage requestMessage = ServerMessage.builder()
             .messageId(correlationId)
             .messageType(ServerMessage.MessageType.GET_ROOM_MEMBERS)
+            .timestamp(LocalDateTime.now())
             .build();
         
         ServerMessage responseMessage = ServerMessage.builder()

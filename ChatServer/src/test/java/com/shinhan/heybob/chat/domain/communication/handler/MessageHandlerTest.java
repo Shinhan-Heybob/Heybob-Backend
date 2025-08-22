@@ -143,24 +143,25 @@ class MessageHandlerTest {
         List<ChatMessageResponse> broadcastedMessages = messageCaptor.getAllValues();
         
         // 각 메시지의 UI 상태 확인 (요청자와 피요청자 구분)
-        for (ChatMessageResponse msg : broadcastedMessages) {
-            assertThat(msg.getUiState()).isNotNull();
-            
-            boolean isRequester = msg.getSenderId().equals(requesterId);
-            assertThat(msg.getUiState().getIsRequester()).isEqualTo(isRequester);
-            assertThat(msg.getUiState().getUserResponseStatus()).isEqualTo("pending");
-            assertThat(msg.getUiState().getIsExpired()).isFalse();
-            
-            if (isRequester) {
-                // 요청자: [취소하기][자세히보기]
-                assertThat(msg.getUiState().getAvailableActions())
-                    .containsExactlyInAnyOrder("cancel", "view_details");
-            } else {
-                // 피요청자: [정산하기][거절하기][자세히보기]
-                assertThat(msg.getUiState().getAvailableActions())
-                    .containsExactlyInAnyOrder("accept", "reject", "view_details");
-            }
-        }
+        // broadcastedMessages[0]는 요청자용, broadcastedMessages[1]는 피요청자용
+        ChatMessageResponse requesterMessage = broadcastedMessages.get(0);
+        ChatMessageResponse participantMessage = broadcastedMessages.get(1);
+        
+        // 요청자 메시지 검증
+        assertThat(requesterMessage.getUiState()).isNotNull();
+        assertThat(requesterMessage.getUiState().getIsRequester()).isTrue();
+        assertThat(requesterMessage.getUiState().getUserResponseStatus()).isEqualTo("pending");
+        assertThat(requesterMessage.getUiState().getIsExpired()).isFalse();
+        assertThat(requesterMessage.getUiState().getAvailableActions())
+            .containsExactlyInAnyOrder("cancel", "view_details");
+        
+        // 피요청자 메시지 검증
+        assertThat(participantMessage.getUiState()).isNotNull();
+        assertThat(participantMessage.getUiState().getIsRequester()).isFalse();
+        assertThat(participantMessage.getUiState().getUserResponseStatus()).isEqualTo("pending");
+        assertThat(participantMessage.getUiState().getIsExpired()).isFalse();
+        assertThat(participantMessage.getUiState().getAvailableActions())
+            .containsExactlyInAnyOrder("accept", "reject", "view_details");
     }
     
     @Test

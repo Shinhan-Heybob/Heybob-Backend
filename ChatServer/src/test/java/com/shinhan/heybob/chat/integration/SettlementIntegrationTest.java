@@ -123,10 +123,10 @@ class SettlementIntegrationTest {
         
         // 구체적인 응답 내용 확인
         verify(mainServerCommunicationService).sendSettlementResponse(
-            testSettlementId, "user1", "김영희", "accepted", any()
+            eq(testSettlementId), eq("user1"), eq("김영희"), eq("accepted"), anyString()
         );
         verify(mainServerCommunicationService).sendSettlementResponse(
-            testSettlementId, "user2", "박민수", "rejected", any()
+            eq(testSettlementId), eq("user2"), eq("박민수"), eq("rejected"), anyString()
         );
         
         // When 3: Main 서버로부터 정산 완료 알림 수신
@@ -210,7 +210,7 @@ class SettlementIntegrationTest {
         
         // Then: 취소 응답이 Main 서버로 전달되었는지 확인
         verify(mainServerCommunicationService).sendSettlementResponse(
-            testSettlementId, "requester", "김철수", "cancelled", any()
+            eq(testSettlementId), eq("requester"), eq("김철수"), eq("cancelled"), anyString()
         );
         
         // 활성 정산의 요청자 상태가 업데이트되었는지 확인
@@ -264,7 +264,7 @@ class SettlementIntegrationTest {
         
         // Main 서버로는 여전히 응답이 전달되어야 함 (Main에서 만료 처리)
         verify(mainServerCommunicationService).sendSettlementResponse(
-            testSettlementId, "user1", "김영희", "accepted", any()
+            eq(testSettlementId), eq("user1"), eq("김영희"), eq("accepted"), anyString()
         );
     }
     
