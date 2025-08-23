@@ -76,6 +76,8 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(createdUser);
 
+        // ExternalFinanceUser 생성, userId(이메일 형식), userKey 발급
+
         return new UserResponseDto(createdUser);
     }
 
