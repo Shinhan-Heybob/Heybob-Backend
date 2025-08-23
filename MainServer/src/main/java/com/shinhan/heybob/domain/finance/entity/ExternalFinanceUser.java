@@ -2,6 +2,7 @@ package com.shinhan.heybob.domain.finance.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -13,13 +14,14 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class ExternalFinanceUser {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = false, updatable = false)
+    @Column(nullable = false, unique = true, updatable = false)
     private Long userRealId; // 실제 userId
 
     @Column(length = 40, nullable = false, unique = true)

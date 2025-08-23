@@ -17,7 +17,11 @@ public enum ExceptionStatus {
     // USER
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "일치하는 유저 정보를 찾을 수 없습니다"),
     STUDENT_ID_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, 400, "이미 존재하는 학번입니다."),
-    INVALID_PASSWORD(HttpStatus.BAD_REQUEST, 400, "비밀번호가 유효하지 않습니다.");
+    INVALID_PASSWORD(HttpStatus.BAD_REQUEST, 400, "비밀번호가 유효하지 않습니다."),
+
+    // EXTERNAL FINANCE USER
+    FINANCE_API_NOT_FOUND(HttpStatus.BAD_REQUEST, 400, "금융 API 연결 실패했습니다."),
+    EMPTY_USER_KEY(HttpStatus.NOT_FOUND, 404, "userKey가 비어있습니다.");
 
     private final int status;
     private final int customCode;
