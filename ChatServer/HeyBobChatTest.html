@@ -419,6 +419,9 @@
                 
                 updateStatus(userIndex, '✅ Connected & Subscribed', true);
                 addMessage(userIndex, 'System', `Subscribed to room: ${roomId}`, 'system');
+                
+                // 구독 후 채팅 내역 자동 로드
+                loadChatHistory(userIndex);
             } else {
                 addMessage(userIndex, 'System', 'Please connect first!', 'error');
             }
@@ -536,6 +539,69 @@
             if (messagesContainer) {
                 messagesContainer.innerHTML = '';
             }
+        }
+
+        // 채팅 내역 로드 함수
+        function loadChatHistory(userIndex) {
+            const messagesContainer = document.getElementById(`messages${userIndex}`);
+            if (!messagesContainer) return;
+
+            // API 호출해서 기존 메시지 가져오기
+            fetch(`http://localhost:8081/api/chat/rooms/${roomId}/messages?limit=20`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log(`User ${userIndex} chat history loaded:`, data);
+                    
+                    if (data.messages && data.messages.length > 0) {
+                        addMessage(userIndex, 'System', `📚 ${data.messages.length}개의 이전 메시지를 불러왔습니다.`, 'system');
+                        
+                        // 메시지를 시간순으로 표시 (오래된 것부터)
+                        data.messages.reverse().forEach(chatMessage => {
+                            // Determine if this is our own message or from another user
+                            const isOwnMessage = chatMessage.senderId === users[userIndex].userId;
+                            const messageType = isOwnMessage ? 'own' : 'other';
+                            
+                            // Handle settlement data (단순화된 형식) - 하나의 메시지로 합치기
+                            if (chatMessage.settlementData || chatMessage.messageType === 'PAYMENT_REQUEST') {
+                                // settlementData가 없는 과거 메시지의 경우 기본값 생성
+                                let settlementData = chatMessage.settlementData;
+                                if (!settlementData && chatMessage.messageType === 'PAYMENT_REQUEST') {
+                                    settlementData = {
+                                        requestAmount: 12000,
+                                        settlementUrl: '/main/settlement/legacy'
+                                    };
+                                }
+                                
+                                // 텍스트와 버튼을 하나의 메시지로 합침
+                                const combinedContent = `
+                                    ${chatMessage.content}
+                                    <div class="settlement-info" style="margin-top: 10px;">
+                                        <button onclick="window.open('${settlementData.settlementUrl}', '_blank')" 
+                                                style="padding: 12px 20px; background: #4CAF50; border: none; 
+                                                       border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; color: white;">
+                                            ${settlementData.requestAmount.toLocaleString()}원 이체하기
+                                        </button>
+                                    </div>
+                                `;
+                                addMessage(userIndex, chatMessage.senderName, combinedContent, 'settlement', chatMessage.timestamp);
+                            } else {
+                                // 일반 메시지
+                                addMessage(userIndex, chatMessage.senderName, chatMessage.content, messageType, chatMessage.timestamp);
+                            }
+                        });
+                    } else {
+                        addMessage(userIndex, 'System', '💬 이전 메시지가 없습니다. 첫 번째 대화를 시작해보세요!', 'system');
+                    }
+                })
+                .catch(error => {
+                    console.error(`User ${userIndex} chat history load error:`, error);
+                    addMessage(userIndex, 'System', `채팅 내역 로드 실패: ${error.message}`, 'error');
+                });
         }
 
         // Event Listeners

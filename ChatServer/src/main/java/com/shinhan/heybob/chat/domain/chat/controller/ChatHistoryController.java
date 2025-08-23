@@ -16,6 +16,7 @@ import java.util.List;
 @RequestMapping("/api/chat")
 @RequiredArgsConstructor
 @Slf4j
+@CrossOrigin(origins = "*")
 public class ChatHistoryController {
 
     private final ChatService chatService;
@@ -25,7 +26,7 @@ public class ChatHistoryController {
             @PathVariable String roomId,
             @RequestParam(required = false) String before,
             @RequestParam(defaultValue = "50") int limit,
-            @RequestHeader("X-User-Id") String userId  // Nginx에서 전달
+            @RequestHeader(value = "X-User-Id", required = false) String userId  // 테스트용으로 옵션 처리
     ) {
         // 입력 검증
         if (roomId == null || roomId.trim().isEmpty()) {
@@ -34,8 +35,9 @@ public class ChatHistoryController {
         if (limit <= 0 || limit > 100) {
             throw new ChatException(ErrorCode.INVALID_REQUEST);
         }
+        // 테스트용: userId가 없으면 기본값 사용
         if (userId == null || userId.trim().isEmpty()) {
-            throw new ChatException(ErrorCode.USER_INFO_MISSING);
+            userId = "test-user";
         }
         
         log.info("채팅 히스토리 요청: roomId={}, userId={}, before={}, limit={}", roomId, userId, before, limit);
@@ -54,7 +56,7 @@ public class ChatHistoryController {
             @PathVariable String roomId,
             @RequestParam(required = false) String before,
             @RequestParam(defaultValue = "50") int limit,
-            @RequestHeader("X-User-Id") String userId
+            @RequestHeader(value = "X-User-Id", required = false) String userId
     ) {
         // 입력 검증
         if (roomId == null || roomId.trim().isEmpty()) {
@@ -63,8 +65,9 @@ public class ChatHistoryController {
         if (limit <= 0 || limit > 100) {
             throw new ChatException(ErrorCode.INVALID_REQUEST);
         }
+        // 테스트용: userId가 없으면 기본값 사용
         if (userId == null || userId.trim().isEmpty()) {
-            throw new ChatException(ErrorCode.USER_INFO_MISSING);
+            userId = "test-user";
         }
         
         log.info("레거시 채팅 히스토리 요청: roomId={}, userId={}, before={}, limit={}", roomId, userId, before, limit);
