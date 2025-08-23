@@ -17,7 +17,10 @@ public class ExternalFinanceUser {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;   // User 엔티티의 id와 동일
+    private Long id;
+
+    @Column(nullable = false, unique = false, updatable = false)
+    private Long userRealId; // 실제 userId
 
     @Column(length = 40, nullable = false, unique = true)
     private String userId;  // 외부 시스템에 넘길 이메일 형식 ex) abcd1234@ssafy.com
