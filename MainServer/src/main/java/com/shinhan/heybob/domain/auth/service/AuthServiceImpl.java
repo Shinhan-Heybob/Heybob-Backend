@@ -127,7 +127,9 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void verifyExistUser(UserCreateRequestDto userCreateRequestDto) {
-        if (userRepository.existsByStudentId(userCreateRequestDto.getStudentId())) {
+        if (userRepository.existsByStudentIdAndUniversity(
+                userCreateRequestDto.getStudentId(),
+                userCreateRequestDto.getUniversity())) {
             throw new HeybobException(ExceptionStatus.STUDENT_ID_ALREADY_EXISTS);
         }
     }
