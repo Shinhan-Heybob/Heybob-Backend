@@ -29,7 +29,7 @@ public class User extends BaseTime {
     @Column(name = "user_password", nullable = false)
     private String password;
 
-    @Column(name = "user_profile_url")
+    @Column(name = "user_profile_url", nullable = false)
     private String profileUrl;
 
     @Column(name = "user_university", nullable = false, updatable = false)
@@ -37,5 +37,9 @@ public class User extends BaseTime {
 
     @Column(name = "user_department", nullable = false, updatable = false)
     private String department;
+
+    public void updateProfileUrl(String newProfileUrl) {
+        this.profileUrl = newProfileUrl;
+    }
 
 }
