@@ -29,7 +29,7 @@ public class MainResponseConsumer {
     private static final String CONSUMER_GROUP = "chat-server-group";
     private static final String CONSUMER_NAME = "chat-server-consumer";
     
-    @Scheduled(fixedDelay = 1000) // 1초마다 실행
+    // @Scheduled(fixedDelay = 1000) // 1초마다 실행 - MainServer 연동 전까지 비활성화
     public void consumeMessages() {
         try {
             // Consumer Group이 없으면 생성

@@ -2,11 +2,7 @@ package com.shinhan.heybob.chat.domain.chat.controller;
 
 import com.shinhan.heybob.chat.domain.chat.dto.ChatMessageRequest;
 import com.shinhan.heybob.chat.domain.chat.dto.ChatMessageResponse;
-import com.shinhan.heybob.chat.domain.chat.dto.SettlementData;
 import com.shinhan.heybob.chat.domain.chat.service.ChatService;
-import com.shinhan.heybob.chat.domain.chat.service.SettlementService;
-import com.shinhan.heybob.chat.domain.communication.service.MainServerCommunicationService;
-import com.shinhan.heybob.chat.domain.communication.handler.MessageHandler;
 import com.shinhan.heybob.chat.global.error.ChatException;
 import com.shinhan.heybob.chat.global.error.ErrorCode;
 import com.shinhan.heybob.chat.global.error.ErrorResponse;
@@ -26,9 +22,6 @@ public class ChatController {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatService chatService;
-    private final SettlementService settlementService;
-    private final MainServerCommunicationService mainServerCommunicationService;
-    private final MessageHandler messageHandler;
 
     @MessageMapping("/chat/{roomId}")
     public void sendMessage(
@@ -62,11 +55,6 @@ public class ChatController {
                 profileImageUrl = "https://example.com/default-profile.jpg";
             }
             
-            // 정산 버튼 상호작용 처리
-            if (isSettlementInteraction(request.getMessageType())) {
-                handleSettlementInteraction(roomId, userId, userName, request);
-            }
-            
             // 메시지 처리 및 저장
             ChatMessageResponse response = chatService.processMessage(roomId, userId, studentId, userName, profileImageUrl, request);
             
@@ -91,64 +79,5 @@ public class ChatController {
                 ErrorResponse.of(ErrorCode.INTERNAL_SERVER_ERROR)
             );
         }
-    }
-    
-    private boolean isSettlementInteraction(String messageType) {
-        return "SETTLEMENT_ACCEPT".equals(messageType) || 
-               "SETTLEMENT_REJECT".equals(messageType) || 
-               "SETTLEMENT_CANCEL".equals(messageType);
-    }
-    
-    private void handleSettlementInteraction(String roomId, String userId, String userName, ChatMessageRequest request) {
-        try {
-            String settlementId = request.getSettlementId();
-            if (settlementId == null) {
-                log.warn("정산 상호작용에 settlementId 없음: messageType={}", request.getMessageType());
-                return;
-            }
-            
-            String responseType = switch (request.getMessageType()) {
-                case "SETTLEMENT_ACCEPT" -> "accepted";
-                case "SETTLEMENT_REJECT" -> "rejected";
-                case "SETTLEMENT_CANCEL" -> "cancelled";
-                default -> null;
-            };
-            
-            if (responseType != null) {
-                // 1. 로컬 정산 상태 업데이트 (활성 정산에서)
-                SettlementData activeSettlement = messageHandler.getActiveSettlement(settlementId);
-                if (activeSettlement != null) {
-                    SettlementData.SettlementStatus userStatus = activeSettlement.getParticipantStatus().get(userId);
-                    if (userStatus != null) {
-                        userStatus.setStatus(responseType);
-                        userStatus.setResponseTime(java.time.LocalDateTime.now());
-                    }
-                    
-                    // 방의 모든 사용자에게 상태 업데이트 브로드캐스트
-                    broadcastSettlementUpdate(roomId, activeSettlement);
-                }
-                
-                // 2. Main 서버에 사용자 응답 전달
-                mainServerCommunicationService.sendSettlementResponse(
-                    settlementId, 
-                    userId, 
-                    userName, 
-                    responseType, 
-                    java.time.LocalDateTime.now().toString()
-                );
-                
-                log.info("📤 정산 응답 Main 서버 전송: settlementId={}, userId={}, response={}", 
-                    settlementId, userId, responseType);
-            }
-            
-        } catch (Exception e) {
-            log.error("정산 상호작용 처리 실패: roomId={}, userId={}, messageType={}", roomId, userId, request.getMessageType(), e);
-        }
-    }
-    
-    private void broadcastSettlementUpdate(String roomId, SettlementData settlementData) {
-        // 정산 상태 업데이트를 방의 모든 구독자에게 알림
-        messagingTemplate.convertAndSend("/topic/room/" + roomId + "/settlement", settlementData);
-        log.info("정산 상태 업데이트 브로드캐스트: roomId={}, settlementId={}", roomId, settlementData.getSettlementId());
     }
 }

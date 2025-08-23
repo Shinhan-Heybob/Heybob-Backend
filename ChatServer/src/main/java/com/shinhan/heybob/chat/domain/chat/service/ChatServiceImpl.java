@@ -66,7 +66,7 @@ public class ChatServiceImpl implements ChatService {
     }
     
     private boolean isFinancialMessage(String messageType) {
-        return List.of("PAYMENT_REQUEST", "PAYMENT_CONFIRM", "PAYMENT_COMPLETE",
+        return List.of("PAYMENT_REQUEST", "SETTLEMENT_REQUEST", "PAYMENT_CONFIRM", "PAYMENT_COMPLETE",
                       "SETTLEMENT_ACCEPT", "SETTLEMENT_REJECT", "SETTLEMENT_CANCEL", "SETTLEMENT_TIMEOUT")
                    .contains(messageType);
     }
@@ -85,7 +85,7 @@ public class ChatServiceImpl implements ChatService {
                 .timestamp(LocalDateTime.now());
         
         // 정산 요청 메시지인 경우
-        if ("PAYMENT_REQUEST".equals(request.getMessageType())) {
+        if ("PAYMENT_REQUEST".equals(request.getMessageType()) || "SETTLEMENT_REQUEST".equals(request.getMessageType())) {
             SettlementData settlementData = createSettlementData(roomId, request);
             responseBuilder.settlementData(settlementData);
         } else if (request.getSettlementData() != null) {
@@ -103,30 +103,27 @@ public class ChatServiceImpl implements ChatService {
     }
     
     private SettlementData createSettlementData(String roomId, ChatMessageRequest request) {
-        // Mock 데이터로 방 멤버 조회 (나중에 메인 서버 API 연동)
-        List<String> mockRoomMembers = Arrays.asList("20000622", "20000623", "20000624");
-        
         String settlementId = UUID.randomUUID().toString();
-        Integer totalAmount = request.getSettlementData() != null ? request.getSettlementData().getTotalAmount() : 24000;
-        Integer perPersonAmount = totalAmount / mockRoomMembers.size();
         
-        // 초기 참가자 상태 설정
-        Map<String, SettlementData.SettlementStatus> participantStatus = new HashMap<>();
-        for (String memberId : mockRoomMembers) {
-            participantStatus.put(memberId, SettlementData.SettlementStatus.builder()
-                    .status("pending")
-                    .build());
+        // 간단한 정산 데이터 생성
+        String requesterName = "사용자";
+        Integer requestAmount = 12000;
+        
+        if (request.getSettlementData() != null) {
+            if (request.getSettlementData().getRequesterName() != null) {
+                requesterName = request.getSettlementData().getRequesterName();
+            }
+            if (request.getSettlementData().getRequestAmount() != null) {
+                requestAmount = request.getSettlementData().getRequestAmount();
+            }
         }
         
         return SettlementData.builder()
                 .settlementId(settlementId)
                 .roomId(roomId)
-                .note(request.getSettlementData() != null ? request.getSettlementData().getNote() : "정산 요청")
-                .totalAmount(totalAmount)
-                .perPersonAmount(perPersonAmount)
-                .participants(mockRoomMembers)
-                .expiryTime(LocalDateTime.now().plusMinutes(30))  // 30분 만료
-                .participantStatus(participantStatus)
+                .requesterName(requesterName)
+                .requestAmount(requestAmount)
+                .settlementUrl("/main/settlement/" + settlementId)
                 .build();
     }
     
@@ -135,34 +132,12 @@ public class ChatServiceImpl implements ChatService {
             return null;
         }
         
-        boolean isExpired = settlementData.getExpiryTime() != null && LocalDateTime.now().isAfter(settlementData.getExpiryTime());
-        boolean isRequester = "PAYMENT_REQUEST".equals(messageType);
-        
-        SettlementData.SettlementStatus userStatus = null;
-        String userResponseStatus = "pending";
-        if (settlementData.getParticipantStatus() != null) {
-            userStatus = settlementData.getParticipantStatus().get(userId);
-            userResponseStatus = userStatus != null ? userStatus.getStatus() : "pending";
-        }
-        
-        List<String> availableActions = new ArrayList<>();
-        if (isExpired) {
-            availableActions.add("view_details");
-        } else if (isRequester) {
-            availableActions.addAll(Arrays.asList("cancel", "view_details"));
-        } else {
-            if ("pending".equals(userResponseStatus)) {
-                availableActions.addAll(Arrays.asList("accept", "reject", "view_details"));
-            } else {
-                availableActions.add("view_details");
-            }
-        }
-        
+        // 단순화된 UI 상태 - 모든 사용자가 정산 페이지로 이동 가능
         return UiState.builder()
-                .isRequester(isRequester)
-                .userResponseStatus(userResponseStatus)
-                .availableActions(availableActions)
-                .isExpired(isExpired)
+                .isRequester(false)  // Main 페이지에서 확인
+                .userResponseStatus("unknown")  // Main 페이지에서 확인
+                .availableActions(Arrays.asList("go_to_settlement"))  // 정산 페이지로 이동만 가능
+                .isExpired(false)
                 .build();
     }
     

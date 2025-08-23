@@ -21,8 +21,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // STOMP 엔드포인트 등록
+        // STOMP 엔드포인트 등록 (SockJS 지원 추가)
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*");  // React Native 개발용
+                .setAllowedOriginPatterns("*")  // CORS 설정
+                .withSockJS();  // SockJS fallback 지원
     }
 }

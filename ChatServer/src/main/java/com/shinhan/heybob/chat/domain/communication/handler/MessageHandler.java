@@ -12,8 +12,6 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.util.*;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -21,8 +19,6 @@ public class MessageHandler {
     
     private final SimpMessagingTemplate messagingTemplate;
     
-    // 활성 정산 요청들을 메모리에 임시 저장 (실제로는 Redis에 저장해야 함)
-    private final Map<String, SettlementData> activeSettlements = new ConcurrentHashMap<>();
     
     public void handleNotification(ServerMessage message) {
         try {
@@ -159,125 +155,66 @@ public class MessageHandler {
     }
     
     /**
-     * Main 서버의 정산 브로드캐스트 요청 처리
+     * Main 서버의 정산 브로드캐스트 요청 처리 (단순화)
      */
     public void handleSettlementBroadcast(ServerMessage message) {
         try {
             Map<String, Object> payload = message.getPayload();
             String settlementId = (String) payload.get("settlementId");
             String roomId = (String) payload.get("roomId");
-            String requesterId = (String) payload.get("requesterId");
             String requesterName = (String) payload.get("requesterName");
-            List<String> targetUserIds = (List<String>) payload.get("targetUserIds");
-            Integer perPersonAmount = (Integer) payload.get("perPersonAmount");
-            String note = (String) payload.get("note");
-            String expiryTimeStr = (String) payload.get("expiryTime");
+            Integer requestAmount = (Integer) payload.get("requestAmount");
             
             log.info("💰 Main 서버로부터 정산 브로드캐스트 요청: settlementId={}, roomId={}, requester={}", 
                 settlementId, roomId, requesterName);
             
-            // SettlementData 생성
-            LocalDateTime expiryTime = LocalDateTime.parse(expiryTimeStr);
-            Map<String, SettlementData.SettlementStatus> participantStatus = new HashMap<>();
-            
-            // 모든 참여자의 초기 상태 설정
-            for (String userId : targetUserIds) {
-                participantStatus.put(userId, SettlementData.SettlementStatus.builder()
-                    .status("pending")
-                    .build());
-            }
-            
+            // 단순한 정산 데이터 생성
             SettlementData settlementData = SettlementData.builder()
                 .settlementId(settlementId)
                 .roomId(roomId)
-                .note(note)
-                .totalAmount(perPersonAmount * targetUserIds.size())
-                .perPersonAmount(perPersonAmount)
-                .participants(targetUserIds)
-                .expiryTime(expiryTime)
-                .participantStatus(participantStatus)
+                .requesterName(requesterName)
+                .requestAmount(requestAmount)
+                .settlementUrl("/main/settlement/" + settlementId)
                 .build();
             
-            // 활성 정산으로 등록
-            activeSettlements.put(settlementId, settlementData);
-            
-            // 각 사용자별로 맞춤형 정산 메시지 생성 및 전송
-            broadcastSettlementToUsers(roomId, requesterId, requesterName, settlementData);
+            // 정산 메시지 생성 및 방에 브로드캐스트
+            broadcastSettlementMessage(roomId, settlementData);
             
         } catch (Exception e) {
             log.error("❌ 정산 브로드캐스트 처리 실패: messageId={}", message.getMessageId(), e);
         }
     }
     
-    private void broadcastSettlementToUsers(String roomId, String requesterId, String requesterName, 
-                                           SettlementData settlementData) {
-        for (String userId : settlementData.getParticipants()) {
-            try {
-                // 사용자별 UI 상태 생성
-                boolean isRequester = userId.equals(requesterId);
-                UiState uiState = createSettlementUiState(userId, isRequester, settlementData);
+    private void broadcastSettlementMessage(String roomId, SettlementData settlementData) {
+        try {
+            // 모든 사용자에게 동일한 정산 메시지 전송
+            ChatMessageResponse settlementMessage = ChatMessageResponse.builder()
+                .messageId(UUID.randomUUID().toString())
+                .roomId(roomId)
+                .senderId("system")
+                .senderName("시스템")
+                .content(String.format("%s님이 이체하기를 요청했습니다!", 
+                    settlementData.getRequesterName()))
+                .messageType("PAYMENT_REQUEST")
+                .timestamp(LocalDateTime.now())
+                .settlementData(settlementData)
+                .uiState(UiState.builder()
+                    .isRequester(false)
+                    .userResponseStatus("unknown")
+                    .availableActions(Arrays.asList("go_to_settlement"))
+                    .isExpired(false)
+                    .build())
+                .build();
+            
+            // 해당 방의 모든 사용자에게 브로드캐스트
+            messagingTemplate.convertAndSend("/topic/room/" + roomId, settlementMessage);
+            
+            log.info("📨 정산 메시지 브로드캐스트 완료: roomId={}, settlementId={}", 
+                roomId, settlementData.getSettlementId());
                 
-                // 정산 메시지 생성
-                ChatMessageResponse settlementMessage = ChatMessageResponse.builder()
-                    .messageId(UUID.randomUUID().toString())
-                    .roomId(roomId)
-                    .senderId(requesterId)
-                    .senderName(requesterName)
-                    .content(String.format("%s님이 정산을 요청했습니다.\n💰 %s\n1인당 %,d원", 
-                        requesterName, settlementData.getNote(), settlementData.getPerPersonAmount()))
-                    .messageType("PAYMENT_REQUEST")
-                    .timestamp(LocalDateTime.now())
-                    .settlementData(settlementData)
-                    .uiState(uiState)
-                    .build();
-                
-                // 해당 방의 모든 사용자에게 브로드캐스트
-                messagingTemplate.convertAndSend("/topic/room/" + roomId, settlementMessage);
-                
-                log.debug("📨 정산 메시지 전송: userId={}, settlementId={}", userId, settlementData.getSettlementId());
-                
-            } catch (Exception e) {
-                log.error("❌ 사용자별 정산 메시지 전송 실패: userId={}, settlementId={}", 
-                    userId, settlementData.getSettlementId(), e);
-            }
+        } catch (Exception e) {
+            log.error("❌ 정산 메시지 전송 실패: roomId={}, settlementId={}", 
+                roomId, settlementData.getSettlementId(), e);
         }
-    }
-    
-    private UiState createSettlementUiState(String userId, boolean isRequester, SettlementData settlementData) {
-        boolean isExpired = LocalDateTime.now().isAfter(settlementData.getExpiryTime());
-        
-        SettlementData.SettlementStatus userStatus = settlementData.getParticipantStatus().get(userId);
-        String userResponseStatus = userStatus != null ? userStatus.getStatus() : "pending";
-        
-        List<String> availableActions = new ArrayList<>();
-        if (isExpired) {
-            availableActions.add("view_details");
-        } else if (isRequester) {
-            availableActions.addAll(Arrays.asList("cancel", "view_details"));
-        } else {
-            if ("pending".equals(userResponseStatus)) {
-                availableActions.addAll(Arrays.asList("accept", "reject", "view_details"));
-            } else {
-                availableActions.add("view_details");
-            }
-        }
-        
-        return UiState.builder()
-            .isRequester(isRequester)
-            .userResponseStatus(userResponseStatus)
-            .availableActions(availableActions)
-            .isExpired(isExpired)
-            .build();
-    }
-    
-    // 활성 정산 조회 (다른 서비스에서 사용)
-    public SettlementData getActiveSettlement(String settlementId) {
-        return activeSettlements.get(settlementId);
-    }
-    
-    // 활성 정산 제거 (정산 완료 후)
-    public void removeActiveSettlement(String settlementId) {
-        activeSettlements.remove(settlementId);
-        log.debug("🗑️ 활성 정산 제거: settlementId={}", settlementId);
     }
 }
