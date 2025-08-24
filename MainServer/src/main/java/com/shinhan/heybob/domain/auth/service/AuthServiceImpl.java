@@ -9,6 +9,7 @@ import com.shinhan.heybob.domain.auth.dto.RefreshTokenResponseDto;
 import com.shinhan.heybob.domain.auth.dto.UserLoginRequestDto;
 import com.shinhan.heybob.domain.auth.entity.RefreshToken;
 import com.shinhan.heybob.domain.auth.repository.RefreshTokenRepository;
+import com.shinhan.heybob.domain.finance.service.FinanceService;
 import com.shinhan.heybob.domain.user.dto.UserCreateRequestDto;
 import com.shinhan.heybob.domain.user.dto.UserResponseDto;
 import com.shinhan.heybob.domain.user.entity.User;
@@ -31,6 +32,7 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final FinanceService financeService;
 
     @Transactional
     @Override
@@ -77,6 +79,9 @@ public class AuthServiceImpl implements AuthService {
         userRepository.save(createdUser);
 
         // ExternalFinanceUser 생성, userId(이메일 형식), userKey 발급
+        financeService.createUserKey(createdUser.getId());
+
+        log.info("[FinanceService] userKey 생성 완료");
 
         return new UserResponseDto(createdUser);
     }
