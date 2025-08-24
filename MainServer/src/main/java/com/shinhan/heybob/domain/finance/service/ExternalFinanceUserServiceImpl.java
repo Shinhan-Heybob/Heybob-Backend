@@ -13,7 +13,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.security.SecureRandom;
@@ -26,7 +25,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class FinanceServiceImpl implements FinanceService {
+public class ExternalFinanceUserServiceImpl implements ExternalFinanceUserService {
 
     private static final String EMAIL_DOMAIN = "@ssafy.com";
     private static final int MAX_EMAIL_LEN = 40; // 외부 문서 기준에 맞춰 조정
