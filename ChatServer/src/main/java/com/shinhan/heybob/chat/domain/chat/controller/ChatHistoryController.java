@@ -44,6 +44,16 @@ public class ChatHistoryController {
         
         ChatHistoryResponse response = chatService.getChatHistory(roomId, before, limit);
         
+        if (response == null) {
+            log.warn("채팅 히스토리가 null로 반환됨: roomId={}", roomId);
+            response = ChatHistoryResponse.builder()
+                    .messages(List.of())
+                    .totalCount(0)
+                    .hasMore(false)
+                    .lastMessageId(null)
+                    .build();
+        }
+        
         log.info("채팅 히스토리 응답: roomId={}, count={}, lastMessageId={}, hasMore={}", 
                 roomId, response.getTotalCount(), response.getLastMessageId(), response.isHasMore());
         

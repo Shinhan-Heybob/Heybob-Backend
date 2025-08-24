@@ -67,8 +67,14 @@ public class ChatStreamServiceImpl implements ChatStreamService {
     }
     
     private void saveDirectlyToMongoDB(ChatMessageResponse response) {
+        String messageId = response.getMessageId();
+        if (messageId == null || messageId.trim().isEmpty()) {
+            messageId = java.util.UUID.randomUUID().toString();
+            log.warn("ChatStreamService Fallback: MessageId가 null이었습니다. 새로 생성: {}", messageId);
+        }
+        
         ChatMessage message = ChatMessage.builder()
-                .id(response.getMessageId())
+                .id(messageId)  // MongoDB _id (messageId 역할)
                 .roomId(response.getRoomId())
                 .senderId(response.getSenderId())
                 .studentId(response.getStudentId())
@@ -77,7 +83,8 @@ public class ChatStreamServiceImpl implements ChatStreamService {
                 .content(response.getContent())
                 .messageType(ChatMessage.MessageType.valueOf(response.getMessageType()))
                 .timestamp(response.getTimestamp())
-                .settlementData(response.getSettlementData())
+                .paymentRequestData(response.getPaymentRequestData())
+                .paymentCompleteData(response.getPaymentCompleteData())
                 .emergencyFallback(true)  // Fallback으로 저장됐음을 표시
                 .build();
                 

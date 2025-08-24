@@ -1,11 +1,13 @@
 package com.shinhan.heybob.chat.domain.chat.service;
 
-import com.shinhan.heybob.chat.domain.chat.dto.SettlementData;
+import com.shinhan.heybob.chat.domain.chat.dto.PaymentRequestData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -13,11 +15,11 @@ import java.util.*;
 public class SettlementServiceImpl implements SettlementService {
     
     @Override
-    public SettlementData createSettlement(String roomId, String requesterId, String note, Integer totalAmount) {
-        log.info("정산 생성 요청: roomId={}, requesterId={}, note={}, amount={}", roomId, requesterId, note, totalAmount);
+    public PaymentRequestData createSettlement(String roomId, String requesterId, String note, Integer totalAmount) {
+        log.info("결제 요청 생성: roomId={}, requesterId={}, note={}, amount={}", roomId, requesterId, note, totalAmount);
         
-        // 단순화된 정산 데이터 생성 (실제 처리는 Main 서버에서)
-        return SettlementData.builder()
+        // 단순화된 결제 요청 데이터 생성 (실제 처리는 Main 서버에서)
+        return PaymentRequestData.builder()
                 .settlementId(UUID.randomUUID().toString())
                 .roomId(roomId)
                 .requesterName("사용자")
@@ -27,15 +29,15 @@ public class SettlementServiceImpl implements SettlementService {
     }
     
     @Override
-    public SettlementData updateSettlementResponse(String settlementId, String userId, String responseType) {
-        log.info("정산 응답 (단순화): settlementId={}, userId={}, responseType={}", settlementId, userId, responseType);
+    public PaymentRequestData updateSettlementResponse(String settlementId, String userId, String responseType) {
+        log.info("결제 응답 (단순화): settlementId={}, userId={}, responseType={}", settlementId, userId, responseType);
         // 실제 처리는 Main 서버에서 담당
         return null;
     }
     
     @Override
-    public SettlementData getSettlement(String settlementId) {
-        log.debug("정산 조회 (단순화): settlementId={}", settlementId);
+    public PaymentRequestData getSettlement(String settlementId) {
+        log.debug("결제 조회 (단순화): settlementId={}", settlementId);
         return null;
     }
     
@@ -47,11 +49,11 @@ public class SettlementServiceImpl implements SettlementService {
     
     @Override
     public void processSettlementCompletion(String settlementId) {
-        log.info("정산 완료 처리 (단순화): settlementId={}", settlementId);
+        log.info("결제 완료 처리 (단순화): settlementId={}", settlementId);
     }
     
     @Override
     public void handleSettlementTimeout(String settlementId) {
-        log.info("정산 시간 만료 처리 (단순화): settlementId={}", settlementId);
+        log.info("결제 시간 만료 처리 (단순화): settlementId={}", settlementId);
     }
 }

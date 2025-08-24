@@ -29,7 +29,7 @@ public class MainResponseConsumer {
     private static final String CONSUMER_GROUP = "chat-server-group";
     private static final String CONSUMER_NAME = "chat-server-consumer";
     
-    // @Scheduled(fixedDelay = 1000) // 1초마다 실행 - MainServer 연동 전까지 비활성화
+    @Scheduled(fixedDelay = 1000) // 1초마다 실행
     public void consumeMessages() {
         try {
             // Consumer Group이 없으면 생성
@@ -74,6 +74,10 @@ public class MainResponseConsumer {
             
             // 메시지 타입별 처리
             switch (message.getMessageType()) {
+                case CREATE_ROOM:
+                    handleCreateRoom(message);
+                    break;
+                    
                 case ROOM_CREATED:
                 case ROOM_JOINED:
                 case ROOM_MEMBERS_RESPONSE:
@@ -180,5 +184,89 @@ public class MainResponseConsumer {
         } catch (NumberFormatException e) {
             return 0;
         }
+    }
+    
+    private void handleCreateRoom(ServerMessage message) {
+        try {
+            Map<String, Object> payload = message.getPayload();
+            String bob약Id = (String) payload.get("bob약Id");
+            String creatorUserId = (String) payload.get("creatorUserId");
+            String roomName = (String) payload.get("roomName");
+            List<String> initialMembers = (List<String>) payload.get("initialMembers");
+            
+            log.info("📢 채팅방 생성 요청 수신: bob약Id={}, creator={}, roomName={}", 
+                bob약Id, creatorUserId, roomName);
+            
+            // 채팅방 ID 생성 (실제로는 DB에 저장하고 ID를 받아야 함)
+            Long chatRoomId = System.currentTimeMillis() % 1000000;
+            
+            // 응답 메시지 생성
+            ServerMessage response = ServerMessage.builder()
+                .messageId(java.util.UUID.randomUUID().toString())
+                .correlationId(message.getMessageId()) // 원본 메시지 ID를 correlationId로 설정
+                .messageType(ServerMessage.MessageType.ROOM_CREATED)
+                .sourceServer("CHAT")
+                .targetServer("MAIN")
+                .timestamp(LocalDateTime.now())
+                .payload(Map.of(
+                    "chatRoomId", chatRoomId,
+                    "bob약Id", bob약Id,
+                    "roomName", roomName,
+                    "success", true,
+                    "message", "채팅방이 성공적으로 생성되었습니다"
+                ))
+                .retryCount(0)
+                .expiryTime(LocalDateTime.now().plusMinutes(5))
+                .build();
+            
+            // CHAT_TO_MAIN_STREAM으로 응답 전송
+            Map<String, Object> streamData = convertToStreamData(response);
+            redisTemplate.opsForStream().add("chat-to-main-stream", streamData);
+            
+            log.info("✅ 채팅방 생성 응답 전송: chatRoomId={}, correlationId={}", 
+                chatRoomId, message.getMessageId());
+                
+        } catch (Exception e) {
+            log.error("❌ 채팅방 생성 처리 실패: messageId={}", message.getMessageId(), e);
+            
+            // 에러 응답 전송
+            sendErrorResponse(message.getMessageId(), "채팅방 생성 실패: " + e.getMessage());
+        }
+    }
+    
+    private Map<String, Object> convertToStreamData(ServerMessage message) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("messageId", message.getMessageId());
+        data.put("correlationId", message.getCorrelationId());
+        data.put("messageType", message.getMessageType().toString());
+        data.put("sourceServer", message.getSourceServer());
+        data.put("targetServer", message.getTargetServer());
+        data.put("timestamp", message.getTimestamp().toString());
+        data.put("payload", message.getPayload());
+        data.put("retryCount", message.getRetryCount());
+        if (message.getExpiryTime() != null) {
+            data.put("expiryTime", message.getExpiryTime().toString());
+        }
+        return data;
+    }
+    
+    private void sendErrorResponse(String correlationId, String errorMessage) {
+        ServerMessage errorResponse = ServerMessage.builder()
+            .messageId(java.util.UUID.randomUUID().toString())
+            .correlationId(correlationId)
+            .messageType(ServerMessage.MessageType.ERROR_RESPONSE)
+            .sourceServer("CHAT")
+            .targetServer("MAIN")
+            .timestamp(LocalDateTime.now())
+            .payload(Map.of(
+                "success", false,
+                "errorMessage", errorMessage
+            ))
+            .retryCount(0)
+            .expiryTime(LocalDateTime.now().plusMinutes(5))
+            .build();
+        
+        Map<String, Object> streamData = convertToStreamData(errorResponse);
+        redisTemplate.opsForStream().add("chat-to-main-stream", streamData);
     }
 }

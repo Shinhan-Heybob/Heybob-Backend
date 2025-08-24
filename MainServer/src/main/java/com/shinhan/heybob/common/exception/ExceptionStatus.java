@@ -25,7 +25,8 @@ public enum ExceptionStatus {
     INVALID_APPOINTMENT_TIME(HttpStatus.BAD_REQUEST, 400, "약속 시간이 올바르지 않습니다."),
     DUPLICATE_PARTICIPANT(HttpStatus.BAD_REQUEST, 400, "이미 참여 중인 사용자입니다."),
     CHAT_ROOM_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, 500, "채팅방 생성에 실패했습니다."),
-    PAST_APPOINTMENT_TIME(HttpStatus.BAD_REQUEST, 400, "과거 시간으로는 밥약을 생성할 수 없습니다.");
+    PAST_APPOINTMENT_TIME(HttpStatus.BAD_REQUEST, 400, "과거 시간으로는 밥약을 생성할 수 없습니다."),
+    CHAT_INTEGRATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, 500, "채팅 서버 연동에 실패했습니다.");
 
     private final int status;
     private final int customCode;

@@ -7,6 +7,6 @@ public class ChatMessageRequest {
     private String roomId;
     private String content;
     private String messageType = "CHAT";  // CHAT, JOIN, LEAVE 등
-    private SettlementData settlementData;  // 정산 요청 시 포함되는 데이터
-    private String settlementId;  // 정산 응답 시 사용할 ID
+    private PaymentRequestData paymentRequestData;   // 결제 요청 데이터 (PAYMENT_REQUEST 타입에서 사용)
+    private PaymentCompleteData paymentCompleteData; // 결제 완료 데이터 (PAYMENT_COMPLETE 타입에서 사용)
 }

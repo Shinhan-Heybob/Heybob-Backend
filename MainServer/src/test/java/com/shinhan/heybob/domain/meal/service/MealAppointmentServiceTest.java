@@ -147,6 +147,8 @@ class MealAppointmentServiceTest {
                 .willReturn(Arrays.asList(testUser2, testUser3));
         given(mealAppointmentRepository.save(any(MealAppointment.class)))
                 .willReturn(savedAppointment);
+        // ChatIntegrationService는 이제 Redis Stream을 사용하므로
+        // 실제 동작은 모킹하지만 더미 값을 반환하도록 설정
         given(chatIntegrationService.createChatRoom(any(MealAppointment.class)))
                 .willReturn(12345L);
 

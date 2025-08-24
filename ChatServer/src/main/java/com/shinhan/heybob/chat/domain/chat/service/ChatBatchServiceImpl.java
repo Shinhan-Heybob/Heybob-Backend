@@ -2,6 +2,7 @@ package com.shinhan.heybob.chat.domain.chat.service;
 
 import com.shinhan.heybob.chat.domain.chat.model.ChatMessage;
 import com.shinhan.heybob.chat.domain.chat.repository.ChatRepository;
+import com.shinhan.heybob.chat.global.util.FallbackMetrics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 // 기본 Redis 작업만 사용 - Stream 복잡한 타입 제거
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +24,7 @@ public class ChatBatchServiceImpl implements ChatBatchService {
     
     private final RedisTemplate<String, Object> redisTemplate;
     private final ChatRepository chatRepository;
+    private final FallbackMetrics fallbackMetrics;
     
     @Override
     @Scheduled(fixedDelay = 5000) // 5초마다 실행
@@ -62,8 +65,15 @@ public class ChatBatchServiceImpl implements ChatBatchService {
                     String recordId = record.getId().getValue();
                     Map<Object, Object> rawData = record.getValue();
                     
-                    // 안전한 데이터 변환
-                    String messageId = String.valueOf(rawData.get("messageId"));
+                    // 안전한 데이터 변환 (messageId가 null인 경우 UUID 생성)
+                    Object messageIdObj = rawData.get("messageId");
+                    String messageId = null;
+                    if (messageIdObj != null && !"null".equals(String.valueOf(messageIdObj))) {
+                        messageId = String.valueOf(messageIdObj);
+                    } else {
+                        messageId = UUID.randomUUID().toString();
+                        log.warn("Redis Stream에서 messageId가 null이어서 UUID로 대체: recordId={}, newMessageId={}", recordId, messageId);
+                    }
                     String senderId = String.valueOf(rawData.get("senderId"));
                     String studentId = String.valueOf(rawData.get("studentId"));
                     String senderName = String.valueOf(rawData.get("senderName"));
@@ -72,9 +82,14 @@ public class ChatBatchServiceImpl implements ChatBatchService {
                     String messageType = String.valueOf(rawData.get("messageType"));
                     String timestamp = String.valueOf(rawData.get("timestamp"));
                     
-                    // ChatMessage 엔티티 생성
+                    // null 체크와 함께 ChatMessage 엔티티 생성
+                    if (messageId == null || messageId.isEmpty() || "null".equals(messageId)) {
+                        messageId = UUID.randomUUID().toString();
+                        log.warn("messageId가 null이거나 비어있어서 UUID로 대체: {}", messageId);
+                    }
+                    
                     ChatMessage message = ChatMessage.builder()
-                            .id(messageId)
+                            .id(messageId)  // MongoDB _id (messageId 역할)
                             .roomId(extractRoomIdFromStreamKey(streamKey))
                             .senderId(senderId)
                             .studentId(studentId)
@@ -93,20 +108,44 @@ public class ChatBatchServiceImpl implements ChatBatchService {
                 }
             }
             
-            // MongoDB에 배치 저장
+            // MongoDB에 배치 저장 (Exception 처리 개선)
             if (!messagesToSave.isEmpty()) {
-                for (ChatMessage message : messagesToSave) {
-                    chatRepository.save(message);
+                List<String> successfulRecordIds = new ArrayList<>();
+                List<String> failedRecordIds = new ArrayList<>();
+                
+                for (int i = 0; i < messagesToSave.size(); i++) {
+                    ChatMessage message = messagesToSave.get(i);
+                    String recordId = recordIdsToDelete.get(i);
+                    
+                    try {
+                        chatRepository.save(message);
+                        successfulRecordIds.add(recordId);
+                        log.debug("MongoDB 저장 성공: messageId={}", message.getId());
+                        
+                    } catch (Exception e) {
+                        failedRecordIds.add(recordId);
+                        log.warn("MongoDB 저장 실패 (스킵): messageId={}, recordId={}, error={}", 
+                            message.getId(), recordId, e.getMessage());
+                        
+                        // 메트릭 업데이트
+                        fallbackMetrics.incrementTotalFailure();
+                    }
                 }
                 
-                log.info("MongoDB 배치 저장 완료 (금융 메시지): streamKey={}, count={}", streamKey, messagesToSave.size());
-                
-                // Redis에서 처리된 메시지 삭제
-                for (String recordId : recordIdsToDelete) {
-                    redisTemplate.opsForStream().delete(streamKey, recordId);
+                // 성공한 메시지만 Redis에서 삭제
+                if (!successfulRecordIds.isEmpty()) {
+                    for (String recordId : successfulRecordIds) {
+                        try {
+                            redisTemplate.opsForStream().delete(streamKey, recordId);
+                        } catch (Exception e) {
+                            log.warn("Redis 메시지 삭제 실패: recordId={}, error={}", recordId, e.getMessage());
+                        }
+                    }
+                    log.info("MongoDB 저장 및 Redis 정리 완료: streamKey={}, success={}, failed={}", 
+                        streamKey, successfulRecordIds.size(), failedRecordIds.size());
+                } else {
+                    log.warn("모든 메시지 저장 실패: streamKey={}, totalFailed={}", streamKey, messagesToSave.size());
                 }
-                
-                log.info("Redis Stream 정리 완료: streamKey={}, deleted={}", streamKey, recordIdsToDelete.size());
             }
             
         } catch (Exception e) {

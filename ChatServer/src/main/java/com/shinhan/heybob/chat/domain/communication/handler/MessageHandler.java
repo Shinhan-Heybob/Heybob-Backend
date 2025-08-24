@@ -2,6 +2,7 @@ package com.shinhan.heybob.chat.domain.communication.handler;
 
 import com.shinhan.heybob.chat.domain.communication.dto.ServerMessage;
 import com.shinhan.heybob.chat.domain.chat.dto.ChatMessageResponse;
+import com.shinhan.heybob.chat.domain.chat.dto.PaymentRequestData;
 import com.shinhan.heybob.chat.domain.chat.dto.SettlementData;
 import com.shinhan.heybob.chat.domain.chat.dto.UiState;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +11,10 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -197,7 +201,13 @@ public class MessageHandler {
                     settlementData.getRequesterName()))
                 .messageType("PAYMENT_REQUEST")
                 .timestamp(LocalDateTime.now())
-                .settlementData(settlementData)
+                .paymentRequestData(PaymentRequestData.builder()
+                    .settlementId(settlementData.getSettlementId())
+                    .roomId(settlementData.getRoomId())
+                    .requesterName(settlementData.getRequesterName())
+                    .requestAmount(settlementData.getRequestAmount())
+                    .settlementUrl(settlementData.getSettlementUrl())
+                    .build())
                 .uiState(UiState.builder()
                     .isRequester(false)
                     .userResponseStatus("unknown")

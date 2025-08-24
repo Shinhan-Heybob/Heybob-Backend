@@ -216,8 +216,14 @@
 </head>
 <body>
     <div class="room-info">
-        <h2>🍚 HeyBob Real-time Chat Test</h2>
+        <h2>🍚 HeyBob Main-Chat Server Integration Test</h2>
         <div class="room-id">Room: TEST_ROOM_001</div>
+        <div style="font-size: 12px; color: #666; margin-top: 10px;">
+            <button onclick="testMealAppointmentFlow()" style="background: #FF5722; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; margin-right: 10px;">
+                🍚 밥약 생성 → 채팅방 연동 테스트
+            </button>
+            <span id="integrationStatus">Main Server: ❓ | Chat Server: ❓</span>
+        </div>
     </div>
 
     <div class="container">
@@ -246,7 +252,8 @@
             
             <div class="settlement-controls">
                 <h4>💰 Settlement Actions</h4>
-                <button class="btn-settlement" onclick="sendSettlement(1)">이체 요청하기 (12,000원)</button>
+                <button class="btn-settlement" onclick="sendSettlement(1)">송금 요청하기 (12,000원)</button>
+                <button class="btn-settlement" onclick="sendPaymentComplete(1)" style="background: #28a745;">정산 완료 메시지 보내기</button>
                 <div style="margin-top: 5px; font-size: 11px;" id="settlementInfo1">Settlement ID: None</div>
             </div>
             
@@ -278,7 +285,8 @@
             
             <div class="settlement-controls">
                 <h4>💰 Settlement Actions</h4>
-                <button class="btn-settlement" onclick="sendSettlement(2)">이체 요청하기 (12,000원)</button>
+                <button class="btn-settlement" onclick="sendSettlement(2)">송금 요청하기 (12,000원)</button>
+                <button class="btn-settlement" onclick="sendPaymentComplete(2)" style="background: #28a745;">정산 완료 메시지 보내기</button>
                 <div style="margin-top: 5px; font-size: 11px;" id="settlementInfo2">Settlement ID: None</div>
             </div>
             
@@ -376,28 +384,46 @@
                     try {
                         const chatMessage = JSON.parse(message.body);
                         console.log(`User ${userIndex} received message:`, chatMessage);
+                        console.log(`paymentRequestData:`, chatMessage.paymentRequestData);
+                        console.log(`messageType:`, chatMessage.messageType);
                         
                         // Determine if this is our own message or from another user
                         const isOwnMessage = chatMessage.senderId === users[userIndex].userId;
                         const messageType = isOwnMessage ? 'own' : 'other';
                         
-                        // Handle settlement data (단순화된 형식) - 하나의 메시지로 합치기
-                        if (chatMessage.settlementData) {
-                            currentSettlementId = chatMessage.settlementData.settlementId;
-                            updateSettlementInfo(userIndex, currentSettlementId);
+                        // Handle payment request data - 결제 요청 메시지 처리
+                        if (chatMessage.paymentRequestData || chatMessage.messageType === 'PAYMENT_REQUEST') {
+                            // paymentRequestData가 없는 경우 기본값 생성
+                            let paymentData = chatMessage.paymentRequestData;
+                            if (!paymentData && chatMessage.messageType === 'PAYMENT_REQUEST') {
+                                paymentData = {
+                                    settlementId: 'temp-' + Date.now(),
+                                    requestAmount: 12000,
+                                    settlementUrl: '/main/settlement/temp'
+                                };
+                                console.log('PaymentRequestData가 없어서 기본값 생성:', paymentData);
+                            }
+                            
+                            if (paymentData && paymentData.settlementId) {
+                                currentSettlementId = paymentData.settlementId;
+                                updateSettlementInfo(userIndex, currentSettlementId);
+                            }
                             
                             // 텍스트와 버튼을 하나의 메시지로 합침
                             const combinedContent = `
                                 ${chatMessage.content}
                                 <div class="settlement-info" style="margin-top: 10px;">
-                                    <button onclick="window.open('${chatMessage.settlementData.settlementUrl}', '_blank')" 
+                                    <button onclick="window.open('${paymentData.settlementUrl}', '_blank')" 
                                             style="padding: 12px 20px; background: #4CAF50; border: none; 
                                                    border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; color: white;">
-                                        ${chatMessage.settlementData.requestAmount.toLocaleString()}원 이체하기
+                                        ${paymentData.requestAmount.toLocaleString()}원 송금하기
                                     </button>
                                 </div>
                             `;
                             addMessage(userIndex, chatMessage.senderName, combinedContent, 'settlement', chatMessage.timestamp);
+                        } else if (chatMessage.messageType === 'PAYMENT_COMPLETE') {
+                            // 정산 완료 메시지 처리
+                            addMessage(userIndex, chatMessage.senderName, chatMessage.content, 'settlement', chatMessage.timestamp);
                         } else {
                             // 일반 메시지
                             addMessage(userIndex, chatMessage.senderName, chatMessage.content, messageType, chatMessage.timestamp);
@@ -465,9 +491,9 @@
                 updateSettlementInfo(userIndex, currentSettlementId);
                 
                 const settlementMessage = {
-                    content: `${users[userIndex].userName}님이 이체하기를 요청했습니다!`,
+                    content: `${users[userIndex].userName}님이 요청했습니다.`,
                     messageType: 'PAYMENT_REQUEST',
-                    settlementData: {
+                    paymentRequestData: {
                         settlementId: currentSettlementId,
                         roomId: roomId,
                         requesterName: users[userIndex].userName,
@@ -485,7 +511,7 @@
                         'X-Profile-Image': user.profileImageUrl
                     };
                     stompClient.send(`/app/chat/${roomId}`, headers, JSON.stringify(settlementMessage));
-                    addMessage(userIndex, users[userIndex].userName, '이체 요청을 보냈습니다!', 'own');
+                    addMessage(userIndex, users[userIndex].userName, '송금 요청을 보냈습니다!', 'own');
                 } catch (e) {
                     addMessage(userIndex, 'System', `Settlement send failed: ${e.message}`, 'error');
                 }
@@ -494,7 +520,32 @@
             }
         }
 
-        // 정산 응답 함수들 제거 (더 이상 필요 없음 - Main 페이지에서 처리)
+        // 정산 완료 메시지 전송 함수
+        function sendPaymentComplete(userIndex) {
+            const stompClient = stompClients[userIndex];
+            if (stompClient && stompClient.connected) {
+                const completeMessage = {
+                    content: `${users[userIndex].userName}님이 정산을 완료했습니다.`,
+                    messageType: 'PAYMENT_COMPLETE'
+                };
+                
+                try {
+                    const user = users[userIndex];
+                    const headers = {
+                        'X-User-Id': user.userId,
+                        'X-Student-Id': user.studentId,
+                        'X-User-Name': user.userName,
+                        'X-Profile-Image': user.profileImageUrl
+                    };
+                    stompClient.send(`/app/chat/${roomId}`, headers, JSON.stringify(completeMessage));
+                    addMessage(userIndex, users[userIndex].userName, '정산 완료 메시지를 보냈습니다!', 'own');
+                } catch (e) {
+                    addMessage(userIndex, 'System', `Payment complete send failed: ${e.message}`, 'error');
+                }
+            } else {
+                addMessage(userIndex, 'System', 'Please connect first!', 'error');
+            }
+        }
 
         // UI Helper Functions
         function updateStatus(userIndex, message, isConnected) {
@@ -566,12 +617,12 @@
                             const isOwnMessage = chatMessage.senderId === users[userIndex].userId;
                             const messageType = isOwnMessage ? 'own' : 'other';
                             
-                            // Handle settlement data (단순화된 형식) - 하나의 메시지로 합치기
-                            if (chatMessage.settlementData || chatMessage.messageType === 'PAYMENT_REQUEST') {
-                                // settlementData가 없는 과거 메시지의 경우 기본값 생성
-                                let settlementData = chatMessage.settlementData;
-                                if (!settlementData && chatMessage.messageType === 'PAYMENT_REQUEST') {
-                                    settlementData = {
+                            // Handle payment request data - 결제 요청 메시지 처리
+                            if (chatMessage.paymentRequestData || chatMessage.messageType === 'PAYMENT_REQUEST') {
+                                // paymentRequestData가 없는 과거 메시지의 경우 기본값 생성
+                                let paymentData = chatMessage.paymentRequestData;
+                                if (!paymentData && chatMessage.messageType === 'PAYMENT_REQUEST') {
+                                    paymentData = {
                                         requestAmount: 12000,
                                         settlementUrl: '/main/settlement/legacy'
                                     };
@@ -581,14 +632,17 @@
                                 const combinedContent = `
                                     ${chatMessage.content}
                                     <div class="settlement-info" style="margin-top: 10px;">
-                                        <button onclick="window.open('${settlementData.settlementUrl}', '_blank')" 
+                                        <button onclick="window.open('${paymentData.settlementUrl}', '_blank')" 
                                                 style="padding: 12px 20px; background: #4CAF50; border: none; 
                                                        border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; color: white;">
-                                            ${settlementData.requestAmount.toLocaleString()}원 이체하기
+                                            ${paymentData.requestAmount.toLocaleString()}원 송금하기
                                         </button>
                                     </div>
                                 `;
                                 addMessage(userIndex, chatMessage.senderName, combinedContent, 'settlement', chatMessage.timestamp);
+                            } else if (chatMessage.messageType === 'PAYMENT_COMPLETE') {
+                                // 정산 완료 메시지 처리
+                                addMessage(userIndex, chatMessage.senderName, chatMessage.content, 'settlement', chatMessage.timestamp);
                             } else {
                                 // 일반 메시지
                                 addMessage(userIndex, chatMessage.senderName, chatMessage.content, messageType, chatMessage.timestamp);
@@ -613,10 +667,89 @@
             if (e.key === 'Enter') sendMessage(2);
         });
 
+        // 밥약 생성 → 채팅방 연동 테스트 함수
+        async function testMealAppointmentFlow() {
+            updateIntegrationStatus('Main Server: 🔄 Testing...');
+            
+            try {
+                // 1. Main Server에 밥약 생성 요청
+                const mealAppointmentRequest = {
+                    name: "점심 밥약",
+                    memo: "맛있는 점심 먹어요",
+                    appointmentDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 내일
+                    appointmentTime: "12:30:00",
+                    participantIds: [2, 3], // 테스트용 participant IDs
+                    creatorId: 1
+                };
+                
+                console.log('밥약 생성 요청:', mealAppointmentRequest);
+                addMessage(1, 'Integration Test', '🍚 Main Server에 밥약 생성 요청 중...', 'system');
+                addMessage(2, 'Integration Test', '🍚 Main Server에 밥약 생성 요청 중...', 'system');
+                
+                const response = await fetch('http://localhost:8080/api/meal-appointments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(mealAppointmentRequest)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Main Server Error: ${response.status} ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                console.log('밥약 생성 결과:', result);
+                
+                updateIntegrationStatus('Main Server: ✅ Success | Chat Server: ✅ Integrated');
+                addMessage(1, 'Integration Test', `✅ 밥약 생성 성공! 
+                    <br>밥약 ID: ${result.id}
+                    <br>채팅방 ID: ${result.chatRoomId}
+                    <br>Redis Stream을 통한 서버간 통신 완료!`, 'system');
+                addMessage(2, 'Integration Test', `✅ Main-Chat 서버 연동 완료!
+                    <br>밥약명: ${result.name}
+                    <br>예정일: ${result.appointmentDate} ${result.appointmentTime}
+                    <br>참여자: ${result.participants.length}명`, 'system');
+                
+            } catch (error) {
+                console.error('Integration test failed:', error);
+                updateIntegrationStatus('Main Server: ❌ Failed | Chat Server: ❓');
+                addMessage(1, 'Integration Test', `❌ 연동 테스트 실패: ${error.message}`, 'error');
+                addMessage(2, 'Integration Test', `❌ Main Server 연결 실패. Docker Container가 실행 중인지 확인하세요.`, 'error');
+            }
+        }
+        
+        function updateIntegrationStatus(status) {
+            const statusElement = document.getElementById('integrationStatus');
+            if (statusElement) {
+                statusElement.textContent = status;
+            }
+        }
+        
+        // 서버 상태 확인 함수
+        async function checkServerStatus() {
+            try {
+                // Main Server 상태 확인
+                const mainResponse = await fetch('http://localhost:8080/actuator/health', { timeout: 3000 });
+                const mainStatus = mainResponse.ok ? '✅' : '❌';
+                
+                // Chat Server 상태 확인  
+                const chatResponse = await fetch('http://localhost:8081/actuator/health', { timeout: 3000 });
+                const chatStatus = chatResponse.ok ? '✅' : '❌';
+                
+                updateIntegrationStatus(`Main Server: ${mainStatus} | Chat Server: ${chatStatus}`);
+            } catch (error) {
+                updateIntegrationStatus('Main Server: ❓ | Chat Server: ❓');
+            }
+        }
+
         // Initialize
         window.onload = function() {
-            addMessage(1, 'System', '🚀 HeyBob Chat Test loaded! Server: ws://localhost:8081/ws', 'system');
-            addMessage(2, 'System', '🚀 HeyBob Chat Test loaded! Server: ws://localhost:8081/ws', 'system');
+            addMessage(1, 'System', '🚀 HeyBob Integration Test loaded! Chat: ws://localhost:8081/ws | Main: http://localhost:8080', 'system');
+            addMessage(2, 'System', '🚀 서버 연동 테스트 준비 완료! 밥약 생성 버튼을 클릭하세요.', 'system');
+            
+            // 서버 상태 초기 확인
+            checkServerStatus();
             
             // Show debug panel on demand (Ctrl+D)
             document.addEventListener('keydown', function(e) {
