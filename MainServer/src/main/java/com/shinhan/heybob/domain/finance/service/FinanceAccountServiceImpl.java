@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -137,6 +138,68 @@ public class FinanceAccountServiceImpl implements FinanceAccountService{
 
         return new PersonalAccountBalanceResponseDto().builder()
                 .balance((String) response.getBody().get("balance"))
+                .build();
+    }
+
+    @Override
+    public TransactionHistoryListResponseDto getTransactionHistoryList(
+            Long userId, String startDate, String endDate
+    ) {
+        String accountNo = userAccountUtil.getPersonalAccountNoByUserRealId(userId);
+        String userKey = externalFinanceUserRepository.findUserKeyByUserRealId(userId);
+
+        // Header
+        FinanceHeader header = new FinanceHeader(
+                "inquireTransactionHistoryList",
+                KSTUtil.nowDateKst(),
+                KSTUtil.nowTimeKst(),
+                "00100",
+                "001",
+                "inquireTransactionHistoryList",
+                KSTUtil.makeUniqueNo(),
+                apiKey,
+                userKey
+        );
+
+        InquireTransactionHistoryListRequest request = new InquireTransactionHistoryListRequest(
+                header, accountNo, startDate, endDate, "A", "DESC"
+        );
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<InquireTransactionHistoryListRequest> entity = new HttpEntity<>(request, headers);
+
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+                baseurl + "/edu/demandDeposit/inquireTransactionHistoryList",
+                entity,
+                Map.class
+        );
+
+        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            throw new HeybobException(ExceptionStatus.FINANCE_API_NOT_FOUND);
+        }
+
+        Map<String, Object> body = response.getBody();
+        Map<String, Object> rec = (Map<String, Object>) body.get("REC");
+        int totalCount = Integer.parseInt((String) rec.get("totalCount"));
+        List<Map<String, Object>> list = (List<Map<String, Object>>) rec.get("list");
+
+        List<TransactionHistoryDto> dtoList = list.stream()
+                .map(item -> TransactionHistoryDto.builder()
+                        .transactionUniqueNo((String) item.get("transactionUniqueNo"))
+                        .transactionDate((String) item.get("transactionDate"))
+                        .transactionTime((String) item.get("transactionTime"))
+                        .transactionTypeName((String) item.get("transactionTypeName"))
+                        .transactionBalance((String) item.get("transactionBalance"))
+                        .transactionAfterBalance((String) item.get("transactionAfterBalance"))
+                        .build()
+                )
+                .toList();
+
+        // 6. 최종 ResponseDto 생성
+        return TransactionHistoryListResponseDto.builder()
+                .totalCount(totalCount)
+                .transactionHistoryDtoList(dtoList)
                 .build();
     }
 }

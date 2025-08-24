@@ -1,5 +1,6 @@
 package com.shinhan.heybob.domain.finance.service;
 
+import com.shinhan.heybob.domain.finance.dto.TransactionHistoryListResponseDto;
 import com.shinhan.heybob.domain.finance.dto.PersonalAccountBalanceResponseDto;
 import com.shinhan.heybob.domain.finance.dto.PersonalAccountNoResponseDto;
 
@@ -13,4 +14,6 @@ public interface FinanceAccountService {
     PersonalAccountNoResponseDto getPersonalAccountNo(Long userId);
 
     PersonalAccountBalanceResponseDto getPersonalAccountBalance(Long userId);
+
+    TransactionHistoryListResponseDto getTransactionHistoryList(Long userId, String startDate, String endDate);
 }

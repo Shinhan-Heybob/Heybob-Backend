@@ -1,13 +1,16 @@
 package com.shinhan.heybob.domain.finance.controller;
 
 import com.shinhan.heybob.common.user.UserPrincipalDetails;
+import com.shinhan.heybob.domain.finance.dto.TransactionHistoryListResponseDto;
 import com.shinhan.heybob.domain.finance.dto.PersonalAccountBalanceResponseDto;
 import com.shinhan.heybob.domain.finance.dto.PersonalAccountNoResponseDto;
+import com.shinhan.heybob.domain.finance.dto.TransactionHistoryDateRequestDto;
 import com.shinhan.heybob.domain.finance.service.FinanceAccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -32,6 +35,17 @@ public class AccountController {
     ) {
         PersonalAccountBalanceResponseDto dto =
                 financeAccountService.getPersonalAccountBalance(userPrincipal.getUserId());
+        return ResponseEntity.ok(dto);
+    }
+
+    @GetMapping("/personal/history")
+    public ResponseEntity<TransactionHistoryListResponseDto> getTransactionHistory(
+            @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
+            @RequestBody TransactionHistoryDateRequestDto dateRequestDto
+            ) {
+        TransactionHistoryListResponseDto dto = financeAccountService.getTransactionHistoryList(
+                userPrincipal.getUserId(), dateRequestDto.getStartDate(), dateRequestDto.getEndDate()
+        );
         return ResponseEntity.ok(dto);
     }
 }
