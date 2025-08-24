@@ -1,0 +1,13 @@
+.idea
+.env
+build
+.gradle
+.iml
+/build/
+/ChatServer/build/
+/ChatServer/build/reports/
+*.html
+bin
+/bin/
+out/
+out

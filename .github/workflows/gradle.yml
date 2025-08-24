@@ -5,7 +5,7 @@
 # This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
 
-name: Java CD with Gradle
+name: Java CD with Gradle and Docker Compose
 
 on:
   push:
@@ -13,65 +13,125 @@ on:
   pull_request:
     branches: [ "develop" ]
 
+env:
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+
 jobs:
-  build-docker-image:
+  build-push-mainserver:
     runs-on: ubuntu-latest
     permissions:
       contents: read
 
     steps:
     - uses: actions/checkout@v4
-    - name: Set up JDK 17
+
+    - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
-        java-version: '17'
+        java-version: '21'
         distribution: 'temurin'
 
-    - name: application.yml 생성
+    - name: Create application.yml (MainServer)
       run: |
-        mkdir -p ./src/main/resources && cd $_
-        touch ./application.yml
-        echo "${{ secrets.CD_APPLICATION }}" > ./application.yml
-        cat ./application.yml
+        mkdir -p ./MainServer/src/main/resources
+        echo "${{ secrets.CD_APPLICATION_MAIN }}" > ./MainServer/src/main/resources/application.yml
+        cat ./MainServer/src/main/resources/application.yml
 
-    # Configure Gradle for optimal use in GitHub Actions, including caching of downloaded dependencies.
-    # See: https://github.com/gradle/actions/blob/main/setup-gradle/README.md
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
-      
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-      
-    - name: Build with Gradle Wrapper
-      run: ./gradlew build -x test
+      uses: gradle/actions/setup-gradle@v4
 
-    - name: docker image build
-      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/heybob .
+    - name: Grant execute permission for gradlew (MainServer)
+      run: chmod +x ./MainServer/gradlew
 
-    - name: docker login
+    - name: Build MainServer
+      working-directory: ./MainServer
+      run: ./gradlew clean build -x test
+
+    - name: Build Docker image (MainServer)
+      run: docker build -t ${{ env.DOCKERHUB_USERNAME }}/heybob-mainserver ./MainServer
+
+    - name: Docker login
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-    - name: docker hub push
-      run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/heybob
+    - name: Push Docker image (MainServer)
+      run: docker push ${{ env.DOCKERHUB_USERNAME }}/heybob-mainserver
 
-  run-docker-image-on-ec2:
-    needs: build-docker-image
+  build-push-chatserver:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - name: Create application.yml (ChatServer)
+      run: |
+        mkdir -p ./ChatServer/src/main/resources
+        echo "${{ secrets.CD_APPLICATION_CHAT }}" > ./ChatServer/src/main/resources/application.yml
+        cat ./ChatServer/src/main/resources/application.yml
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+
+    - name: Grant execute permission for gradlew (ChatServer)
+      run: chmod +x ./ChatServer/gradlew
+
+    - name: Build ChatServer
+      working-directory: ./ChatServer
+      run: ./gradlew clean build -x test
+
+    - name: Build Docker image (ChatServer)
+      run: docker build -t ${{ env.DOCKERHUB_USERNAME }}/heybob-chatserver ./ChatServer
+
+    - name: Docker login
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+    - name: Push Docker image (ChatServer)
+      run: docker push ${{ env.DOCKERHUB_USERNAME }}/heybob-chatserver
+
+  deploy:
+    needs: [build-push-mainserver, build-push-chatserver]
     runs-on: self-hosted
 
     steps:
-    - name: docker pull
-      run: sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/heybob
-
-    - name: docker stop container
+    - name: Pull updated Docker images
       run: |
-        if [ $(sudo docker ps -a -q -f name=heybob) ]; then
-          sudo docker stop heybob
+        sudo docker pull ${{ env.DOCKERHUB_USERNAME }}/heybob-mainserver
+        sudo docker pull ${{ env.DOCKERHUB_USERNAME }}/heybob-chatserver
+
+    - name: Stop and remove existing containers if any
+      run: |
+        if [ $(sudo docker ps -a -q -f name=heybob-mainserver) ]; then
+          sudo docker stop heybob-mainserver
+          sudo docker rm heybob-mainserver
         fi
-    - name: docker run new container
-      run: sudo docker run --rm -d -p 80:8080 --name heybob ${{ secrets.DOCKERHUB_USERNAME }}/heybob
+
+        if [ $(sudo docker ps -a -q -f name=heybob-chatserver) ]; then
+          sudo docker stop heybob-chatserver
+          sudo docker rm heybob-chatserver
+        fi
+
+        if [ $(sudo docker ps -a -q -f name=heybob-nginx) ]; then
+          sudo docker stop heybob-nginx
+          sudo docker rm heybob-nginx
+        fi
+
+    - name: Start containers with docker-compose
+      run: |
+        sudo docker-compose -f ~/docker-compose.yml up -d --build
+
       
     - name: delete old docker image
       run: sudo docker system prune -f
