@@ -2,6 +2,7 @@ package com.shinhan.heybob.domain.lecture.repository;
 
 import com.shinhan.heybob.domain.lecture.entity.Lecture;
 import java.time.LocalTime;
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,4 +20,6 @@ public interface LectureRepository extends JpaRepository<Lecture, Long> {
             @Param("startTime") LocalTime startTime,
             @Param("endTime") LocalTime endTime
     );
+
+    List<Lecture> findAllByTimetableId(Long timetableId);
 }
