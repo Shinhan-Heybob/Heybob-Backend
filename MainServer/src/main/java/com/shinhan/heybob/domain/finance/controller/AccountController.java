@@ -1,6 +1,7 @@
 package com.shinhan.heybob.domain.finance.controller;
 
 import com.shinhan.heybob.common.user.UserPrincipalDetails;
+import com.shinhan.heybob.domain.finance.dto.PersonalAccountBalanceResponseDto;
 import com.shinhan.heybob.domain.finance.dto.PersonalAccountNoResponseDto;
 import com.shinhan.heybob.domain.finance.service.FinanceAccountService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,15 @@ public class AccountController {
             @AuthenticationPrincipal UserPrincipalDetails userPrincipal
             ) {
         PersonalAccountNoResponseDto dto = financeAccountService.getPersonalAccountNo(userPrincipal.getUserId());
+        return ResponseEntity.ok(dto);
+    }
+
+    @GetMapping("/personal/balance")
+    public ResponseEntity<PersonalAccountBalanceResponseDto> getPersonalAccountBalance(
+            @AuthenticationPrincipal UserPrincipalDetails userPrincipal
+    ) {
+        PersonalAccountBalanceResponseDto dto =
+                financeAccountService.getPersonalAccountBalance(userPrincipal.getUserId());
         return ResponseEntity.ok(dto);
     }
 }

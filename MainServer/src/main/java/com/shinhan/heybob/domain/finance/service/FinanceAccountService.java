@@ -1,5 +1,6 @@
 package com.shinhan.heybob.domain.finance.service;
 
+import com.shinhan.heybob.domain.finance.dto.PersonalAccountBalanceResponseDto;
 import com.shinhan.heybob.domain.finance.dto.PersonalAccountNoResponseDto;
 
 public interface FinanceAccountService {
@@ -10,4 +11,6 @@ public interface FinanceAccountService {
     void createPersonalAccount(Long externalFinanceUserId, String accountNo);
 
     PersonalAccountNoResponseDto getPersonalAccountNo(Long userId);
+
+    PersonalAccountBalanceResponseDto getPersonalAccountBalance(Long userId);
 }
