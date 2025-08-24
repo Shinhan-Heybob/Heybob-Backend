@@ -10,6 +10,7 @@ import com.shinhan.heybob.domain.auth.dto.UserLoginRequestDto;
 import com.shinhan.heybob.domain.auth.entity.RefreshToken;
 import com.shinhan.heybob.domain.auth.repository.RefreshTokenRepository;
 import com.shinhan.heybob.domain.finance.service.ExternalFinanceUserService;
+import com.shinhan.heybob.domain.finance.service.FinanceAccountService;
 import com.shinhan.heybob.domain.user.dto.UserCreateRequestDto;
 import com.shinhan.heybob.domain.user.dto.UserResponseDto;
 import com.shinhan.heybob.domain.user.entity.User;
@@ -33,6 +34,7 @@ public class AuthServiceImpl implements AuthService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final ExternalFinanceUserService externalFinanceUserService;
+    private final FinanceAccountService financeAccountService;
 
     @Transactional
     @Override
@@ -78,10 +80,17 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(createdUser);
 
-        // ExternalFinanceUser 생성, userId(이메일 형식), userKey 발급
-        externalFinanceUserService.createUserKey(createdUser.getId());
+        log.info("[User] 사용자 생성 완료");
 
-        log.info("[FinanceService] userKey 생성 완료");
+        // ExternalFinanceUser 생성, userId(이메일 형식), userKey 발급
+        String userKey = externalFinanceUserService.createUserKey(createdUser.getId());
+
+        log.info("[ExternalFinanceUserService] userKey 생성 완료");
+
+        // userKey로 계좌 생성
+        financeAccountService.createDemandDepositAccount(userKey);
+
+        log.info("[FinanceAccountService] userKey로 계좌 생성 완료");
 
         return new UserResponseDto(createdUser);
     }
