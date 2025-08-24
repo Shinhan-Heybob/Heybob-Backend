@@ -1,5 +1,6 @@
 package com.shinhan.heybob.domain.financePersonal.entity;
 
+import com.shinhan.heybob.common.entity.BaseTime;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -15,7 +16,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PersonalAccount {
+public class PersonalAccount extends BaseTime {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

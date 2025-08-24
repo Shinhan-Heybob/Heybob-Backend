@@ -28,7 +28,9 @@ public enum ExceptionStatus {
 
     // EXTERNAL FINANCE USER
     FINANCE_API_NOT_FOUND(HttpStatus.BAD_REQUEST, 400, "금융 API 연결 실패했습니다."),
-    EMPTY_USER_KEY(HttpStatus.NOT_FOUND, 404, "userKey가 비어있습니다.");
+    EMPTY_USER_KEY(HttpStatus.NOT_FOUND, 404, "userKey가 비어있습니다."),
+    EMPTY_PARTICIPANTS_USER_IDS(HttpStatus.NOT_FOUND, 404,"정산 참여자 목록이 비어있습니다."),
+    INVALID_TOTAL_AMOUNT(HttpStatus.BAD_REQUEST, 400, "정산 금액은 1원 이상이어야 합니다.");
 
     private final int status;
     private final int customCode;
