@@ -41,7 +41,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                                .requestMatchers("/auth/**").permitAll()
+                                .requestMatchers("/auth/**", "/timetable/**", "/timetable/lecture/**").permitAll()
                                 .anyRequest().authenticated()
                 )
                 .formLogin(AbstractHttpConfigurer::disable)
