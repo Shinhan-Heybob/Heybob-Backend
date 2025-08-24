@@ -1,6 +1,6 @@
-package com.shinhan.heybob.domain.finance.dto;
+package com.shinhan.heybob.domain.financePersonal.dto;
 
 public record InquireDemandDepositAccountBalanceRequest (
-        FinanceHeader header,
+        FinanceHeader Header,
         String accountNo
 ) {}

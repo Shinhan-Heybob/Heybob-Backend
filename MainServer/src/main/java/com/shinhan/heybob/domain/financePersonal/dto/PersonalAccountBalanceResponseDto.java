@@ -1,4 +1,4 @@
-package com.shinhan.heybob.domain.finance.dto;
+package com.shinhan.heybob.domain.financePersonal.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PersonalAccountNoResponseDto {
+public class PersonalAccountBalanceResponseDto {
 
-    private String accountNo;
+    private String balance;
 
 }

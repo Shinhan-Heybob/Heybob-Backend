@@ -1,10 +1,10 @@
-package com.shinhan.heybob.domain.finance.dto;
+package com.shinhan.heybob.domain.financePersonal.dto;
 
 import lombok.Builder;
 
 @Builder
 public record InquireTransactionHistoryListRequest(
-        FinanceHeader header,
+        FinanceHeader Header,
         String accountNo,
         String startDate,
         String endDate,

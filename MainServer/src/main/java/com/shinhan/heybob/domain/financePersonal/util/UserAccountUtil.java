@@ -1,9 +1,9 @@
-package com.shinhan.heybob.domain.finance.util;
+package com.shinhan.heybob.domain.financePersonal.util;
 
 import com.shinhan.heybob.common.exception.ExceptionStatus;
 import com.shinhan.heybob.common.exception.HeybobException;
-import com.shinhan.heybob.domain.finance.repository.ExternalFinanceUserRepository;
-import com.shinhan.heybob.domain.finance.repository.PersonalAccountRepository;
+import com.shinhan.heybob.domain.financePersonal.repository.ExternalFinanceUserRepository;
+import com.shinhan.heybob.domain.financePersonal.repository.PersonalAccountRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

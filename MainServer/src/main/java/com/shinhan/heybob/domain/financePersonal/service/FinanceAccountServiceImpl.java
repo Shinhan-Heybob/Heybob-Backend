@@ -1,13 +1,13 @@
-package com.shinhan.heybob.domain.finance.service;
+package com.shinhan.heybob.domain.financePersonal.service;
 
 import com.shinhan.heybob.common.exception.ExceptionStatus;
 import com.shinhan.heybob.common.exception.HeybobException;
 import com.shinhan.heybob.common.util.KSTUtil;
-import com.shinhan.heybob.domain.finance.dto.*;
-import com.shinhan.heybob.domain.finance.entity.PersonalAccount;
-import com.shinhan.heybob.domain.finance.repository.ExternalFinanceUserRepository;
-import com.shinhan.heybob.domain.finance.repository.PersonalAccountRepository;
-import com.shinhan.heybob.domain.finance.util.UserAccountUtil;
+import com.shinhan.heybob.domain.financePersonal.dto.*;
+import com.shinhan.heybob.domain.financePersonal.entity.PersonalAccount;
+import com.shinhan.heybob.domain.financePersonal.repository.ExternalFinanceUserRepository;
+import com.shinhan.heybob.domain.financePersonal.repository.PersonalAccountRepository;
+import com.shinhan.heybob.domain.financePersonal.util.UserAccountUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,7 +25,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class FinanceAccountServiceImpl implements FinanceAccountService{
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
     private final PersonalAccountRepository personalAccountRepository;
     private final UserAccountUtil userAccountUtil;
     private final ExternalFinanceUserRepository externalFinanceUserRepository;
@@ -75,7 +75,11 @@ public class FinanceAccountServiceImpl implements FinanceAccountService{
         }
 
         // 개인계좌 엔티티 생성
-        createPersonalAccount(externalFinanceUserId, (String) response.getBody().get("accountNo"));
+        Map<String, Object> body = response.getBody();
+        Map<String, Object> rec = (Map<String, Object>) body.get("REC");
+        String accountNo = (String) rec.get("accountNo");
+
+        createPersonalAccount(externalFinanceUserId, accountNo);
 
     }
 
@@ -94,16 +98,15 @@ public class FinanceAccountServiceImpl implements FinanceAccountService{
     @Override
     public PersonalAccountNoResponseDto getPersonalAccountNo(Long userId) {
         String accountNo = userAccountUtil.getPersonalAccountNoByUserRealId(userId);
-        return new PersonalAccountNoResponseDto().builder()
-                .accountNo(accountNo)
-                .build();
+        return new PersonalAccountNoResponseDto(accountNo);
     }
 
     // 계좌 잔액 조회
     @Override
     public PersonalAccountBalanceResponseDto getPersonalAccountBalance(Long userId) {
         String accountNo = userAccountUtil.getPersonalAccountNoByUserRealId(userId);
-        String userKey = externalFinanceUserRepository.findUserKeyByUserRealId(userId);
+        String userKey = externalFinanceUserRepository.findUserKeyByUserRealId(userId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.EMPTY_USER_KEY));
 
         // Header
         FinanceHeader header = new FinanceHeader(
@@ -136,8 +139,12 @@ public class FinanceAccountServiceImpl implements FinanceAccountService{
             throw new HeybobException(ExceptionStatus.FINANCE_API_NOT_FOUND);
         }
 
+        Map<String, Object> body = response.getBody();
+        Map<String, Object> rec = (Map<String, Object>) body.get("REC");
+        String balance = (String) rec.get("accountBalance");
+
         return new PersonalAccountBalanceResponseDto().builder()
-                .balance((String) response.getBody().get("balance"))
+                .balance(balance)
                 .build();
     }
 
@@ -146,7 +153,8 @@ public class FinanceAccountServiceImpl implements FinanceAccountService{
             Long userId, String startDate, String endDate
     ) {
         String accountNo = userAccountUtil.getPersonalAccountNoByUserRealId(userId);
-        String userKey = externalFinanceUserRepository.findUserKeyByUserRealId(userId);
+        String userKey = externalFinanceUserRepository.findUserKeyByUserRealId(userId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.EMPTY_USER_KEY));
 
         // Header
         FinanceHeader header = new FinanceHeader(

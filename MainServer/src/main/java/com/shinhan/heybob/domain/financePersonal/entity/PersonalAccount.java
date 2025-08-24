@@ -1,7 +1,8 @@
-package com.shinhan.heybob.domain.finance.entity;
+package com.shinhan.heybob.domain.financePersonal.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,7 +21,7 @@ public class PersonalAccount {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank
+    @NotNull
     @Column(name = "external_finance_user_id", updatable = false)
     private Long externalFinanceUserId;
 

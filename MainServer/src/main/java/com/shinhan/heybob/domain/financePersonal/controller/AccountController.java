@@ -1,11 +1,11 @@
-package com.shinhan.heybob.domain.finance.controller;
+package com.shinhan.heybob.domain.financePersonal.controller;
 
 import com.shinhan.heybob.common.user.UserPrincipalDetails;
-import com.shinhan.heybob.domain.finance.dto.TransactionHistoryListResponseDto;
-import com.shinhan.heybob.domain.finance.dto.PersonalAccountBalanceResponseDto;
-import com.shinhan.heybob.domain.finance.dto.PersonalAccountNoResponseDto;
-import com.shinhan.heybob.domain.finance.dto.TransactionHistoryDateRequestDto;
-import com.shinhan.heybob.domain.finance.service.FinanceAccountService;
+import com.shinhan.heybob.domain.financePersonal.dto.TransactionHistoryListResponseDto;
+import com.shinhan.heybob.domain.financePersonal.dto.PersonalAccountBalanceResponseDto;
+import com.shinhan.heybob.domain.financePersonal.dto.PersonalAccountNoResponseDto;
+import com.shinhan.heybob.domain.financePersonal.dto.TransactionHistoryDateRequestDto;
+import com.shinhan.heybob.domain.financePersonal.service.FinanceAccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

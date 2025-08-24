@@ -1,8 +1,8 @@
-package com.shinhan.heybob.domain.finance.service;
+package com.shinhan.heybob.domain.financePersonal.service;
 
-import com.shinhan.heybob.domain.finance.dto.TransactionHistoryListResponseDto;
-import com.shinhan.heybob.domain.finance.dto.PersonalAccountBalanceResponseDto;
-import com.shinhan.heybob.domain.finance.dto.PersonalAccountNoResponseDto;
+import com.shinhan.heybob.domain.financePersonal.dto.TransactionHistoryListResponseDto;
+import com.shinhan.heybob.domain.financePersonal.dto.PersonalAccountBalanceResponseDto;
+import com.shinhan.heybob.domain.financePersonal.dto.PersonalAccountNoResponseDto;
 
 public interface FinanceAccountService {
 

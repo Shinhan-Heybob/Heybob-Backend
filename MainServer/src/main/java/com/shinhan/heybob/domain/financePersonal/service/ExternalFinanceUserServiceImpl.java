@@ -1,9 +1,9 @@
-package com.shinhan.heybob.domain.finance.service;
+package com.shinhan.heybob.domain.financePersonal.service;
 
 import com.shinhan.heybob.common.exception.ExceptionStatus;
 import com.shinhan.heybob.common.exception.HeybobException;
-import com.shinhan.heybob.domain.finance.entity.ExternalFinanceUser;
-import com.shinhan.heybob.domain.finance.repository.ExternalFinanceUserRepository;
+import com.shinhan.heybob.domain.financePersonal.entity.ExternalFinanceUser;
+import com.shinhan.heybob.domain.financePersonal.repository.ExternalFinanceUserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +34,7 @@ public class ExternalFinanceUserServiceImpl implements ExternalFinanceUserServic
     private static final String USER_KEY_END_POINT = "/member/";
 
     private final ExternalFinanceUserRepository externalFinanceUserRepository;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
     private final SecureRandom rng = new SecureRandom();
 
     @Value("${ssafy.finance.base-url}")

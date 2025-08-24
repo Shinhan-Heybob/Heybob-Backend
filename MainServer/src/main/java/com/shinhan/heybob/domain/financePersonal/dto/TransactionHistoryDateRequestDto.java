@@ -1,4 +1,4 @@
-package com.shinhan.heybob.domain.finance.dto;
+package com.shinhan.heybob.domain.financePersonal.dto;
 
 import lombok.Getter;
 
