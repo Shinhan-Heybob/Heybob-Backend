@@ -39,7 +39,7 @@ public class User extends BaseTime {
     @Column(name = "user_department", nullable = false, updatable = false)
     private String department;
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Timetable> timetableList;
 
     public void updateProfileUrl(String newProfileUrl) {
