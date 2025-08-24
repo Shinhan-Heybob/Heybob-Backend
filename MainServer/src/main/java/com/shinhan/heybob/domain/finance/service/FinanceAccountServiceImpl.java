@@ -28,9 +28,6 @@ public class FinanceAccountServiceImpl implements FinanceAccountService{
     @Value("${ssafy.finance.api-key}")
     private String apiKey;
 
-    @Value("${ssafy.finance.bank-code}")
-    private String bankCode;
-
     @Value("${ssafy.finance.account-type-unique-no}")
     private String accountTypeUniqueNo;
 
