@@ -5,6 +5,8 @@ import com.shinhan.heybob.common.exception.HeybobException;
 import com.shinhan.heybob.common.util.KSTUtil;
 import com.shinhan.heybob.domain.finance.dto.CreateDemandDepositAccountRequest;
 import com.shinhan.heybob.domain.finance.dto.FinanceHeader;
+import com.shinhan.heybob.domain.finance.entity.PersonalAccount;
+import com.shinhan.heybob.domain.finance.repository.PersonalAccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -21,6 +23,7 @@ import java.util.Map;
 public class FinanceAccountServiceImpl implements FinanceAccountService{
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final PersonalAccountRepository personalAccountRepository;
 
     @Value("${ssafy.finance.base-url}")
     private String baseurl;
@@ -32,7 +35,7 @@ public class FinanceAccountServiceImpl implements FinanceAccountService{
     private String accountTypeUniqueNo;
 
     @Override
-    public Map<String, Object> createDemandDepositAccount(String userKey) {
+    public void createDemandDepositAccount(Long externalFinanceUserId, String userKey) {
         // Header 생성
         FinanceHeader header = new FinanceHeader(
                 "createDemandDepositAccount",
@@ -64,6 +67,19 @@ public class FinanceAccountServiceImpl implements FinanceAccountService{
             throw new HeybobException(ExceptionStatus.FINANCE_API_NOT_FOUND);
         }
 
-        return response.getBody();
+        // 개인계좌 엔티티 생성
+        createPersonalAccount(externalFinanceUserId, (String) response.getBody().get("accountNo"));
+
+    }
+
+    @Override
+    public void createPersonalAccount(Long externalFinanceUserId, String accountNo) {
+        PersonalAccount personalAccount = new PersonalAccount().builder()
+                .externalFinanceUserId(externalFinanceUserId)
+                .accountNo(accountNo)
+                .build();
+
+        personalAccountRepository.save(personalAccount);
+
     }
 }

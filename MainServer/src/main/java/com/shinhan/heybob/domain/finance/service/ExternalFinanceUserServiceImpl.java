@@ -45,7 +45,7 @@ public class ExternalFinanceUserServiceImpl implements ExternalFinanceUserServic
 
     @Transactional
     @Override
-    public String createUserKey(Long userRealId) {
+    public ExternalFinanceUser createUserKey(Long userRealId) {
         // 1) 외부용 랜덤 이메일 생성
         final String externalUserId = makeRandomAndUniqueUserId();
 
@@ -85,7 +85,7 @@ public class ExternalFinanceUserServiceImpl implements ExternalFinanceUserServic
         externalFinanceUserRepository.save(created);
         log.info("외부 금융 사용자 생성 완료: userId={}, userKey={}", externalUserId, userKey);
 
-        return userKey;
+        return created;
     }
 
     /**

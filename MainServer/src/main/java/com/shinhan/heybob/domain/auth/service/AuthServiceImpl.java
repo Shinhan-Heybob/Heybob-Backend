@@ -9,6 +9,7 @@ import com.shinhan.heybob.domain.auth.dto.RefreshTokenResponseDto;
 import com.shinhan.heybob.domain.auth.dto.UserLoginRequestDto;
 import com.shinhan.heybob.domain.auth.entity.RefreshToken;
 import com.shinhan.heybob.domain.auth.repository.RefreshTokenRepository;
+import com.shinhan.heybob.domain.finance.entity.ExternalFinanceUser;
 import com.shinhan.heybob.domain.finance.service.ExternalFinanceUserService;
 import com.shinhan.heybob.domain.finance.service.FinanceAccountService;
 import com.shinhan.heybob.domain.user.dto.UserCreateRequestDto;
@@ -83,12 +84,14 @@ public class AuthServiceImpl implements AuthService {
         log.info("[User] 사용자 생성 완료");
 
         // ExternalFinanceUser 생성, userId(이메일 형식), userKey 발급
-        String userKey = externalFinanceUserService.createUserKey(createdUser.getId());
+        ExternalFinanceUser externalFinanceUser = externalFinanceUserService.createUserKey(createdUser.getId());
+        Long externalFinanceUserId = externalFinanceUser.getId();
+        String userKey = externalFinanceUser.getUserKey();
 
         log.info("[ExternalFinanceUserService] userKey 생성 완료");
 
         // userKey로 계좌 생성
-        financeAccountService.createDemandDepositAccount(userKey);
+        financeAccountService.createDemandDepositAccount(externalFinanceUserId, userKey);
 
         log.info("[FinanceAccountService] userKey로 계좌 생성 완료");
 

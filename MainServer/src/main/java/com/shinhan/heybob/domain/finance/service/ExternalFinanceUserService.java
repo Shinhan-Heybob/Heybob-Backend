@@ -1,6 +1,8 @@
 package com.shinhan.heybob.domain.finance.service;
 
+import com.shinhan.heybob.domain.finance.entity.ExternalFinanceUser;
+
 public interface ExternalFinanceUserService {
 
-    String createUserKey(Long userId);
+    ExternalFinanceUser createUserKey(Long userId);
 }
