@@ -3,6 +3,7 @@ package com.shinhan.heybob.domain.lecture.service;
 import com.shinhan.heybob.common.exception.ExceptionStatus;
 import com.shinhan.heybob.common.exception.HeybobException;
 import com.shinhan.heybob.domain.lecture.dto.LectureCreateRequestDto;
+import com.shinhan.heybob.domain.lecture.dto.LectureUpdateRequestDto;
 import com.shinhan.heybob.domain.lecture.entity.Lecture;
 import com.shinhan.heybob.domain.lecture.repository.LectureRepository;
 import com.shinhan.heybob.domain.timetable.entity.Timetable;
@@ -39,6 +40,25 @@ public class LectureService {
                 .professor(lectureCreateRequestDto.professor())
                 .timetable(timetable)
                 .build();
+        lectureRepository.save(lecture);
+    }
+
+    public void updateLecture(LectureUpdateRequestDto lectureUpdateRequestDto, Long lectureId) {
+
+        if(lectureRepository.existsByDayOfWeekAndTimeOverlap(lectureUpdateRequestDto.dayOfWeek(),
+                lectureUpdateRequestDto.startTime(),
+                lectureUpdateRequestDto.endTime()))
+            throw new HeybobException(ExceptionStatus.DUPLICATED_LECTURE_TIME);
+
+        Lecture lecture = lectureRepository.findById(lectureId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.LECTURE_NOT_FOUND));
+        lecture.updateLecture(lectureUpdateRequestDto.name(),
+                lectureUpdateRequestDto.subjectCode(),
+                lectureUpdateRequestDto.dayOfWeek(),
+                lectureUpdateRequestDto.startTime(),
+                lectureUpdateRequestDto.endTime(),
+                lectureUpdateRequestDto.classroom(),
+                lectureUpdateRequestDto.professor());
         lectureRepository.save(lecture);
     }
 }

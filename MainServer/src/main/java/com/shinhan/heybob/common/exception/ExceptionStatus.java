@@ -21,6 +21,7 @@ public enum ExceptionStatus {
 
     // LECTURE
     DUPLICATED_LECTURE_TIME(HttpStatus.BAD_REQUEST, 400, "강의 시간이 겹칩니다"),
+    LECTURE_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "존재하지 않는 강의입니다."),
 
     //TIMETABLE
     TIMETABLE_NOT_FOUND(HttpStatus.NOT_FOUND,404, "존재하지 않는 시간표입니다.")
