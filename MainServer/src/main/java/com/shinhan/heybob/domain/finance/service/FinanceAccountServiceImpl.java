@@ -5,8 +5,10 @@ import com.shinhan.heybob.common.exception.HeybobException;
 import com.shinhan.heybob.common.util.KSTUtil;
 import com.shinhan.heybob.domain.finance.dto.CreateDemandDepositAccountRequest;
 import com.shinhan.heybob.domain.finance.dto.FinanceHeader;
+import com.shinhan.heybob.domain.finance.dto.PersonalAccountNoResponseDto;
 import com.shinhan.heybob.domain.finance.entity.PersonalAccount;
 import com.shinhan.heybob.domain.finance.repository.PersonalAccountRepository;
+import com.shinhan.heybob.domain.finance.util.UserAccountUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -24,6 +26,7 @@ public class FinanceAccountServiceImpl implements FinanceAccountService{
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final PersonalAccountRepository personalAccountRepository;
+    private final UserAccountUtil userAccountUtil;
 
     @Value("${ssafy.finance.base-url}")
     private String baseurl;
@@ -81,5 +84,13 @@ public class FinanceAccountServiceImpl implements FinanceAccountService{
 
         personalAccountRepository.save(personalAccount);
 
+    }
+
+    @Override
+    public PersonalAccountNoResponseDto getPersonalAccountNo(Long userId) {
+        String accountNo = userAccountUtil.getPersonalAccountNoByUserRealId(userId);
+        return new PersonalAccountNoResponseDto().builder()
+                .accountNo(accountNo)
+                .build();
     }
 }

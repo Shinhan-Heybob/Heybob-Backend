@@ -12,4 +12,6 @@ public interface ExternalFinanceUserRepository extends JpaRepository<ExternalFin
     Optional<ExternalFinanceUser> findByUserId(String userId);
 
     boolean existsByUserId(String userId);
+
+    Optional<Long> findIdByUserRealId (Long userRealId);
 }
