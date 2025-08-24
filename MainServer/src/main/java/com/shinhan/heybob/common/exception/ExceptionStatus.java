@@ -30,7 +30,15 @@ public enum ExceptionStatus {
     FINANCE_API_NOT_FOUND(HttpStatus.BAD_REQUEST, 400, "금융 API 연결 실패했습니다."),
     EMPTY_USER_KEY(HttpStatus.NOT_FOUND, 404, "userKey가 비어있습니다."),
     EMPTY_PARTICIPANTS_USER_IDS(HttpStatus.NOT_FOUND, 404,"정산 참여자 목록이 비어있습니다."),
-    INVALID_TOTAL_AMOUNT(HttpStatus.BAD_REQUEST, 400, "정산 금액은 1원 이상이어야 합니다.");
+    INVALID_TOTAL_AMOUNT(HttpStatus.BAD_REQUEST, 400, "정산 금액은 1원 이상이어야 합니다."),
+
+    // MEAL APPOINTMENT
+    MEAL_APPOINTMENT_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "밥약 정보를 찾을 수 없습니다."),
+    INVALID_PARTICIPANT_LIST(HttpStatus.BAD_REQUEST, 400, "참여자 목록이 올바르지 않습니다."),
+    INVALID_APPOINTMENT_TIME(HttpStatus.BAD_REQUEST, 400, "약속 시간이 올바르지 않습니다."),
+    DUPLICATE_PARTICIPANT(HttpStatus.BAD_REQUEST, 400, "이미 참여 중인 사용자입니다."),
+    CHAT_ROOM_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, 500, "채팅방 생성에 실패했습니다."),
+    PAST_APPOINTMENT_TIME(HttpStatus.BAD_REQUEST, 400, "과거 시간으로는 밥약을 생성할 수 없습니다.");
 
     private final int status;
     private final int customCode;
