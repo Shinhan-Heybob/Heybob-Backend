@@ -24,8 +24,11 @@ public enum ExceptionStatus {
     LECTURE_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "존재하지 않는 강의입니다."),
 
     //TIMETABLE
-    TIMETABLE_NOT_FOUND(HttpStatus.NOT_FOUND,404, "존재하지 않는 시간표입니다.")
-    ;
+    TIMETABLE_NOT_FOUND(HttpStatus.NOT_FOUND,404, "존재하지 않는 시간표입니다."),
+
+    // EXTERNAL FINANCE USER
+    FINANCE_API_NOT_FOUND(HttpStatus.BAD_REQUEST, 400, "금융 API 연결 실패했습니다."),
+    EMPTY_USER_KEY(HttpStatus.NOT_FOUND, 404, "userKey가 비어있습니다.");
 
     private final int status;
     private final int customCode;

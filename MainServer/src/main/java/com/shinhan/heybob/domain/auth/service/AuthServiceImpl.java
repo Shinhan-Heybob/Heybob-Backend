@@ -9,6 +9,9 @@ import com.shinhan.heybob.domain.auth.dto.RefreshTokenResponseDto;
 import com.shinhan.heybob.domain.auth.dto.UserLoginRequestDto;
 import com.shinhan.heybob.domain.auth.entity.RefreshToken;
 import com.shinhan.heybob.domain.auth.repository.RefreshTokenRepository;
+import com.shinhan.heybob.domain.financePersonal.entity.ExternalFinanceUser;
+import com.shinhan.heybob.domain.financePersonal.service.ExternalFinanceUserService;
+import com.shinhan.heybob.domain.financePersonal.service.FinanceAccountService;
 import com.shinhan.heybob.domain.user.dto.UserCreateRequestDto;
 import com.shinhan.heybob.domain.user.dto.UserResponseDto;
 import com.shinhan.heybob.domain.user.entity.User;
@@ -31,6 +34,8 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final ExternalFinanceUserService externalFinanceUserService;
+    private final FinanceAccountService financeAccountService;
 
     @Transactional
     @Override
@@ -75,6 +80,20 @@ public class AuthServiceImpl implements AuthService {
         User createdUser = userCreateRequestDto.toEntity(userCreateRequestDto, encryptedPassword);
 
         userRepository.save(createdUser);
+
+        log.info("[User] 사용자 생성 완료");
+
+        // ExternalFinanceUser 생성, userId(이메일 형식), userKey 발급
+        ExternalFinanceUser externalFinanceUser = externalFinanceUserService.createUserKey(createdUser.getId());
+        Long externalFinanceUserId = externalFinanceUser.getId();
+        String userKey = externalFinanceUser.getUserKey();
+
+        log.info("[ExternalFinanceUserService] userKey 생성 완료");
+
+        // userKey로 계좌 생성
+        financeAccountService.createDemandDepositAccount(externalFinanceUserId, userKey);
+
+        log.info("[FinanceAccountService] userKey로 계좌 생성 완료");
 
         return new UserResponseDto(createdUser);
     }
@@ -127,7 +146,9 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void verifyExistUser(UserCreateRequestDto userCreateRequestDto) {
-        if (userRepository.existsByStudentId(userCreateRequestDto.getStudentId())) {
+        if (userRepository.existsByStudentIdAndUniversity(
+                userCreateRequestDto.getStudentId(),
+                userCreateRequestDto.getUniversity())) {
             throw new HeybobException(ExceptionStatus.STUDENT_ID_ALREADY_EXISTS);
         }
     }
