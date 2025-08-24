@@ -24,11 +24,16 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Transactional
 @TestPropertySource(properties = {
     "spring.datasource.url=jdbc:h2:mem:testdb",
-    "spring.jpa.hibernate.ddl-auto=create-drop"
+    "spring.datasource.driver-class-name=org.h2.Driver",
+    "spring.datasource.username=sa",
+    "spring.datasource.password=",
+    "spring.jpa.hibernate.ddl-auto=create-drop",
+    "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
+    "spring.h2.console.enabled=false"
 })
 class MealAppointmentIntegrationTest {
 
@@ -79,7 +84,7 @@ class MealAppointmentIntegrationTest {
     @DisplayName("전체 플로우 테스트: 시간표 비교 -> 밥약 생성 -> 조회")
     void fullFlowTest() {
         ScheduleComparisonRequest compareRequest = ScheduleComparisonRequest.builder()
-                .date(LocalDate.now().plusDays(1))
+                .date(LocalDate.now().plusDays(7))
                 .participantIds(Arrays.asList(testUser1.getId(), testUser2.getId(), testUser3.getId()))
                 .build();
 
@@ -95,6 +100,7 @@ class MealAppointmentIntegrationTest {
                 .appointmentDate(compareRequest.getDate())
                 .appointmentTime(LocalTime.of(12, 30))
                 .participantIds(Arrays.asList(testUser2.getId(), testUser3.getId()))
+                .creatorId(testUser1.getId())
                 .build();
 
         MealAppointmentDetailResponse createResponse = mealAppointmentService.createMealAppointment(createRequest);
@@ -122,23 +128,26 @@ class MealAppointmentIntegrationTest {
     void multipleAppointmentsTest() {
         CreateMealAppointmentRequest request1 = CreateMealAppointmentRequest.builder()
                 .name("아침 밥약")
-                .appointmentDate(LocalDate.now().plusDays(1))
+                .appointmentDate(LocalDate.now().plusDays(7))
                 .appointmentTime(LocalTime.of(8, 0))
                 .participantIds(Arrays.asList(testUser2.getId()))
+                .creatorId(testUser1.getId())
                 .build();
 
         CreateMealAppointmentRequest request2 = CreateMealAppointmentRequest.builder()
                 .name("점심 밥약")
-                .appointmentDate(LocalDate.now().plusDays(1))
+                .appointmentDate(LocalDate.now().plusDays(7))
                 .appointmentTime(LocalTime.of(12, 0))
                 .participantIds(Arrays.asList(testUser2.getId(), testUser3.getId()))
+                .creatorId(testUser1.getId())
                 .build();
 
         CreateMealAppointmentRequest request3 = CreateMealAppointmentRequest.builder()
                 .name("저녁 밥약")
-                .appointmentDate(LocalDate.now().plusDays(2))
+                .appointmentDate(LocalDate.now().plusDays(8))
                 .appointmentTime(LocalTime.of(18, 0))
                 .participantIds(Arrays.asList(testUser3.getId()))
+                .creatorId(testUser1.getId())
                 .build();
 
         MealAppointmentDetailResponse response1 = mealAppointmentService.createMealAppointment(request1);

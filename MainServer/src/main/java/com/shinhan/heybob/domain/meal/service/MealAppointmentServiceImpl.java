@@ -75,7 +75,8 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
             throw new HeybobException(ExceptionStatus.INVALID_PARTICIPANT_LIST);
         }
 
-        User creator = userRepository.findById(1L)
+        Long creatorId = request.getCreatorId() != null ? request.getCreatorId() : 1L;
+        User creator = userRepository.findById(creatorId)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.USER_NOT_FOUND));
 
         List<User> participants = userRepository.findByIdIn(request.getParticipantIds());
@@ -107,34 +108,10 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
 
         mealAppointment = mealAppointmentRepository.save(mealAppointment);
 
-        try {
-            Long chatRoomId = chatIntegrationService.createChatRoom(mealAppointment);
-            
-            MealAppointment updatedAppointment = MealAppointment.builder()
-                    .id(mealAppointment.getId())
-                    .name(mealAppointment.getName())
-                    .memo(mealAppointment.getMemo())
-                    .appointmentDate(mealAppointment.getAppointmentDate())
-                    .appointmentTime(mealAppointment.getAppointmentTime())
-                    .creator(mealAppointment.getCreator())
-                    .status(mealAppointment.getStatus())
-                    .chatRoomId(chatRoomId)
-                    .build();
-            
-            for (MealParticipant participant : mealAppointment.getParticipants()) {
-                MealParticipant newParticipant = MealParticipant.builder()
-                        .user(participant.getUser())
-                        .build();
-                updatedAppointment.addParticipant(newParticipant);
-            }
-            
-            mealAppointment = mealAppointmentRepository.save(updatedAppointment);
-        } catch (Exception e) {
-            log.error("채팅방 생성 실패: ", e);
-            throw new HeybobException(ExceptionStatus.CHAT_ROOM_CREATION_FAILED);
-        }
+        Long chatRoomId = chatIntegrationService.createChatRoom(mealAppointment);
+        log.info("채팅방 생성 완료: {}", chatRoomId);
 
-        return convertToDetailResponse(mealAppointment);
+        return convertToDetailResponse(mealAppointment, chatRoomId);
     }
 
     @Override
@@ -208,6 +185,10 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
     }
 
     private MealAppointmentDetailResponse convertToDetailResponse(MealAppointment mealAppointment) {
+        return convertToDetailResponse(mealAppointment, mealAppointment.getChatRoomId());
+    }
+    
+    private MealAppointmentDetailResponse convertToDetailResponse(MealAppointment mealAppointment, Long chatRoomId) {
         List<UserResponseDto> participantDtos = mealAppointment.getParticipants().stream()
                 .map(participant -> new UserResponseDto(participant.getUser()))
                 .collect(Collectors.toList());
@@ -221,7 +202,7 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
                 .creator(new UserResponseDto(mealAppointment.getCreator()))
                 .participants(participantDtos)
                 .status(mealAppointment.getStatus().name())
-                .chatRoomId(mealAppointment.getChatRoomId())
+                .chatRoomId(chatRoomId)
                 .createdAt(mealAppointment.getCreatedAt())
                 .build();
     }

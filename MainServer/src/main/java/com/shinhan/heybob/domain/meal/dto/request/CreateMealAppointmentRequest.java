@@ -32,4 +32,6 @@ public class CreateMealAppointmentRequest {
 
     @NotNull(message = "참여자 목록은 필수입니다.")
     private List<Long> participantIds;
+
+    private Long creatorId;
 }

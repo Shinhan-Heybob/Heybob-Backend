@@ -158,7 +158,7 @@ class MealAppointmentServiceTest {
         assertThat(response.getAppointmentDate()).isEqualTo(request.getAppointmentDate());
         assertThat(response.getAppointmentTime()).isEqualTo(request.getAppointmentTime());
         
-        verify(mealAppointmentRepository, times(3)).save(any(MealAppointment.class));
+        verify(mealAppointmentRepository, times(2)).save(any(MealAppointment.class));
         verify(chatIntegrationService).createChatRoom(any(MealAppointment.class));
     }
 
