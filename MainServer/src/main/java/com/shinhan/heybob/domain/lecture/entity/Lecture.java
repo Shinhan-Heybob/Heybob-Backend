@@ -1,6 +1,7 @@
 package com.shinhan.heybob.domain.lecture.entity;
 
 import com.shinhan.heybob.common.entity.BaseTime;
+import com.shinhan.heybob.domain.lecture.dto.LectureUpdateRequestDto;
 import com.shinhan.heybob.domain.timetable.entity.Timetable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -42,4 +43,14 @@ public class Lecture extends BaseTime {
     @ManyToOne
     @JoinColumn(name = "timetable_id")
     private Timetable timetable;
+
+    public void updateLecture(String name, String subjectCode, String dayOfWeek, LocalTime startTime, LocalTime endTime, String classroom, String professor) {
+        this.name = name;
+        this.subjectCode = subjectCode;
+        this.dayOfWeek = dayOfWeek;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.classroom = classroom;
+        this.professor = professor;
+    }
 }
