@@ -50,8 +50,9 @@ public class SettlementController {
 
     @GetMapping("/{chatRoomId}")
     public ResponseEntity<SettlementResponseDto> getSettlementInfo(
+            @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
             @PathVariable Long chatRoomId
     ) {
-        return ResponseEntity.ok(transactionService.getSettlementInfo(chatRoomId));
+        return ResponseEntity.ok(transactionService.getSettlementInfo(userPrincipal.getUserId(), chatRoomId));
     }
 }

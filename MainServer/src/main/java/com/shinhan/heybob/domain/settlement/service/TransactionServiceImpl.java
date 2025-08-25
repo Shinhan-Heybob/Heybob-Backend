@@ -188,7 +188,6 @@ public class TransactionServiceImpl implements TransactionService{
                 ctaLabel
         );
 
-        // 퍼블리셔 주입 필요
         redisStreamPublisher.publish(event);
 
         log.info("Settlement started and event published: settlementId={}, chatRoomId={}",
@@ -197,25 +196,37 @@ public class TransactionServiceImpl implements TransactionService{
 
     @Transactional
     @Override
-    public SettlementResponseDto getSettlementInfo(Long chatRoomId) {
+    public SettlementResponseDto getSettlementInfo(Long userId, Long chatRoomId) {
         MealAppointment meal = mealAppointmentRepository.findByChatRoomId(chatRoomId)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND));
 
-        Settlement settlement = settlementRepository.findByMealAppointment(meal)
+        Settlement s = settlementRepository.findByMealAppointment(meal)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.SETTLEMENT_NOT_FOUND));
 
-        if (settlement.getStatus() != SettlementStatus.CREATED) {
-            throw new HeybobException(ExceptionStatus.SETTLEMENT_STATUS_BAD_REQUEST);
-        }
-
-        if (settlement.getMealAppointment().getChatRoomId() == null) {
+        if (s.getMealAppointment().getChatRoomId() == null) {
             throw new HeybobException(ExceptionStatus.NOT_FOUND_CHAT_ROOM_ID);
         }
 
-        return new  SettlementResponseDto(
-                settlement.getTotalAmount(),
-                settlement.getParticipantsCount(),
-                settlement.getPerHeadAmount()
+        boolean isInitiator = s.getInitiator().getId().equals(userId);
+
+        var mySpOpt = participantRepository
+                .findBySettlement_IdAndParticipantUser_Id(s.getId(), userId);
+
+        boolean isParticipant = mySpOpt.isPresent();
+        Boolean myPaid = isParticipant
+                ? (mySpOpt.get().getTransferStatus() == TransferStatus.SUCCESS)
+                : null;
+
+        return new SettlementResponseDto(
+                s.getId(),
+                s.getInitiator().getId(),
+                s.getInitiator().getName(),
+                s.getPerHeadAmount(),
+                s.getTotalAmount(),
+                s.getParticipantsCount(),
+                isInitiator,
+                isParticipant,
+                myPaid
         );
     }
 

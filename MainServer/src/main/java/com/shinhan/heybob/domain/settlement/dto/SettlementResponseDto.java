@@ -1,8 +1,13 @@
 package com.shinhan.heybob.domain.settlement.dto;
 
-
 public record SettlementResponseDto(
+        Long settlementId,
+        Long initiatorId,
+        String initiatorName,
+        int perHeadAmount,
         int totalAmount,
         int participantsCount,
-        int perHeadAmount
+        boolean isInitiator,
+        boolean isParticipant,
+        Boolean myPaid
 ) {}

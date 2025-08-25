@@ -14,5 +14,5 @@ public interface TransactionService {
 
     void notifySettlement(Long chatRoomId, Long requesterId);
 
-    SettlementResponseDto getSettlementInfo(Long chatRoomId);
+    SettlementResponseDto getSettlementInfo(Long userId, Long chatRoomId);
 }
