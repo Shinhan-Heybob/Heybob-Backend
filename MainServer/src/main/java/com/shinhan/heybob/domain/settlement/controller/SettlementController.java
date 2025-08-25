@@ -1,7 +1,7 @@
 package com.shinhan.heybob.domain.settlement.controller;
 
 import com.shinhan.heybob.common.user.UserPrincipalDetails;
-import com.shinhan.heybob.domain.settlement.dto.SettlementRequestDto;
+import com.shinhan.heybob.domain.settlement.dto.CreateSettlementRequestDto;
 import com.shinhan.heybob.domain.settlement.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,10 +19,10 @@ public class SettlementController {
 
     private final TransactionService transactionService;
 
-    @PostMapping("/meal")
-    public ResponseEntity<Void> settleUp(
+    @PostMapping("/create")
+    public ResponseEntity<Void> createSettlement(
             @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
-            @RequestBody SettlementRequestDto requestDto
+            @RequestBody CreateSettlementRequestDto requestDto
     ) {
         transactionService.createSettlement(userPrincipal.getUserId(), requestDto);
         return ResponseEntity.status(HttpStatus.CREATED).build();

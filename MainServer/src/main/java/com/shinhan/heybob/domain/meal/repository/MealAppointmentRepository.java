@@ -30,4 +30,6 @@ public interface MealAppointmentRepository extends JpaRepository<MealAppointment
            "WHERE ma.appointmentDate = :date " +
            "ORDER BY ma.appointmentTime")
     List<MealAppointment> findByAppointmentDate(@Param("date") LocalDate date);
+
+    Optional<MealAppointment> findById(Long mealappointmentId);
 }

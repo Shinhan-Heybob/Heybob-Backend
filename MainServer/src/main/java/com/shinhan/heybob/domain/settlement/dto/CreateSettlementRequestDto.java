@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 
-public record SettlementRequestDto(
+public record CreateSettlementRequestDto(
         @NotNull Long mealAppointmentId,
         @Min(1) int totalAmount,
         @NotEmpty List<Long> participantsUserIds
