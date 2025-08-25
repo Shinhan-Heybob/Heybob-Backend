@@ -36,7 +36,7 @@ public class TestServiceImpl implements TestService {
             
             ServerMessage message = ServerMessage.builder()
                 .messageId(messageId)
-                .messageType(ServerMessage.MessageType.BROADCAST_SETTLEMENT_REQUEST)
+                .messageType(ServerMessage.MessageType.PAYMENT_REQUEST)
                 .sourceServer("MAIN")
                 .targetServer("CHAT")
                 .timestamp(LocalDateTime.now())
@@ -62,10 +62,51 @@ public class TestServiceImpl implements TestService {
         }
     }
     
+    @Override
+    public String sendSavingsBroadcast(SettlementBroadcastRequest request) {
+        try {
+            String messageId = UUID.randomUUID().toString();
+            
+            // 적금 브로드캐스트 메시지 생성
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("settlementId", request.getSettlementId());
+            payload.put("roomId", request.getRoomId());
+            payload.put("requesterName", request.getRequesterName());
+            payload.put("requestAmount", request.getRequestAmount());
+            payload.put("message", request.getMessage());
+            
+            ServerMessage message = ServerMessage.builder()
+                .messageId(messageId)
+                .messageType(ServerMessage.MessageType.SAVINGS_REQUEST)
+                .sourceServer("MAIN")
+                .targetServer("CHAT")
+                .timestamp(LocalDateTime.now())
+                .payload(payload)
+                .retryCount(0)
+                .expiryTime(LocalDateTime.now().plusMinutes(5))
+                .build();
+            
+            // Redis Stream으로 메시지 전송
+            Map<String, Object> streamData = convertToStreamData(message);
+            log.info("🔍 Redis Stream 전송 데이터: {}", streamData);
+            
+            redisTemplate.opsForStream().add(MAIN_TO_CHAT_STREAM, streamData);
+            
+            log.info("✅ 적금 브로드캐스트 전송 완료: messageId={}, settlementId={}", 
+                messageId, request.getSettlementId());
+            
+            return messageId;
+            
+        } catch (Exception e) {
+            log.error("❌ 적금 브로드캐스트 전송 실패: settlementId={}", request.getSettlementId(), e);
+            throw new RuntimeException("적금 브로드캐스트 전송 실패: " + e.getMessage());
+        }
+    }
+    
     private Map<String, Object> convertToStreamData(ServerMessage message) {
         Map<String, Object> data = new HashMap<>();
         data.put("messageId", message.getMessageId());
-        data.put("messageType", message.getMessageType().toString());
+        data.put("messageType", message.getMessageType().name());
         data.put("sourceServer", message.getSourceServer());
         data.put("targetServer", message.getTargetServer());
         data.put("timestamp", message.getTimestamp().toString());

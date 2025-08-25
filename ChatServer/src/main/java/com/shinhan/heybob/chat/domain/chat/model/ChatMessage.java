@@ -35,7 +35,9 @@ public class ChatMessage {
         CHAT,               // 일반 채팅 메시지
         JOIN,               // 사용자 입장
         LEAVE,              // 사용자 퇴장
-        PAYMENT_REQUEST,    // 송금 요청 "이지민님이 요청했습니다. (12000원 송금하기)"
-        PAYMENT_COMPLETE    // 정산 완료 "정산이 완료되었습니다"
+        PAYMENT_REQUEST,    // 송금 요청 "이지민님이 정산을 요청했습니다. (12000원 정산하기)"
+        PAYMENT_COMPLETE,   // 정산 완료 "정산이 완료되었습니다"
+        SAVINGS_REQUEST,    // 적금 요청 "이지민님이 적금을 요청했습니다. (12000원 적금하기)"
+        SAVINGS_COMPLETE    // 적금 완료 "적금이 완료되었습니다"
     }
 }

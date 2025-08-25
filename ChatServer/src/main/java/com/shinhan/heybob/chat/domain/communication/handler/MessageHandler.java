@@ -42,7 +42,7 @@ public class MessageHandler {
                     handleMemberLeft(message);
                     break;
                     
-                case SETTLEMENT_COMPLETED:
+                case PAYMENT_COMPLETED:
                     handleSettlementCompleted(message);
                     break;
                     

@@ -29,14 +29,15 @@ public class ServerMessage {
         JOIN_ROOM,             // 채팅방 입장 요청  
         LEAVE_ROOM,            // 채팅방 퇴장 요청
         GET_ROOM_MEMBERS,      // 채팅방 멤버 조회
-        PROCESS_SETTLEMENT,    // 정산 처리 요청
-        VALIDATE_ACCESS,       // 사용자 접근 권한 확인
+        VALIDATE_USER_ACCESS,  // 사용자 접근 권한 확인
+        PROCESS_SETTLEMENT,    // 정산 처리 요청 (ChatServer에서 사용)
+        SETTLEMENT_RESPONSE,   // 정산 응답 전달 (ChatServer에서 사용)
         
         // Main → Chat 응답
         ROOM_CREATED,          // 채팅방 생성 완료
         ROOM_JOINED,           // 채팅방 입장 완료
         ROOM_LEFT,             // 채팅방 퇴장 완료
-        ACCESS_VALIDATED,      // 접근 권한 확인 완료
+        USER_ACCESS_RESPONSE,  // 사용자 접근 권한 응답
         ROOM_MEMBERS_RESPONSE, // 채팅방 멤버 정보
         SETTLEMENT_PROCESSED,  // 정산 처리 완료
         
@@ -44,14 +45,14 @@ public class ServerMessage {
         ROOM_STATUS_CHANGED,   // 채팅방 상태 변경
         MEMBER_JOINED,         // 새 멤버 입장 알림
         MEMBER_LEFT,           // 멤버 퇴장 알림
-        SETTLEMENT_COMPLETED,  // 정산 완료 알림
         
-        // 정산 관련 추가
-        BROADCAST_SETTLEMENT_REQUEST, // Main이 Chat에게 정산 메시지 브로드캐스트 요청
-        SETTLEMENT_RESPONSE,          // Chat이 Main에게 사용자 정산 응답 전달
+        // Payment 관련 (Main → Chat)
+        PAYMENT_REQUEST,       // 정산 요청 브로드캐스트
+        PAYMENT_COMPLETED,     // 정산 완료 알림
+        SAVINGS_REQUEST,       // 적금 요청 브로드캐스트
+        SAVINGS_COMPLETED,     // 적금 완료 알림
         
         // 공통
-        ERROR,                 // 일반 에러
         ERROR_RESPONSE,        // 에러 응답
         HEARTBEAT             // 헬스체크
     }

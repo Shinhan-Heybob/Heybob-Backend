@@ -4,4 +4,5 @@ import com.shinhan.heybob.domain.test.dto.SettlementBroadcastRequest;
 
 public interface TestService {
     String sendSettlementBroadcast(SettlementBroadcastRequest request);
+    String sendSavingsBroadcast(SettlementBroadcastRequest request);
 }

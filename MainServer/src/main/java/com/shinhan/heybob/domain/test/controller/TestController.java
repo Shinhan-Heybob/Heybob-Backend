@@ -44,6 +44,28 @@ public class TestController {
         }
     }
     
+    @PostMapping("/send-savings-broadcast")
+    public ResponseEntity<Map<String, Object>> sendSavingsBroadcast(@RequestBody SettlementBroadcastRequest request) {
+        try {
+            log.info("🧪 테스트 적금 브로드캐스트 요청: {}", request);
+            
+            String messageId = testService.sendSavingsBroadcast(request);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "messageId", messageId,
+                "message", "적금 브로드캐스트가 Redis Stream으로 전송되었습니다"
+            ));
+            
+        } catch (Exception e) {
+            log.error("❌ 테스트 적금 브로드캐스트 실패", e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
+        }
+    }
+    
     /**
      * 테스트용 밥약 생성 API (인증 우회)
      */

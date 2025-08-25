@@ -209,7 +209,7 @@ public class ChatIntegrationServiceImpl implements ChatIntegrationService {
             
             ServerMessage serverMessage = ServerMessage.builder()
                 .messageId(messageId)
-                .messageType(ServerMessage.MessageType.BROADCAST_SETTLEMENT_REQUEST)
+                .messageType(ServerMessage.MessageType.PAYMENT_REQUEST)
                 .sourceServer(SERVER_NAME)
                 .targetServer(TARGET_SERVER)
                 .timestamp(LocalDateTime.now())

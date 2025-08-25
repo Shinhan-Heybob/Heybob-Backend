@@ -23,7 +23,7 @@ public class RetryMechanism {
     public void scheduleRetry(ServerMessage failedMessage, Exception error, 
                              Runnable retryAction) {
         try {
-            int currentRetry = failedMessage.getRetryCount() == null ? 0 : failedMessage.getRetryCount();
+            int currentRetry = failedMessage.getRetryCount();
             
             if (currentRetry >= MAX_RETRY_COUNT) {
                 log.error("💀 최대 재시도 횟수 초과, 메시지 포기: messageId={}, messageType={}", 

@@ -147,8 +147,8 @@ public class MainResponseConsumer {
                 case ROOM_CREATED:
                 case ROOM_JOINED:
                 case ROOM_MEMBERS_RESPONSE:
-                case SETTLEMENT_PROCESSED:
                 case USER_ACCESS_RESPONSE:
+                case SETTLEMENT_PROCESSED:
                     // 응답 메시지는 대기 중인 Future에 전달
                     communicationService.handleResponse(message);
                     break;
@@ -156,14 +156,20 @@ public class MainResponseConsumer {
                 case ROOM_STATUS_CHANGED:
                 case MEMBER_JOINED:
                 case MEMBER_LEFT:
-                case SETTLEMENT_COMPLETED:
                     // 알림 메시지는 별도 핸들러에서 처리
                     messageHandler.handleNotification(message);
                     break;
                     
-                case BROADCAST_SETTLEMENT_REQUEST:
-                    // Main 서버의 정산 브로드캐스트 요청 처리
+                case PAYMENT_REQUEST:
+                case SAVINGS_REQUEST:
+                    // Payment 요청 처리 (기존 handleSettlementBroadcast 재사용)
                     messageHandler.handleSettlementBroadcast(message);
+                    break;
+                    
+                case PAYMENT_COMPLETED:
+                case SAVINGS_COMPLETED:
+                    // Payment 완료 알림 처리
+                    messageHandler.handleNotification(message);
                     break;
                     
                 case ERROR_RESPONSE:
@@ -188,35 +194,62 @@ public class MainResponseConsumer {
         try {
             log.info("🔍 Stream 데이터 변환 시작: {}", streamData);
             
+            if (streamData == null || streamData.isEmpty()) {
+                throw new IllegalArgumentException("Stream 데이터가 null이거나 비어있습니다");
+            }
+            
             // Stream 데이터를 ServerMessage 객체로 변환
             Map<String, Object> payload = new HashMap<>();
             
             // payload_ 접두사가 붙은 필드들을 추출
             for (Map.Entry<Object, Object> entry : streamData.entrySet()) {
-                String key = entry.getKey().toString();
-                if (key.startsWith("payload_")) {
-                    String payloadKey = key.substring("payload_".length());
-                    Object value = entry.getValue();
-                    
-                    // Payload 값도 문자열인 경우 따옴표 제거
-                    if (value instanceof String) {
-                        value = ((String) value).replaceAll("^\"|\"$", "");
+                try {
+                    String key = entry.getKey().toString();
+                    if (key.startsWith("payload_")) {
+                        String payloadKey = key.substring("payload_".length());
+                        Object value = entry.getValue();
+                        
+                        // Payload 값도 문자열인 경우 따옴표 제거
+                        if (value instanceof String) {
+                            value = ((String) value).replaceAll("^\"|\"$", "");
+                        }
+                        
+                        payload.put(payloadKey, value);
+                        log.debug("📝 Payload 추출: {} = {}", payloadKey, value);
                     }
-                    
-                    payload.put(payloadKey, value);
+                } catch (Exception e) {
+                    log.warn("⚠️ Payload 항목 처리 실패: key={}, value={}, error={}", 
+                        entry.getKey(), entry.getValue(), e.getMessage());
                 }
             }
             
             // 필수 필드들을 안전하게 추출
             String messageId = getString(streamData, "messageId");
+            log.debug("🆔 messageId: {}", messageId);
+            
             String messageTypeStr = getString(streamData, "messageType");
+            log.info("🔍 messageType 원본 값: [{}], 길이: {}, 타입: {}", 
+                messageTypeStr, 
+                messageTypeStr != null ? messageTypeStr.length() : "null",
+                messageTypeStr != null ? messageTypeStr.getClass().getSimpleName() : "null");
+            
+            // Raw 값도 확인
+            Object rawMessageType = streamData.get("messageType");
+            log.info("🔍 messageType Raw 값: [{}], 타입: {}", 
+                rawMessageType,
+                rawMessageType != null ? rawMessageType.getClass().getSimpleName() : "null");
+            
             String sourceServer = getString(streamData, "sourceServer");
+            log.debug("📤 sourceServer: {}", sourceServer);
+            
             String targetServer = getString(streamData, "targetServer");
+            log.debug("📥 targetServer: {}", targetServer);
+            
             String timestampStr = getString(streamData, "timestamp");
+            log.debug("⏰ timestamp: {}", timestampStr);
             
-            
-            log.info("📋 추출된 필드들: messageId={}, messageType={}, sourceServer={}, targetServer={}, timestamp={}", 
-                messageId, messageTypeStr, sourceServer, targetServer, timestampStr);
+            log.info("📋 추출된 필드들: messageId={}, messageType={}, sourceServer={}, targetServer={}, timestamp={}, payload={}", 
+                messageId, messageTypeStr, sourceServer, targetServer, timestampStr, payload);
             
             // 필수 필드 검증 및 기본값 설정
             if (messageId == null || messageId.isEmpty()) {
@@ -251,17 +284,70 @@ public class MainResponseConsumer {
                 }
             }
             
+            // MessageType enum 안전하게 변환
+            ServerMessage.MessageType messageType;
+            try {
+                if (messageTypeStr == null) {
+                    throw new IllegalArgumentException("messageTypeStr is null");
+                }
+                messageType = ServerMessage.MessageType.valueOf(messageTypeStr.trim());
+                log.debug("✅ MessageType 변환 성공: {}", messageType);
+            } catch (IllegalArgumentException e) {
+                log.error("❌❌❌ CRITICAL ERROR: 알 수 없는 MessageType");
+                log.error("🔍 입력 값: '{}'", messageTypeStr);
+                log.error("🔢 문자열 길이: {}", messageTypeStr != null ? messageTypeStr.length() : "null");
+                
+                // 지원되는 모든 MessageType 출력
+                log.error("✅ 지원하는 MessageType 목록:");
+                for (ServerMessage.MessageType type : ServerMessage.MessageType.values()) {
+                    log.error("   - {}", type.name());
+                }
+                
+                // 디버깅을 위해 각 문자의 아스키 코드도 출력
+                if (messageTypeStr != null) {
+                    StringBuilder hexDump = new StringBuilder();
+                    for (char c : messageTypeStr.toCharArray()) {
+                        hexDump.append(String.format("[%c:%d] ", c, (int)c));
+                    }
+                    log.error("🔤 입력 문자 상세 분석: {}", hexDump.toString());
+                }
+                
+                // 유사한 타입 찾기 시도
+                if (messageTypeStr != null) {
+                    String cleanType = messageTypeStr.trim().toUpperCase();
+                    log.error("🧹 정리된 입력: '{}'", cleanType);
+                    
+                    for (ServerMessage.MessageType type : ServerMessage.MessageType.values()) {
+                        if (type.name().equals(cleanType)) {
+                            log.error("💡 제안: 공백이나 대소문자 문제일 수 있습니다. '{}' 사용을 권장합니다.", type.name());
+                        }
+                    }
+                }
+                
+                throw new RuntimeException("❌ FATAL: 지원하지 않는 MessageType: '" + messageTypeStr + "'. 위의 지원 목록을 확인하세요.", e);
+            }
+
+            // expiryTime 안전하게 파싱
+            LocalDateTime expiryTime = null;
+            String expiryTimeStr = getString(streamData, "expiryTime");
+            if (expiryTimeStr != null && !expiryTimeStr.isEmpty()) {
+                try {
+                    expiryTime = LocalDateTime.parse(expiryTimeStr);
+                    log.debug("✅ expiryTime 파싱 성공: {}", expiryTime);
+                } catch (Exception e) {
+                    log.warn("⚠️ expiryTime 파싱 실패: {} -> null로 설정", expiryTimeStr, e);
+                }
+            }
+
             ServerMessage result = ServerMessage.builder()
                     .messageId(messageId)
-                    .correlationId(getString(streamData, "correlationId"))
-                    .messageType(ServerMessage.MessageType.valueOf(messageTypeStr))
+                    .messageType(messageType)
                     .sourceServer(sourceServer)
                     .targetServer(targetServer)
                     .timestamp(timestamp)
                     .payload(payload)
                     .retryCount(getInteger(streamData, "retryCount"))
-                    .expiryTime(getString(streamData, "expiryTime") != null ? 
-                        LocalDateTime.parse(getString(streamData, "expiryTime")) : null)
+                    .expiryTime(expiryTime)
                     .build();
                     
             log.info("✅ ServerMessage 변환 완료: {}", result);
@@ -324,7 +410,6 @@ public class MainResponseConsumer {
             // 응답 메시지 생성
             ServerMessage response = ServerMessage.builder()
                 .messageId(java.util.UUID.randomUUID().toString())
-                .correlationId(message.getMessageId()) // 원본 메시지 ID를 correlationId로 설정
                 .messageType(ServerMessage.MessageType.ROOM_CREATED)
                 .sourceServer("CHAT")
                 .targetServer("MAIN")
@@ -358,8 +443,7 @@ public class MainResponseConsumer {
     private Map<String, Object> convertToStreamData(ServerMessage message) {
         Map<String, Object> data = new HashMap<>();
         data.put("messageId", message.getMessageId());
-        data.put("correlationId", message.getCorrelationId());
-        data.put("messageType", message.getMessageType().toString());
+        data.put("messageType", message.getMessageType().name());
         data.put("sourceServer", message.getSourceServer());
         data.put("targetServer", message.getTargetServer());
         data.put("timestamp", message.getTimestamp().toString());
@@ -374,7 +458,6 @@ public class MainResponseConsumer {
     private void sendErrorResponse(String correlationId, String errorMessage) {
         ServerMessage errorResponse = ServerMessage.builder()
             .messageId(java.util.UUID.randomUUID().toString())
-            .correlationId(correlationId)
             .messageType(ServerMessage.MessageType.ERROR_RESPONSE)
             .sourceServer("CHAT")
             .targetServer("MAIN")
