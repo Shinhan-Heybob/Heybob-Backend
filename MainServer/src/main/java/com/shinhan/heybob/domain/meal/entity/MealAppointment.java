@@ -52,11 +52,6 @@ public class MealAppointment extends BaseTime {
     @Column(name = "chat_room_id")
     private Long chatRoomId;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "settlement_id")
-    private Settlement settlement;
-
-
     public void updateStatus(MealAppointmentStatus status) {
         this.status = status;
     }
