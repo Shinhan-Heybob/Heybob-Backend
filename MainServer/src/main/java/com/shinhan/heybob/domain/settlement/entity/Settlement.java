@@ -1,7 +1,9 @@
 package com.shinhan.heybob.domain.settlement.entity;
 
 import com.shinhan.heybob.common.entity.BaseTime;
+import com.shinhan.heybob.domain.meal.entity.MealAppointment;
 import com.shinhan.heybob.domain.settlement.model.SettlementStatus;
+import com.shinhan.heybob.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,11 +25,13 @@ public class Settlement extends BaseTime {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "meal_appointment_id", nullable = false)
-    private Long mealAppointmentId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "meal_appointment_id", nullable = false)
+    private MealAppointment mealAppointment;
 
-    @Column(name = "initiator_user_id", nullable = false)
-    private Long initiatorUserId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "initiator_user_id", nullable = false)
+    private User initiator;
 
     @Column(name = "total_amount", nullable = false)
     private int totalAmount;
