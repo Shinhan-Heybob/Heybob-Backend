@@ -42,7 +42,10 @@ public enum ExceptionStatus {
 
     // SETTLEMENT
     SETTLEMENT_STATUS_BAD_REQUEST(HttpStatus.BAD_REQUEST, 400, "생성 상태에서만 수정할 수 있습니다."),
-    SETTLEMENT_PARTICIPANT_BAD_REQUEST(HttpStatus.BAD_REQUEST, 400, "참여자가 비었습니다.");
+    SETTLEMENT_PARTICIPANT_BAD_REQUEST(HttpStatus.BAD_REQUEST, 400, "참여자가 비었습니다."),
+
+    // REDIS
+    REDIS_STREAM_FAIL_TO_PUBLISH(HttpStatus.BAD_REQUEST, 400, "Redis Stream 발행 실패했습니다.");
 
     private final int status;
     private final int customCode;
