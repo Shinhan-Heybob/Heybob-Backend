@@ -5,6 +5,8 @@ import com.shinhan.heybob.chat.domain.chat.dto.ChatMessageResponse;
 import com.shinhan.heybob.chat.domain.chat.dto.PaymentRequestData;
 import com.shinhan.heybob.chat.domain.chat.dto.SettlementData;
 import com.shinhan.heybob.chat.domain.chat.dto.UiState;
+import com.shinhan.heybob.chat.domain.chat.model.ChatMessage;
+import com.shinhan.heybob.chat.domain.chat.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -22,6 +24,7 @@ import java.util.UUID;
 public class MessageHandler {
     
     private final SimpMessagingTemplate messagingTemplate;
+    private final ChatService chatService;
     
     
     public void handleNotification(ServerMessage message) {
@@ -163,11 +166,20 @@ public class MessageHandler {
      */
     public void handleSettlementBroadcast(ServerMessage message) {
         try {
+            log.info("🔍 정산 브로드캐스트 처리 시작: messageId={}", message.getMessageId());
+            
             Map<String, Object> payload = message.getPayload();
+            log.info("🔍 Payload 내용: {}", payload);
+            
             String settlementId = (String) payload.get("settlementId");
             String roomId = (String) payload.get("roomId");
             String requesterName = (String) payload.get("requesterName");
-            Integer requestAmount = (Integer) payload.get("requestAmount");
+            
+            // requestAmount 안전한 변환 (Redis Stream에서는 String으로 전달됨)
+            Integer requestAmount = getIntegerFromPayload(payload, "requestAmount", 15000);
+            
+            log.info("🔍 추출된 데이터: settlementId={}, roomId={}, requester={}, amount={}", 
+                settlementId, roomId, requesterName, requestAmount);
             
             log.info("💰 Main 서버로부터 정산 브로드캐스트 요청: settlementId={}, roomId={}, requester={}", 
                 settlementId, roomId, requesterName);
@@ -181,8 +193,12 @@ public class MessageHandler {
                 .settlementUrl("/main/settlement/" + settlementId)
                 .build();
             
+            log.info("🔍 SettlementData 생성 완료: {}", settlementData);
+            
             // 정산 메시지 생성 및 방에 브로드캐스트
+            log.info("🔍 broadcastSettlementMessage 호출 시작");
             broadcastSettlementMessage(roomId, settlementData);
+            log.info("🔍 broadcastSettlementMessage 호출 완료");
             
         } catch (Exception e) {
             log.error("❌ 정산 브로드캐스트 처리 실패: messageId={}", message.getMessageId(), e);
@@ -191,16 +207,47 @@ public class MessageHandler {
     
     private void broadcastSettlementMessage(String roomId, SettlementData settlementData) {
         try {
-            // 모든 사용자에게 동일한 정산 메시지 전송
+            String messageId = UUID.randomUUID().toString();
+            
+            // 1. MongoDB에 정산 메시지 저장
+            ChatMessage chatMessage = ChatMessage.builder()
+                .id(messageId)  // MongoDB _id로 사용
+                .roomId(roomId)
+                .senderId("system")
+                .studentId("SYSTEM")
+                .senderName("시스템")
+                .profileImageUrl(null)
+                .content(String.format("%s님이 이체하기를 요청했습니다!", settlementData.getRequesterName()))
+                .messageType(ChatMessage.MessageType.PAYMENT_REQUEST)
+                .timestamp(LocalDateTime.now())
+                .paymentRequestData(com.shinhan.heybob.chat.domain.chat.dto.PaymentRequestData.builder()
+                    .settlementId(settlementData.getSettlementId())
+                    .roomId(settlementData.getRoomId())
+                    .requesterName(settlementData.getRequesterName())
+                    .requestAmount(settlementData.getRequestAmount())
+                    .settlementUrl(settlementData.getSettlementUrl())
+                    .build())
+                .paymentCompleteData(null)  // 정산 요청이므로 null
+                .emergencyFallback(false)  // 정상적인 Redis Stream 처리
+                .build();
+            
+            // MongoDB에 저장
+            try {
+                chatService.saveMessage(chatMessage);
+                log.info("💾 정산 메시지 MongoDB 저장 완료: messageId={}", messageId);
+            } catch (Exception saveException) {
+                log.error("❌ 정산 메시지 MongoDB 저장 실패: messageId={}", messageId, saveException);
+            }
+            
+            // 2. WebSocket으로 실시간 브로드캐스트
             ChatMessageResponse settlementMessage = ChatMessageResponse.builder()
-                .messageId(UUID.randomUUID().toString())
+                .messageId(messageId)
                 .roomId(roomId)
                 .senderId("system")
                 .senderName("시스템")
-                .content(String.format("%s님이 이체하기를 요청했습니다!", 
-                    settlementData.getRequesterName()))
+                .content(chatMessage.getContent())
                 .messageType("PAYMENT_REQUEST")
-                .timestamp(LocalDateTime.now())
+                .timestamp(chatMessage.getTimestamp())
                 .paymentRequestData(PaymentRequestData.builder()
                     .settlementId(settlementData.getSettlementId())
                     .roomId(settlementData.getRoomId())
@@ -219,12 +266,33 @@ public class MessageHandler {
             // 해당 방의 모든 사용자에게 브로드캐스트
             messagingTemplate.convertAndSend("/topic/room/" + roomId, settlementMessage);
             
-            log.info("📨 정산 메시지 브로드캐스트 완료: roomId={}, settlementId={}", 
-                roomId, settlementData.getSettlementId());
+            log.info("📨 정산 메시지 브로드캐스트 완료: roomId={}, settlementId={}, messageId={}", 
+                roomId, settlementData.getSettlementId(), messageId);
                 
         } catch (Exception e) {
-            log.error("❌ 정산 메시지 전송 실패: roomId={}, settlementId={}", 
+            log.error("❌ 정산 메시지 저장/전송 실패: roomId={}, settlementId={}", 
                 roomId, settlementData.getSettlementId(), e);
+        }
+    }
+    
+    /**
+     * Payload에서 Integer 값을 안전하게 추출
+     */
+    private Integer getIntegerFromPayload(Map<String, Object> payload, String key, Integer defaultValue) {
+        Object value = payload.get(key);
+        if (value == null) return defaultValue;
+        
+        try {
+            if (value instanceof Integer) {
+                return (Integer) value;
+            } else if (value instanceof String) {
+                return Integer.parseInt((String) value);
+            } else {
+                return Integer.parseInt(value.toString());
+            }
+        } catch (NumberFormatException e) {
+            log.warn("⚠️ {} 변환 실패, 기본값 사용: {} -> {}", key, value, defaultValue);
+            return defaultValue;
         }
     }
 }

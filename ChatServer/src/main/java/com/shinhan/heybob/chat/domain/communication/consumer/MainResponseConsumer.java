@@ -41,10 +41,18 @@ public class MainResponseConsumer {
                 log.info("✅ Redis Stream 초기화: {}", MAIN_TO_CHAT_STREAM);
             }
             
-            // Consumer Group 생성 시도 (처음부터 읽기: 0, 최신부터 읽기: $)
+            // 기존 Consumer Group 삭제 (개발 환경에서만)
+            try {
+                redisTemplate.opsForStream().destroyGroup(MAIN_TO_CHAT_STREAM, CONSUMER_GROUP);
+                log.info("🗑️ 기존 Consumer Group 삭제: {}", CONSUMER_GROUP);
+            } catch (Exception e) {
+                log.debug("Consumer Group이 존재하지 않음 (정상): {}", CONSUMER_GROUP);
+            }
+            
+            // Consumer Group 생성 (처음부터 읽기: 0)
             redisTemplate.opsForStream().createGroup(MAIN_TO_CHAT_STREAM, 
-                org.springframework.data.redis.connection.stream.ReadOffset.from("$"), CONSUMER_GROUP);
-            log.info("✅ Consumer Group 생성 완료: {}", CONSUMER_GROUP);
+                org.springframework.data.redis.connection.stream.ReadOffset.from("0"), CONSUMER_GROUP);
+            log.info("✅ Consumer Group 생성 완료 (처음부터 읽기): {}", CONSUMER_GROUP);
             
         } catch (RedisSystemException e) {
             // BUSYGROUP: Consumer Group이 이미 존재
@@ -62,7 +70,6 @@ public class MainResponseConsumer {
     @Scheduled(fixedDelay = 1000) // 1초마다 실행
     public void consumeMessages() {
         try {
-            
             // 메시지 읽기
             List<MapRecord<String, Object, Object>> messages = redisTemplate.opsForStream()
                 .read(
@@ -70,25 +77,56 @@ public class MainResponseConsumer {
                     StreamOffset.create(MAIN_TO_CHAT_STREAM, org.springframework.data.redis.connection.stream.ReadOffset.lastConsumed())
                 );
             
+            // 항상 로그 출력 (디버깅용)
+            log.info("🔍 Redis Stream 읽기 결과: messages={}", messages != null ? messages.size() : "null");
+            
             if (messages != null && !messages.isEmpty()) {
-                log.debug("📨 Main 서버로부터 {} 개 메시지 수신", messages.size());
+                log.info("📨 Main 서버로부터 {} 개 메시지 수신", messages.size());
                 
                 for (MapRecord<String, Object, Object> record : messages) {
                     try {
+                        log.info("📋 처리할 메시지: recordId={}, data={}", record.getId(), record.getValue());
                         processMessage(record);
                         
                         // 메시지 처리 완료 후 ACK
                         redisTemplate.opsForStream().acknowledge(MAIN_TO_CHAT_STREAM, CONSUMER_GROUP, record.getId());
+                        log.info("✅ 메시지 처리 완료: recordId={}", record.getId());
+                        
+                        // 처리된 메시지 삭제 (Stream에서 완전 제거)
+                        redisTemplate.opsForStream().delete(MAIN_TO_CHAT_STREAM, record.getId());
+                        log.debug("🗑️ 처리된 메시지 삭제: recordId={}", record.getId());
                         
                     } catch (Exception e) {
-                        log.error("❌ 메시지 처리 실패: recordId={}", record.getId(), e);
-                        // TODO: 에러 메시지 처리 로직 (재시도 큐 등)
+                        log.error("❌ 메시지 처리 실패: recordId={}, data={}", record.getId(), record.getValue(), e);
+                        // 에러 발생 시에도 ACK (무한 재시도 방지)
+                        redisTemplate.opsForStream().acknowledge(MAIN_TO_CHAT_STREAM, CONSUMER_GROUP, record.getId());
                     }
                 }
             }
             
         } catch (Exception e) {
             log.error("❌ Main 서버 메시지 소비 중 오류", e);
+        }
+    }
+    
+    /**
+     * 10분마다 오래된 메시지들 대량 정리
+     */
+    @Scheduled(fixedDelay = 600000) // 10분마다 실행
+    public void cleanupOldMessages() {
+        try {
+            // 현재 시간 - 1시간 이전 메시지들 삭제
+            long oneHourAgo = System.currentTimeMillis() - (60 * 60 * 1000);
+            String maxId = oneHourAgo + "-0";
+            
+            // XTRIM으로 오래된 메시지들 정리 (최근 100개 메시지만 유지)
+            Long trimmed = redisTemplate.opsForStream().trim(MAIN_TO_CHAT_STREAM, 100);
+            if (trimmed != null && trimmed > 0) {
+                log.info("🧹 오래된 메시지 {}개 정리 완료 (최근 100개 유지)", trimmed);
+            }
+            
+        } catch (Exception e) {
+            log.warn("⚠️ 메시지 정리 중 오류 (무시 가능): {}", e.getMessage());
         }
     }
     
@@ -147,30 +185,92 @@ public class MainResponseConsumer {
     }
     
     private ServerMessage convertFromStreamData(Map<Object, Object> streamData) {
-        // Stream 데이터를 ServerMessage 객체로 변환
-        Map<String, Object> payload = new HashMap<>();
-        
-        // payload_ 접두사가 붙은 필드들을 추출
-        for (Map.Entry<Object, Object> entry : streamData.entrySet()) {
-            String key = entry.getKey().toString();
-            if (key.startsWith("payload_")) {
-                String payloadKey = key.substring("payload_".length());
-                payload.put(payloadKey, entry.getValue());
+        try {
+            log.info("🔍 Stream 데이터 변환 시작: {}", streamData);
+            
+            // Stream 데이터를 ServerMessage 객체로 변환
+            Map<String, Object> payload = new HashMap<>();
+            
+            // payload_ 접두사가 붙은 필드들을 추출
+            for (Map.Entry<Object, Object> entry : streamData.entrySet()) {
+                String key = entry.getKey().toString();
+                if (key.startsWith("payload_")) {
+                    String payloadKey = key.substring("payload_".length());
+                    Object value = entry.getValue();
+                    
+                    // Payload 값도 문자열인 경우 따옴표 제거
+                    if (value instanceof String) {
+                        value = ((String) value).replaceAll("^\"|\"$", "");
+                    }
+                    
+                    payload.put(payloadKey, value);
+                }
             }
+            
+            // 필수 필드들을 안전하게 추출
+            String messageId = getString(streamData, "messageId");
+            String messageTypeStr = getString(streamData, "messageType");
+            String sourceServer = getString(streamData, "sourceServer");
+            String targetServer = getString(streamData, "targetServer");
+            String timestampStr = getString(streamData, "timestamp");
+            
+            
+            log.info("📋 추출된 필드들: messageId={}, messageType={}, sourceServer={}, targetServer={}, timestamp={}", 
+                messageId, messageTypeStr, sourceServer, targetServer, timestampStr);
+            
+            // 필수 필드 검증 및 기본값 설정
+            if (messageId == null || messageId.isEmpty()) {
+                messageId = "unknown-" + System.currentTimeMillis();
+                log.warn("⚠️ messageId 누락, 기본값 설정: {}", messageId);
+            }
+            
+            if (messageTypeStr == null || messageTypeStr.isEmpty()) {
+                throw new IllegalArgumentException("messageType은 필수 필드입니다");
+            }
+            
+            if (sourceServer == null || sourceServer.isEmpty()) {
+                sourceServer = "MAIN";  // 기본값
+                log.warn("⚠️ sourceServer 누락, 기본값 설정: {}", sourceServer);
+            }
+            
+            if (targetServer == null || targetServer.isEmpty()) {
+                targetServer = "CHAT";  // 기본값
+                log.warn("⚠️ targetServer 누락, 기본값 설정: {}", targetServer);
+            }
+            
+            LocalDateTime timestamp;
+            if (timestampStr == null || timestampStr.isEmpty()) {
+                timestamp = LocalDateTime.now();  // 기본값
+                log.warn("⚠️ timestamp 누락, 현재 시간 사용: {}", timestamp);
+            } else {
+                try {
+                    timestamp = LocalDateTime.parse(timestampStr);
+                } catch (Exception e) {
+                    timestamp = LocalDateTime.now();
+                    log.warn("⚠️ timestamp 파싱 실패, 현재 시간 사용: {} -> {}", timestampStr, timestamp);
+                }
+            }
+            
+            ServerMessage result = ServerMessage.builder()
+                    .messageId(messageId)
+                    .correlationId(getString(streamData, "correlationId"))
+                    .messageType(ServerMessage.MessageType.valueOf(messageTypeStr))
+                    .sourceServer(sourceServer)
+                    .targetServer(targetServer)
+                    .timestamp(timestamp)
+                    .payload(payload)
+                    .retryCount(getInteger(streamData, "retryCount"))
+                    .expiryTime(getString(streamData, "expiryTime") != null ? 
+                        LocalDateTime.parse(getString(streamData, "expiryTime")) : null)
+                    .build();
+                    
+            log.info("✅ ServerMessage 변환 완료: {}", result);
+            return result;
+            
+        } catch (Exception e) {
+            log.error("❌ Stream 데이터 변환 실패: streamData={}", streamData, e);
+            throw new RuntimeException("Stream 데이터 변환 실패", e);
         }
-        
-        return ServerMessage.builder()
-                .messageId(getString(streamData, "messageId"))
-                .correlationId(getString(streamData, "correlationId"))
-                .messageType(ServerMessage.MessageType.valueOf(getString(streamData, "messageType")))
-                .sourceServer(getString(streamData, "sourceServer"))
-                .targetServer(getString(streamData, "targetServer"))
-                .timestamp(LocalDateTime.parse(getString(streamData, "timestamp")))
-                .payload(payload)
-                .retryCount(getInteger(streamData, "retryCount"))
-                .expiryTime(getString(streamData, "expiryTime") != null ? 
-                    LocalDateTime.parse(getString(streamData, "expiryTime")) : null)
-                .build();
     }
     
     private void handleErrorResponse(ServerMessage message) {
@@ -189,7 +289,11 @@ public class MainResponseConsumer {
     
     private String getString(Map<Object, Object> map, String key) {
         Object value = map.get(key);
-        return value != null ? value.toString() : null;
+        if (value == null) return null;
+        
+        String stringValue = value.toString();
+        // Redis Stream에서 문자열이 따옴표로 감싸져 올 수 있으므로 제거
+        return stringValue.replaceAll("^\"|\"$", "");
     }
     
     private Integer getInteger(Map<Object, Object> map, String key) {

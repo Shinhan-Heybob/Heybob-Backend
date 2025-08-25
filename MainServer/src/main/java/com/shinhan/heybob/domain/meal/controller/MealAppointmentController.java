@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/meal-appointments")
+@RequestMapping("/meal-appointments")  // context-path가 /api이므로 /meal-appointments만 사용
 @RequiredArgsConstructor
 public class MealAppointmentController {
 

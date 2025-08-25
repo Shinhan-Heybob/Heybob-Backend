@@ -274,4 +274,20 @@ public class ChatServiceImpl implements ChatService {
             throw new ChatException(ErrorCode.MONGODB_QUERY_ERROR, e);
         }
     }
+    
+    @Override
+    public void saveMessage(ChatMessage chatMessage) {
+        try {
+            log.info("💾 MongoDB 직접 저장 시도: messageId={}, content={}", 
+                chatMessage.getId(), chatMessage.getContent());
+            
+            chatRepository.save(chatMessage);
+            
+            log.info("✅ MongoDB 직접 저장 완료: messageId={}", chatMessage.getId());
+            
+        } catch (Exception e) {
+            log.error("❌ MongoDB 직접 저장 실패: messageId={}", chatMessage.getId(), e);
+            throw new ChatException(ErrorCode.MONGODB_CONNECTION_ERROR, e);
+        }
+    }
 }

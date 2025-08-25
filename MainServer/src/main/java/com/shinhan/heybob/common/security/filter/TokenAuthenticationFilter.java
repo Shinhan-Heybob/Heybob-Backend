@@ -30,7 +30,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         String uri = request.getRequestURI();
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) return true;
         if (uri.equals("/auth") || uri.startsWith("/auth/")) return true;
-        if (uri.startsWith("/api/test/")) return true;  // 테스트 API 제외
+        if (uri.startsWith("/test/")) return true;  // context-path 제거
         if (uri.startsWith("/actuator/health")) return true;  // 헬스체크 제외
         return false;
     }
