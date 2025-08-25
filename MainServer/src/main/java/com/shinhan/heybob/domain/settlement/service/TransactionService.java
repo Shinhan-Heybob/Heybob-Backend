@@ -7,7 +7,9 @@ import java.util.List;
 
 public interface TransactionService {
 
-    void createSettlement(Long userId, List<Long> participantsUserId, int totalAmount, MealAppointment mealAppointment);
+    void createSettlement(Long userId, List<Long> participantsUserId, int totalAmount, Long chatRoomId);
 
-    void updateSettlement(Settlement settlement, Long userId, List<Long> participantsUserIds, int totalAmount);
+    void updateSettlement(Long userId, List<Long> participantsUserIds, int totalAmount, Long chatRoomId);
+
+    void notifySettlement(Long chatRoomId, Long requesterId);
 }

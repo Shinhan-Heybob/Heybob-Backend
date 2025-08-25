@@ -5,6 +5,7 @@ import com.shinhan.heybob.common.exception.ExceptionStatus;
 import com.shinhan.heybob.common.exception.HeybobException;
 import com.shinhan.heybob.domain.notification.dto.ChatEventMessageDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.connection.stream.ObjectRecord;
 import org.springframework.data.redis.connection.stream.RecordId;
 import org.springframework.data.redis.connection.stream.StreamRecords;
@@ -18,7 +19,10 @@ public class RedisStreamPublisher {
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
 
-    public RecordId publish(String streamKey, ChatEventMessageDto message) {
+    @Value("${app.streams.chat-events-key:stream:chat:events}")
+    private String streamKey;
+
+    public RecordId publish(ChatEventMessageDto message) {
         try {
             String payload = objectMapper.writeValueAsString(message);
             ObjectRecord<String, String> record = StreamRecords
