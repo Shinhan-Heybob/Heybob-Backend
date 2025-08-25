@@ -55,4 +55,8 @@ public class TimetableService {
                 .lectures(lectureDtoList)
                 .build();
     }
+
+    public void deleteTimeTable(Long timeTableId){
+        timetableRepository.deleteById(timeTableId);
+    }
 }
