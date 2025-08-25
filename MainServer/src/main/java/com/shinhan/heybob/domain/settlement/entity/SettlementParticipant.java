@@ -36,7 +36,7 @@ public class SettlementParticipant extends BaseTime {
     private Settlement settlement;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "participant_user_id", nullable = false)
     private User participantUser;
 
     // 참가자별 청구 금액(그때의 스냅샷, 보통 per_head와 동일)

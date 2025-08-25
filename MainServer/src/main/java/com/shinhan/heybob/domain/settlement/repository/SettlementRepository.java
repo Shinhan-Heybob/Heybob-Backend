@@ -25,13 +25,13 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
     Optional<Settlement> findDetailById(Long id);
 
     @Query("""
-        select s
-          from Settlement s
-          join fetch s.initiator i
-          join fetch s.mealAppointment m
-          left join fetch s.participants sp
-          left join fetch sp.participantUser u
-         where m.chatRoomId = :chatRoomId
+      select distinct s
+        from Settlement s
+        join fetch s.mealAppointment m
+        join fetch s.initiator i
+        left join fetch s.participants sp
+        left join fetch sp.participantUser u
+       where m.chatRoomId = :chatRoomId
     """)
     Optional<Settlement> findDetailByChatRoomId(Long chatRoomId);
 

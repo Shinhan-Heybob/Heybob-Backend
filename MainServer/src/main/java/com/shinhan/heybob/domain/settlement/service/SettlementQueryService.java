@@ -5,6 +5,7 @@ import com.shinhan.heybob.common.exception.HeybobException;
 import com.shinhan.heybob.domain.settlement.dto.SettlementPageResponseDto;
 import com.shinhan.heybob.domain.settlement.dto.SettlementParticipantItemDto;
 import com.shinhan.heybob.domain.settlement.entity.Settlement;
+import com.shinhan.heybob.domain.settlement.model.TransferStatus;
 import com.shinhan.heybob.domain.settlement.repository.SettlementRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,7 +32,7 @@ public class SettlementQueryService {
                         sp.getParticipantUser().getId(),
                         sp.getParticipantUser().getName(),
                         sp.getAmount(),
-                        sp.getTransferStatus().name().equals("SUCCESS"),
+                        sp.getTransferStatus() == TransferStatus.SUCCESS,
                         sp.getTransferStatus().name()
                 ))
                 .sorted(Comparator.comparing(SettlementParticipantItemDto::userName))

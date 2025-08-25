@@ -6,6 +6,7 @@ import com.shinhan.heybob.domain.settlement.dto.SettlementRequestDto;
 import com.shinhan.heybob.domain.settlement.dto.SettlementResponseDto;
 import com.shinhan.heybob.domain.settlement.service.SettlementQueryService;
 import com.shinhan.heybob.domain.settlement.service.SettlementService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +24,7 @@ public class SettlementController {
     @PostMapping("/create/{chatRoomId}")
     public ResponseEntity<Void> createSettlement(
             @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
-            @RequestBody SettlementRequestDto requestDto,
+            @RequestBody @Valid SettlementRequestDto requestDto,
             @PathVariable Long chatRoomId
     ) {
         settlementService.createSettlement(
@@ -34,12 +35,12 @@ public class SettlementController {
     @PutMapping("/{chatRoomId}/update")
     public ResponseEntity<Void> updateSettlement(
             @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
-            @RequestBody SettlementRequestDto requestDto,
+            @RequestBody @Valid SettlementRequestDto requestDto,
             @PathVariable Long chatRoomId
     ) {
         settlementService.updateSettlement(
                 userPrincipal.getUserId(), requestDto.participantsUserIds(), requestDto.totalAmount(), chatRoomId);
-        return ResponseEntity.status(HttpStatus.ACCEPTED).build();
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @PostMapping("/{chatRoomId}/notify")
