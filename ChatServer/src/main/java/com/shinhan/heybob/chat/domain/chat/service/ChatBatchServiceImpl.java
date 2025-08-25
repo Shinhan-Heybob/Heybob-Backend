@@ -37,7 +37,7 @@ public class ChatBatchServiceImpl implements ChatBatchService {
                 return;
             }
             
-            log.info("Redis Stream 배치 처리 시작: 스트림 수={} (금융 메시지만 처리)", streamKeys.size());
+            log.info("Redis Stream 배치 처리 시작: 스트림 수={}", streamKeys.size());
             
             for (String streamKey : streamKeys) {
                 processRoomStream(streamKey);
@@ -54,8 +54,11 @@ public class ChatBatchServiceImpl implements ChatBatchService {
             var records = redisTemplate.opsForStream().range(streamKey, org.springframework.data.domain.Range.unbounded());
             
             if (records == null || records.isEmpty()) {
+                log.info("Redis Stream에 처리할 메시지가 없음: streamKey={}", streamKey);
                 return;
             }
+            
+            log.info("Redis Stream에서 메시지 발견: streamKey={}, count={}", streamKey, records.size());
             
             List<ChatMessage> messagesToSave = new ArrayList<>();
             List<String> recordIdsToDelete = new ArrayList<>();

@@ -41,7 +41,7 @@
 </td>
 <td>
 <div class="infoBox" id="duration">
-<div class="counter">1.072s</div>
+<div class="counter">0.899s</div>
 <p>duration</p>
 </div>
 </td>
@@ -81,43 +81,43 @@
 <tr>
 <td class="success">방 멤버 조회 성공</td>
 <td class="success">getRoomMembers_Success()</td>
-<td class="success">0.005s</td>
+<td class="success">0.004s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">응답 처리 - 대기 중인 Future 완료</td>
 <td class="success">handleResponse_CompletePendingFuture()</td>
-<td class="success">0.016s</td>
+<td class="success">0.011s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">정산 처리 요청 전송</td>
 <td class="success">processSettlement_Success()</td>
-<td class="success">0.010s</td>
+<td class="success">0.008s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">Heartbeat 전송</td>
 <td class="success">sendHeartbeat_Success()</td>
-<td class="success">0.904s</td>
+<td class="success">0.767s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">메시지 전송 실패시 재시도 스케줄링</td>
 <td class="success">sendMessage_FailureWithRetry()</td>
-<td class="success">0.042s</td>
+<td class="success">0.034s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">메시지 전송 성공 테스트</td>
 <td class="success">sendMessage_Success()</td>
-<td class="success">0.083s</td>
+<td class="success">0.066s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">정산 응답 전송</td>
 <td class="success">sendSettlementResponse_Success()</td>
-<td class="success">0.012s</td>
+<td class="success">0.009s</td>
 <td class="success">passed</td>
 </tr>
 </table>
@@ -125,8 +125,8 @@
 <div class="tab">
 <h2>Standard output</h2>
 <span class="code">
-<pre>2025-08-24T20:25:17.325+09:00  INFO 2488 --- [    Test worker] d.c.s.MainServerCommunicationServiceImpl : ? Main 서버로 메시지 전송: messageType=HEARTBEAT, messageId=948ccba1-e8bf-41d6-a7e9-20fc399d1d32
-2025-08-24T20:25:17.569+09:00 ERROR 2488 --- [MessageBroker-5] c.s.h.c.d.c.c.MainResponseConsumer       : ? Main 서버 메시지 소비 중 오류
+<pre>2025-08-25T10:27:56.194+09:00  INFO 30088 --- [    Test worker] d.c.s.MainServerCommunicationServiceImpl : ? Main 서버로 메시지 전송: messageType=HEARTBEAT, messageId=c8e26bd2-b9a0-45dd-823b-06e572f7940f
+2025-08-25T10:27:56.419+09:00 ERROR 30088 --- [essageBroker-10] c.s.h.c.d.c.c.MainResponseConsumer       : ? Main 서버 메시지 소비 중 오류
 
 org.springframework.data.redis.RedisConnectionFailureException: Unable to connect to Redis
 	at org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory$ExceptionTranslatingConnectionProvider.translateException(LettuceConnectionFactory.java:1866) ~[spring-data-redis-3.5.2.jar:3.5.2]
@@ -145,7 +145,7 @@ org.springframework.data.redis.RedisConnectionFailureException: Unable to connec
 	at org.springframework.data.redis.core.AbstractOperations.execute(AbstractOperations.java:117) ~[spring-data-redis-3.5.2.jar:3.5.2]
 	at org.springframework.data.redis.core.DefaultStreamOperations.read(DefaultStreamOperations.java:275) ~[spring-data-redis-3.5.2.jar:3.5.2]
 	at org.springframework.data.redis.core.StreamOperations.read(StreamOperations.java:521) ~[spring-data-redis-3.5.2.jar:3.5.2]
-	at com.shinhan.heybob.chat.domain.communication.consumer.MainResponseConsumer.consumeMessages(MainResponseConsumer.java:40) ~[main/:na]
+	at com.shinhan.heybob.chat.domain.communication.consumer.MainResponseConsumer.consumeMessages(MainResponseConsumer.java:68) ~[main/:na]
 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
 	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
@@ -212,11 +212,11 @@ Caused by: java.net.UnknownHostException: Failed to resolve 'redis' [A(1)] after
 Caused by: io.netty.resolver.dns.DnsErrorCauseException: Query failed with NXDOMAIN
 	at io.netty.resolver.dns.DnsResolveContext.onResponse(..)(Unknown Source) ~[netty-resolver-dns-4.1.123.Final.jar:4.1.123.Final]
 
-2025-08-24T20:25:17.624+09:00  INFO 2488 --- [    Test worker] d.c.s.MainServerCommunicationServiceImpl : ? Main 서버로 메시지 전송: messageType=SETTLEMENT_RESPONSE, messageId=451b0354-fe8c-4b5c-9f35-427285d6201b
-2025-08-24T20:25:17.625+09:00  INFO 2488 --- [    Test worker] d.c.s.MainServerCommunicationServiceImpl : ? 정산 응답 Main 서버로 전송: settlementId=settlement-123, userId=user-456, response=accepted
-2025-08-24T20:25:17.629+09:00  INFO 2488 --- [    Test worker] d.c.s.MainServerCommunicationServiceImpl : ? Main 서버로 메시지 전송: messageType=GET_ROOM_MEMBERS, messageId=test-message-id
-2025-08-24T20:25:17.720+09:00  INFO 2488 --- [    Test worker] d.c.s.MainServerCommunicationServiceImpl : ? Main 서버로 메시지 전송: messageType=PROCESS_SETTLEMENT, messageId=b569d436-d23f-4228-995f-95ef63e93812
-2025-08-24T20:25:17.736+09:00 ERROR 2488 --- [    Test worker] d.c.s.MainServerCommunicationServiceImpl : ? Main 서버 메시지 전송 실패: messageType=PROCESS_SETTLEMENT, messageId=test-message-id
+2025-08-25T10:27:56.487+09:00  INFO 30088 --- [    Test worker] d.c.s.MainServerCommunicationServiceImpl : ? Main 서버로 메시지 전송: messageType=SETTLEMENT_RESPONSE, messageId=e9638cd2-9024-4358-a938-f02dd82acbd5
+2025-08-25T10:27:56.487+09:00  INFO 30088 --- [    Test worker] d.c.s.MainServerCommunicationServiceImpl : ? 정산 응답 Main 서버로 전송: settlementId=settlement-123, userId=user-456, response=accepted
+2025-08-25T10:27:56.490+09:00  INFO 30088 --- [    Test worker] d.c.s.MainServerCommunicationServiceImpl : ? Main 서버로 메시지 전송: messageType=GET_ROOM_MEMBERS, messageId=test-message-id
+2025-08-25T10:27:56.559+09:00  INFO 30088 --- [    Test worker] d.c.s.MainServerCommunicationServiceImpl : ? Main 서버로 메시지 전송: messageType=PROCESS_SETTLEMENT, messageId=0634d4b9-5b00-49cc-b355-68f29538891e
+2025-08-25T10:27:56.575+09:00 ERROR 30088 --- [    Test worker] d.c.s.MainServerCommunicationServiceImpl : ? Main 서버 메시지 전송 실패: messageType=PROCESS_SETTLEMENT, messageId=test-message-id
 
 java.lang.RuntimeException: Redis connection failed
 	at org.springframework.data.redis.core.StreamOperations.add(StreamOperations.java:158) ~[spring-data-redis-3.5.2.jar:3.5.2]
@@ -318,8 +318,8 @@ java.lang.RuntimeException: Redis connection failed
 	at worker.org.gradle.process.internal.worker.GradleWorkerMain.run(GradleWorkerMain.java:69) ~[gradle-worker.jar:na]
 	at worker.org.gradle.process.internal.worker.GradleWorkerMain.main(GradleWorkerMain.java:74) ~[gradle-worker.jar:na]
 
-2025-08-24T20:25:17.766+09:00  INFO 2488 --- [    Test worker] d.c.s.MainServerCommunicationServiceImpl : ? Main 서버로 메시지 전송: messageType=GET_ROOM_MEMBERS, messageId=correlation-123
-2025-08-24T20:25:17.783+09:00  INFO 2488 --- [    Test worker] d.c.s.MainServerCommunicationServiceImpl : ? Main 서버로 메시지 전송: messageType=GET_ROOM_MEMBERS, messageId=72883937-0690-4be3-9724-617ba94203fa
+2025-08-25T10:27:56.599+09:00  INFO 30088 --- [    Test worker] d.c.s.MainServerCommunicationServiceImpl : ? Main 서버로 메시지 전송: messageType=GET_ROOM_MEMBERS, messageId=correlation-123
+2025-08-25T10:27:56.611+09:00  INFO 30088 --- [    Test worker] d.c.s.MainServerCommunicationServiceImpl : ? Main 서버로 메시지 전송: messageType=GET_ROOM_MEMBERS, messageId=fb5aab3c-27ea-490d-8940-eeb7a0690c82
 </pre>
 </span>
 </div>
@@ -331,7 +331,7 @@ java.lang.RuntimeException: Redis connection failed
 <input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
 </label>
 </div>Generated by 
-<a href="https://www.gradle.org">Gradle 8.14.3</a> at 2025. 8. 24. 오후 8:25:39</p>
+<a href="https://www.gradle.org">Gradle 8.14.3</a> at 2025. 8. 25. 오전 10:28:18</p>
 </div>
 </div>
 </body>

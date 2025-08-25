@@ -10,6 +10,8 @@ import org.springframework.data.redis.connection.stream.StreamOffset;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import jakarta.annotation.PostConstruct;
+import org.springframework.data.redis.RedisSystemException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -29,11 +31,37 @@ public class MainResponseConsumer {
     private static final String CONSUMER_GROUP = "chat-server-group";
     private static final String CONSUMER_NAME = "chat-server-consumer";
     
+    @PostConstruct
+    public void initializeConsumerGroup() {
+        try {
+            // Stream이 없으면 생성
+            Boolean exists = redisTemplate.hasKey(MAIN_TO_CHAT_STREAM);
+            if (Boolean.FALSE.equals(exists)) {
+                redisTemplate.opsForStream().add(MAIN_TO_CHAT_STREAM, Map.of("init", "stream"));
+                log.info("✅ Redis Stream 초기화: {}", MAIN_TO_CHAT_STREAM);
+            }
+            
+            // Consumer Group 생성 시도 (처음부터 읽기: 0, 최신부터 읽기: $)
+            redisTemplate.opsForStream().createGroup(MAIN_TO_CHAT_STREAM, 
+                org.springframework.data.redis.connection.stream.ReadOffset.from("$"), CONSUMER_GROUP);
+            log.info("✅ Consumer Group 생성 완료: {}", CONSUMER_GROUP);
+            
+        } catch (RedisSystemException e) {
+            // BUSYGROUP: Consumer Group이 이미 존재
+            if (e.getCause() != null && e.getCause().getMessage() != null 
+                && e.getCause().getMessage().contains("BUSYGROUP")) {
+                log.debug("Consumer Group이 이미 존재: {}", CONSUMER_GROUP);
+            } else {
+                log.error("❌ Consumer Group 초기화 실패", e);
+            }
+        } catch (Exception e) {
+            log.error("❌ Stream 초기화 중 예상치 못한 오류", e);
+        }
+    }
+    
     @Scheduled(fixedDelay = 1000) // 1초마다 실행
     public void consumeMessages() {
         try {
-            // Consumer Group이 없으면 생성
-            ensureConsumerGroupExists();
             
             // 메시지 읽기
             List<MapRecord<String, Object, Object>> messages = redisTemplate.opsForStream()
@@ -158,17 +186,6 @@ public class MainResponseConsumer {
         // TODO: 헬스체크 상태 업데이트
     }
     
-    private void ensureConsumerGroupExists() {
-        try {
-            redisTemplate.opsForStream().createGroup(MAIN_TO_CHAT_STREAM, 
-                org.springframework.data.redis.connection.stream.ReadOffset.from("0"), CONSUMER_GROUP);
-        } catch (Exception e) {
-            // Consumer Group이 이미 존재하면 무시
-            if (!e.getMessage().contains("BUSYGROUP")) {
-                log.debug("Consumer Group 생성 결과: {}", e.getMessage());
-            }
-        }
-    }
     
     private String getString(Map<Object, Object> map, String key) {
         Object value = map.get(key);

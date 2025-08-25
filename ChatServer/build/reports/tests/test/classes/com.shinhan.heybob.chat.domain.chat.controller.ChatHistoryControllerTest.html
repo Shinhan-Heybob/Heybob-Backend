@@ -41,7 +41,7 @@
 </td>
 <td>
 <div class="infoBox" id="duration">
-<div class="counter">1.956s</div>
+<div class="counter">1.554s</div>
 <p>duration</p>
 </div>
 </td>
@@ -76,36 +76,15 @@
 <a name="User_ID_헤더_없을_때_실패()"></a>
 <h3 class="failures">User_ID_헤더_없을_때_실패()</h3>
 <span class="code">
-<pre>jakarta.servlet.ServletException: Request processing failed: java.lang.NullPointerException: Cannot invoke &quot;com.shinhan.heybob.chat.domain.chat.dto.ChatHistoryResponse.getTotalCount()&quot; because &quot;response&quot; is null
-	at app//org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1022)
-	at app//org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
-	at app//jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)
-	at app//org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
-	at app//org.springframework.test.web.servlet.TestDispatcherServlet.service(TestDispatcherServlet.java:72)
-	at app//jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
-	at app//org.springframework.mock.web.MockFilterChain$ServletFilterProxy.doFilter(MockFilterChain.java:165)
-	at app//org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:132)
-	at app//org.springframework.test.web.servlet.MockMvc.perform(MockMvc.java:201)
-	at app//com.shinhan.heybob.chat.domain.chat.controller.ChatHistoryControllerTest.User_ID_헤더_없을_때_실패(ChatHistoryControllerTest.java:235)
-	at java.base@17.0.12/java.lang.reflect.Method.invoke(Method.java:568)
-	at java.base@17.0.12/java.util.ArrayList.forEach(ArrayList.java:1511)
-	at java.base@17.0.12/java.util.ArrayList.forEach(ArrayList.java:1511)
-Caused by: java.lang.NullPointerException: Cannot invoke &quot;com.shinhan.heybob.chat.domain.chat.dto.ChatHistoryResponse.getTotalCount()&quot; because &quot;response&quot; is null
-	at com.shinhan.heybob.chat.domain.chat.controller.ChatHistoryController.getMessages(ChatHistoryController.java:48)
-	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
-	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+<pre>java.lang.AssertionError: Status expected:&lt;400&gt; but was:&lt;200&gt;
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:61)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:128)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$matcher$9(StatusResultMatchers.java:640)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.shinhan.heybob.chat.domain.chat.controller.ChatHistoryControllerTest.User_ID_헤더_없을_때_실패(ChatHistoryControllerTest.java:237)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
-	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:258)
-	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:191)
-	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
-	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:991)
-	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:896)
-	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
-	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
-	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
-	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
-	... 12 more
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
 </pre>
 </span>
 </div>
@@ -122,52 +101,52 @@ Caused by: java.lang.NullPointerException: Cannot invoke &quot;com.shinhan.heybo
 </thead>
 <tr>
 <td class="failures">User_ID_헤더_없을_때_실패()</td>
-<td class="failures">0.059s</td>
+<td class="failures">0.038s</td>
 <td class="failures">failed</td>
 </tr>
 <tr>
 <td class="success">hasMore_false_상황_테스트()</td>
-<td class="success">0.037s</td>
+<td class="success">0.035s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">hasMore_true_상황_테스트()</td>
-<td class="success">0.032s</td>
+<td class="success">0.025s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">다양한_메시지_타입_응답()</td>
-<td class="success">0.020s</td>
+<td class="success">0.029s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
 <td class="success">레거시_API_엔드포인트_테스트()</td>
-<td class="success">0.037s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">빈_히스토리_응답()</td>
-<td class="success">1.634s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">여러_파라미터_조합_테스트()</td>
-<td class="success">0.039s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">초기_채팅_히스토리_조회_성공()</td>
-<td class="success">0.039s</td>
-<td class="success">passed</td>
-</tr>
-<tr>
-<td class="success">커스텀_limit_파라미터_테스트()</td>
 <td class="success">0.028s</td>
 <td class="success">passed</td>
 </tr>
 <tr>
+<td class="success">빈_히스토리_응답()</td>
+<td class="success">1.308s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">여러_파라미터_조합_테스트()</td>
+<td class="success">0.025s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">초기_채팅_히스토리_조회_성공()</td>
+<td class="success">0.026s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">커스텀_limit_파라미터_테스트()</td>
+<td class="success">0.020s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
 <td class="success">특정_메시지_이전_히스토리_조회_성공()</td>
-<td class="success">0.031s</td>
+<td class="success">0.020s</td>
 <td class="success">passed</td>
 </tr>
 </table>
@@ -175,7 +154,7 @@ Caused by: java.lang.NullPointerException: Cannot invoke &quot;com.shinhan.heybo
 <div class="tab">
 <h2>Standard output</h2>
 <span class="code">
-<pre>2025-08-24T20:25:15.311+09:00 ERROR 2488 --- [MessageBroker-3] c.s.h.c.d.c.c.MainResponseConsumer       : ? Main 서버 메시지 소비 중 오류
+<pre>2025-08-25T10:27:54.353+09:00 ERROR 30088 --- [MessageBroker-2] c.s.h.c.d.c.c.MainResponseConsumer       : ? Main 서버 메시지 소비 중 오류
 
 org.springframework.data.redis.RedisConnectionFailureException: Unable to connect to Redis
 	at org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory$ExceptionTranslatingConnectionProvider.translateException(LettuceConnectionFactory.java:1866) ~[spring-data-redis-3.5.2.jar:3.5.2]
@@ -194,7 +173,7 @@ org.springframework.data.redis.RedisConnectionFailureException: Unable to connec
 	at org.springframework.data.redis.core.AbstractOperations.execute(AbstractOperations.java:117) ~[spring-data-redis-3.5.2.jar:3.5.2]
 	at org.springframework.data.redis.core.DefaultStreamOperations.read(DefaultStreamOperations.java:275) ~[spring-data-redis-3.5.2.jar:3.5.2]
 	at org.springframework.data.redis.core.StreamOperations.read(StreamOperations.java:521) ~[spring-data-redis-3.5.2.jar:3.5.2]
-	at com.shinhan.heybob.chat.domain.communication.consumer.MainResponseConsumer.consumeMessages(MainResponseConsumer.java:40) ~[main/:na]
+	at com.shinhan.heybob.chat.domain.communication.consumer.MainResponseConsumer.consumeMessages(MainResponseConsumer.java:68) ~[main/:na]
 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
 	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
@@ -261,31 +240,22 @@ Caused by: java.net.UnknownHostException: Failed to resolve 'redis' [A(1)] after
 Caused by: io.netty.resolver.dns.DnsErrorCauseException: Query failed with NXDOMAIN
 	at io.netty.resolver.dns.DnsResolveContext.onResponse(..)(Unknown Source) ~[netty-resolver-dns-4.1.123.Final.jar:4.1.123.Final]
 
-2025-08-24T20:25:15.335+09:00  INFO 2488 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
-2025-08-24T20:25:15.336+09:00  INFO 2488 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-08-24T20:25:15.343+09:00  INFO 2488 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 2 ms
-2025-08-24T20:25:15.740+09:00  INFO 2488 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=50
-2025-08-24T20:25:15.760+09:00  INFO 2488 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=0, lastMessageId=null, hasMore=false
-2025-08-24T20:25:16.240+09:00  INFO 2488 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
-2025-08-24T20:25:16.240+09:00  INFO 2488 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-08-24T20:25:16.241+09:00  INFO 2488 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
-2025-08-24T20:25:16.247+09:00  INFO 2488 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=50
-2025-08-24T20:25:16.248+09:00  INFO 2488 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=1, lastMessageId=msg001, hasMore=false
-2025-08-24T20:25:16.273+09:00  INFO 2488 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
-2025-08-24T20:25:16.274+09:00  INFO 2488 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-08-24T20:25:16.274+09:00  INFO 2488 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
-2025-08-24T20:25:16.277+09:00  INFO 2488 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=10
-2025-08-24T20:25:16.280+09:00  INFO 2488 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=2, lastMessageId=msg002, hasMore=true
-2025-08-24T20:25:16.307+09:00  INFO 2488 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
-2025-08-24T20:25:16.308+09:00  INFO 2488 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-08-24T20:25:16.309+09:00  INFO 2488 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
-2025-08-24T20:25:16.309+09:00  INFO 2488 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user, before=null, limit=50
-2025-08-24T20:25:16.370+09:00  INFO 2488 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
-2025-08-24T20:25:16.371+09:00  INFO 2488 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-08-24T20:25:16.371+09:00  INFO 2488 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
-2025-08-24T20:25:16.373+09:00  INFO 2488 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=msg100, limit=25
-2025-08-24T20:25:16.373+09:00  INFO 2488 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=1, lastMessageId=msg050, hasMore=true
-2025-08-24T20:25:16.372+09:00 ERROR 2488 --- [MessageBroker-2] c.s.h.c.d.c.c.MainResponseConsumer       : ? Main 서버 메시지 소비 중 오류
+2025-08-25T10:27:54.602+09:00  INFO 30088 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2025-08-25T10:27:54.602+09:00  INFO 30088 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2025-08-25T10:27:54.608+09:00  INFO 30088 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 2 ms
+2025-08-25T10:27:54.945+09:00  INFO 30088 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=50
+2025-08-25T10:27:54.958+09:00  INFO 30088 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=0, lastMessageId=null, hasMore=false
+2025-08-25T10:27:55.342+09:00  INFO 30088 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2025-08-25T10:27:55.342+09:00  INFO 30088 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2025-08-25T10:27:55.343+09:00  INFO 30088 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2025-08-25T10:27:55.349+09:00  INFO 30088 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=50
+2025-08-25T10:27:55.349+09:00  INFO 30088 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=1, lastMessageId=msg001, hasMore=false
+2025-08-25T10:27:55.375+09:00  INFO 30088 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2025-08-25T10:27:55.376+09:00  INFO 30088 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2025-08-25T10:27:55.376+09:00  INFO 30088 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2025-08-25T10:27:55.377+09:00  INFO 30088 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=10
+2025-08-25T10:27:55.377+09:00  INFO 30088 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=2, lastMessageId=msg002, hasMore=true
+2025-08-25T10:27:55.380+09:00 ERROR 30088 --- [MessageBroker-1] c.s.h.c.d.c.c.MainResponseConsumer       : ? Main 서버 메시지 소비 중 오류
 
 org.springframework.data.redis.RedisConnectionFailureException: Unable to connect to Redis
 	at org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory$ExceptionTranslatingConnectionProvider.translateException(LettuceConnectionFactory.java:1866) ~[spring-data-redis-3.5.2.jar:3.5.2]
@@ -304,7 +274,7 @@ org.springframework.data.redis.RedisConnectionFailureException: Unable to connec
 	at org.springframework.data.redis.core.AbstractOperations.execute(AbstractOperations.java:117) ~[spring-data-redis-3.5.2.jar:3.5.2]
 	at org.springframework.data.redis.core.DefaultStreamOperations.read(DefaultStreamOperations.java:275) ~[spring-data-redis-3.5.2.jar:3.5.2]
 	at org.springframework.data.redis.core.StreamOperations.read(StreamOperations.java:521) ~[spring-data-redis-3.5.2.jar:3.5.2]
-	at com.shinhan.heybob.chat.domain.communication.consumer.MainResponseConsumer.consumeMessages(MainResponseConsumer.java:40) ~[main/:na]
+	at com.shinhan.heybob.chat.domain.communication.consumer.MainResponseConsumer.consumeMessages(MainResponseConsumer.java:68) ~[main/:na]
 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
 	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
@@ -371,31 +341,42 @@ Caused by: java.net.UnknownHostException: Failed to resolve 'redis' [A(1)] after
 Caused by: io.netty.resolver.dns.DnsErrorCauseException: Query failed with NXDOMAIN
 	at io.netty.resolver.dns.DnsResolveContext.onResponse(..)(Unknown Source) ~[netty-resolver-dns-4.1.123.Final.jar:4.1.123.Final]
 
-2025-08-24T20:25:16.412+09:00  INFO 2488 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
-2025-08-24T20:25:16.412+09:00  INFO 2488 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-08-24T20:25:16.412+09:00  INFO 2488 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
-2025-08-24T20:25:16.415+09:00  INFO 2488 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=msg003, limit=50
-2025-08-24T20:25:16.415+09:00  INFO 2488 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=2, lastMessageId=msg002, hasMore=false
-2025-08-24T20:25:16.437+09:00  INFO 2488 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
-2025-08-24T20:25:16.438+09:00  INFO 2488 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-08-24T20:25:16.438+09:00  INFO 2488 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
-2025-08-24T20:25:16.447+09:00  INFO 2488 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=3
-2025-08-24T20:25:16.448+09:00  INFO 2488 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=3, lastMessageId=msg003, hasMore=true
-2025-08-24T20:25:16.465+09:00  INFO 2488 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
-2025-08-24T20:25:16.465+09:00  INFO 2488 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-08-24T20:25:16.466+09:00  INFO 2488 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
-2025-08-24T20:25:16.468+09:00  INFO 2488 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=50
-2025-08-24T20:25:16.468+09:00  INFO 2488 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=3, lastMessageId=msg003, hasMore=false
-2025-08-24T20:25:16.486+09:00  INFO 2488 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
-2025-08-24T20:25:16.487+09:00  INFO 2488 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-08-24T20:25:16.487+09:00  INFO 2488 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
-2025-08-24T20:25:16.490+09:00  INFO 2488 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 레거시 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=50
-2025-08-24T20:25:16.490+09:00  INFO 2488 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 레거시 채팅 히스토리 응답: roomId=test-room-001, count=2
-2025-08-24T20:25:16.526+09:00  INFO 2488 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
-2025-08-24T20:25:16.526+09:00  INFO 2488 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
-2025-08-24T20:25:16.527+09:00  INFO 2488 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
-2025-08-24T20:25:16.531+09:00  INFO 2488 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=50
-2025-08-24T20:25:16.532+09:00  INFO 2488 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=3, lastMessageId=msg003, hasMore=true
+2025-08-25T10:27:55.394+09:00  INFO 30088 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2025-08-25T10:27:55.395+09:00  INFO 30088 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2025-08-25T10:27:55.395+09:00  INFO 30088 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2025-08-25T10:27:55.396+09:00  INFO 30088 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user, before=null, limit=50
+2025-08-25T10:27:55.397+09:00  WARN 30088 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리가 null로 반환됨: roomId=test-room-001
+2025-08-25T10:27:55.397+09:00  INFO 30088 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=0, lastMessageId=null, hasMore=false
+2025-08-25T10:27:55.435+09:00  INFO 30088 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2025-08-25T10:27:55.435+09:00  INFO 30088 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2025-08-25T10:27:55.436+09:00  INFO 30088 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2025-08-25T10:27:55.437+09:00  INFO 30088 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=msg100, limit=25
+2025-08-25T10:27:55.438+09:00  INFO 30088 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=1, lastMessageId=msg050, hasMore=true
+2025-08-25T10:27:55.460+09:00  INFO 30088 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2025-08-25T10:27:55.461+09:00  INFO 30088 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2025-08-25T10:27:55.461+09:00  INFO 30088 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2025-08-25T10:27:55.464+09:00  INFO 30088 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=msg003, limit=50
+2025-08-25T10:27:55.464+09:00  INFO 30088 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=2, lastMessageId=msg002, hasMore=false
+2025-08-25T10:27:55.480+09:00  INFO 30088 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2025-08-25T10:27:55.481+09:00  INFO 30088 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2025-08-25T10:27:55.481+09:00  INFO 30088 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2025-08-25T10:27:55.486+09:00  INFO 30088 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=3
+2025-08-25T10:27:55.487+09:00  INFO 30088 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=3, lastMessageId=msg003, hasMore=true
+2025-08-25T10:27:55.511+09:00  INFO 30088 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2025-08-25T10:27:55.512+09:00  INFO 30088 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2025-08-25T10:27:55.512+09:00  INFO 30088 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2025-08-25T10:27:55.515+09:00  INFO 30088 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=50
+2025-08-25T10:27:55.515+09:00  INFO 30088 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=3, lastMessageId=msg003, hasMore=false
+2025-08-25T10:27:55.534+09:00  INFO 30088 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2025-08-25T10:27:55.534+09:00  INFO 30088 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2025-08-25T10:27:55.534+09:00  INFO 30088 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2025-08-25T10:27:55.536+09:00  INFO 30088 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 레거시 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=50
+2025-08-25T10:27:55.536+09:00  INFO 30088 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 레거시 채팅 히스토리 응답: roomId=test-room-001, count=2
+2025-08-25T10:27:55.563+09:00  INFO 30088 --- [    Test worker] o.s.mock.web.MockServletContext          : Initializing Spring TestDispatcherServlet ''
+2025-08-25T10:27:55.564+09:00  INFO 30088 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2025-08-25T10:27:55.564+09:00  INFO 30088 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2025-08-25T10:27:55.565+09:00  INFO 30088 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 요청: roomId=test-room-001, userId=test-user-001, before=null, limit=50
+2025-08-25T10:27:55.565+09:00  INFO 30088 --- [    Test worker] c.s.h.c.d.c.c.ChatHistoryController      : 채팅 히스토리 응답: roomId=test-room-001, count=3, lastMessageId=msg003, hasMore=true
 </pre>
 </span>
 </div>
@@ -407,7 +388,7 @@ Caused by: io.netty.resolver.dns.DnsErrorCauseException: Query failed with NXDOM
 <input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
 </label>
 </div>Generated by 
-<a href="https://www.gradle.org">Gradle 8.14.3</a> at 2025. 8. 24. 오후 8:25:39</p>
+<a href="https://www.gradle.org">Gradle 8.14.3</a> at 2025. 8. 25. 오전 10:28:18</p>
 </div>
 </div>
 </body>

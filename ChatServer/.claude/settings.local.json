@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\MainServer\\src\\main\\java\\com\\shinhan\\heybob\\domain\\meal\\controller/**)",
+      "Read(/C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
