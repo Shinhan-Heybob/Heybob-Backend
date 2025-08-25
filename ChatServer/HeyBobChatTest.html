@@ -716,7 +716,8 @@
                 addMessage(1, 'Complete Flow', '🍚 Step 1: Main Server에 밥약 생성 요청 중...', 'system');
                 addMessage(2, 'Complete Flow', '🍚 Step 1: 밥약 생성 및 채팅방 연동 시작', 'system');
                 
-                const mealResponse = await fetch('http://localhost:8080/api/api/meal-appointments', {
+                // 테스트 API 경로로 변경 (인증 우회)
+                const mealResponse = await fetch('http://localhost:8080/api/test/create-meal-appointment', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -754,7 +755,7 @@
                         addMessage(1, 'Complete Flow', `💰 Step 3: 밥약 채팅방에 정산 메시지 자동 전송 중...`, 'system');
                         addMessage(2, 'Complete Flow', `💰 Step 3: Main Server → Chat Server 금융 연동 테스트`, 'system');
                         
-                        const settlementResponse = await fetch('http://localhost:8080/api/api/test/send-settlement-to-room', {
+                        const settlementResponse = await fetch('http://localhost:8080/api/test/send-settlement-to-room', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -914,7 +915,7 @@
                     <br>금액: ${settlementRequest.requestAmount.toLocaleString()}원`, 'system');
                 
                 // Redis Stream 메시지 전송 (기존 TestController 사용) - context-path 포함
-                const response = await fetch('http://localhost:8080/api/api/test/send-settlement-broadcast', {
+                const response = await fetch('http://localhost:8080/api/test/send-settlement-broadcast', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

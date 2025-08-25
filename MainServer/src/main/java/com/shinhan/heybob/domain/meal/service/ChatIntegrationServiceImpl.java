@@ -159,9 +159,16 @@ public class ChatIntegrationServiceImpl implements ChatIntegrationService {
         data.put("sourceServer", message.getSourceServer());
         data.put("targetServer", message.getTargetServer());
         data.put("timestamp", message.getTimestamp().toString());
-        data.put("payload", message.getPayload());
         data.put("retryCount", message.getRetryCount());
         data.put("expiryTime", message.getExpiryTime().toString());
+        
+        // payload 데이터를 payload_ 접두사와 함께 추가 (Chat Server 호환성)
+        if (message.getPayload() != null) {
+            for (Map.Entry<String, Object> entry : message.getPayload().entrySet()) {
+                data.put("payload_" + entry.getKey(), entry.getValue());
+            }
+        }
+        
         return data;
     }
     
@@ -183,6 +190,46 @@ public class ChatIntegrationServiceImpl implements ChatIntegrationService {
             }
         } catch (Exception e) {
             log.error("❌ 채팅 서버 응답 처리 실패", e);
+        }
+    }
+    
+    @Override
+    public String sendSettlementBroadcast(String settlementId, String roomId, String requesterName, 
+                                        Integer requestAmount, String message) {
+        try {
+            String messageId = UUID.randomUUID().toString();
+            
+            // 정산 브로드캐스트 메시지 생성
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("settlementId", settlementId);
+            payload.put("roomId", roomId);
+            payload.put("requesterName", requesterName);
+            payload.put("requestAmount", requestAmount);
+            payload.put("message", message);
+            
+            ServerMessage serverMessage = ServerMessage.builder()
+                .messageId(messageId)
+                .messageType(ServerMessage.MessageType.BROADCAST_SETTLEMENT_REQUEST)
+                .sourceServer(SERVER_NAME)
+                .targetServer(TARGET_SERVER)
+                .timestamp(LocalDateTime.now())
+                .payload(payload)
+                .retryCount(0)
+                .expiryTime(LocalDateTime.now().plusMinutes(5))
+                .build();
+            
+            // Redis Stream으로 메시지 전송
+            Map<String, Object> streamData = convertToStreamData(serverMessage);
+            redisTemplate.opsForStream().add(MAIN_TO_CHAT_STREAM, streamData);
+            
+            log.info("✅ 정산 브로드캐스트 전송 완료: messageId={}, settlementId={}, roomId={}", 
+                messageId, settlementId, roomId);
+            
+            return messageId;
+            
+        } catch (Exception e) {
+            log.error("❌ 정산 브로드캐스트 전송 실패: settlementId={}, roomId={}", settlementId, roomId, e);
+            throw new RuntimeException("정산 브로드캐스트 전송 실패: " + e.getMessage());
         }
     }
     
