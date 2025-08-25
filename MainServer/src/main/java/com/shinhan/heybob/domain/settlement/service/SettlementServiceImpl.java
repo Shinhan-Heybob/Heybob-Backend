@@ -2,12 +2,19 @@ package com.shinhan.heybob.domain.settlement.service;
 
 import com.shinhan.heybob.common.exception.ExceptionStatus;
 import com.shinhan.heybob.common.exception.HeybobException;
+import com.shinhan.heybob.common.util.KSTUtil;
+import com.shinhan.heybob.domain.financePersonal.dto.FinanceHeader;
+import com.shinhan.heybob.domain.financePersonal.dto.InquireDemandDepositAccountBalanceRequest;
+import com.shinhan.heybob.domain.financePersonal.dto.PersonalAccountBalanceResponseDto;
+import com.shinhan.heybob.domain.financePersonal.repository.ExternalFinanceUserRepository;
+import com.shinhan.heybob.domain.financePersonal.util.UserAccountUtil;
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
 import com.shinhan.heybob.domain.meal.repository.MealAppointmentRepository;
 import com.shinhan.heybob.domain.notification.dto.ChatEventMessageDto;
 import com.shinhan.heybob.domain.notification.model.NotificationEventType;
 import com.shinhan.heybob.domain.notification.publisher.RedisStreamPublisher;
 import com.shinhan.heybob.domain.settlement.dto.SettlementResponseDto;
+import com.shinhan.heybob.domain.settlement.dto.UpdateDemandDepositAccountTransferRequest;
 import com.shinhan.heybob.domain.settlement.entity.Settlement;
 import com.shinhan.heybob.domain.settlement.entity.SettlementParticipant;
 import com.shinhan.heybob.domain.settlement.model.SettlementStatus;
@@ -19,7 +26,13 @@ import com.shinhan.heybob.domain.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -32,13 +45,25 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class TransactionServiceImpl implements TransactionService{
+public class SettlementServiceImpl implements SettlementService {
 
     private final SettlementRepository settlementRepository;
     private final SettlementParticipantRepository participantRepository;
     private final UserRepository userRepository;
     private final RedisStreamPublisher redisStreamPublisher;
     private final MealAppointmentRepository mealAppointmentRepository;
+    private final UserAccountUtil userAccountUtil;
+    private final ExternalFinanceUserRepository externalFinanceUserRepository;
+    private final RestTemplate restTemplate;
+
+    @Value("${ssafy.finance.base-url}")
+    private String baseurl;
+
+    @Value("${ssafy.finance.api-key}")
+    private String apiKey;
+
+    @Value("${ssafy.finance.account-type-unique-no}")
+    private String accountTypeUniqueNo;
 
     @Transactional
     @Override
@@ -200,17 +225,17 @@ public class TransactionServiceImpl implements TransactionService{
         MealAppointment meal = mealAppointmentRepository.findByChatRoomId(chatRoomId)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND));
 
-        Settlement s = settlementRepository.findByMealAppointment(meal)
+        Settlement settlement = settlementRepository.findByMealAppointment(meal)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.SETTLEMENT_NOT_FOUND));
 
-        if (s.getMealAppointment().getChatRoomId() == null) {
+        if (settlement.getMealAppointment().getChatRoomId() == null) {
             throw new HeybobException(ExceptionStatus.NOT_FOUND_CHAT_ROOM_ID);
         }
 
-        boolean isInitiator = s.getInitiator().getId().equals(userId);
+        boolean isInitiator = settlement.getInitiator().getId().equals(userId);
 
         var mySpOpt = participantRepository
-                .findBySettlement_IdAndParticipantUser_Id(s.getId(), userId);
+                .findBySettlement_IdAndParticipantUser_Id(settlement.getId(), userId);
 
         boolean isParticipant = mySpOpt.isPresent();
         Boolean myPaid = isParticipant
@@ -218,16 +243,88 @@ public class TransactionServiceImpl implements TransactionService{
                 : null;
 
         return new SettlementResponseDto(
-                s.getId(),
-                s.getInitiator().getId(),
-                s.getInitiator().getName(),
-                s.getPerHeadAmount(),
-                s.getTotalAmount(),
-                s.getParticipantsCount(),
+                settlement.getId(),
+                settlement.getInitiator().getId(),
+                settlement.getInitiator().getName(),
+                settlement.getPerHeadAmount(),
+                settlement.getTotalAmount(),
+                settlement.getParticipantsCount(),
                 isInitiator,
                 isParticipant,
                 myPaid
         );
+    }
+
+    @Transactional
+    @Override
+    public void paySettlement(Long userId, Long chatRoomId) {
+        MealAppointment meal = mealAppointmentRepository.findByChatRoomId(chatRoomId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND));
+
+        Settlement settlement = settlementRepository.findByMealAppointment(meal)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.SETTLEMENT_NOT_FOUND));
+
+        if (settlement.getMealAppointment().getChatRoomId() == null) {
+            throw new HeybobException(ExceptionStatus.NOT_FOUND_CHAT_ROOM_ID);
+        }
+
+        User withdrawalUser = userRepository.findById(userId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.USER_NOT_FOUND));
+
+        // 입금 계좌번호 조회 = 정산 개시자의 계좌번호
+        User initiator = settlement.getInitiator();
+        String depositAccountNo = userAccountUtil.getPersonalAccountNoByUserRealId(initiator.getId());
+        // 출금 계좌번호 = 현재 사용자의 계좌번호
+        String withdrawalAccountNo = userAccountUtil.getPersonalAccountNoByUserRealId(userId);
+
+        // 거래금액 = 1인당 정산 금액
+        String transactionBalance = String.valueOf(settlement.getPerHeadAmount());
+
+        // 거래요약내용: 입금계좌표시
+        String depositTransactionSummary = "1/N 정산하기 " + withdrawalUser.getName();
+        // 거래요약내용: 출금계좌
+        String withdrawalTransactionSummary = "1/N 정산하기 " + initiator.getName();
+
+        String userKey = externalFinanceUserRepository.findUserKeyByUserRealId(userId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.EMPTY_USER_KEY));
+
+        FinanceHeader header = new FinanceHeader(
+                "inquireDemandDepositAccountBalance",
+                KSTUtil.nowDateKst(),
+                KSTUtil.nowTimeKst(),
+                "00100",
+                "001",
+                "inquireDemandDepositAccountBalance",
+                KSTUtil.makeUniqueNo(),
+                apiKey,
+                userKey
+        );
+
+        UpdateDemandDepositAccountTransferRequest request
+                = new UpdateDemandDepositAccountTransferRequest(
+                        header,
+                depositAccountNo,
+                depositTransactionSummary,
+                transactionBalance,
+                withdrawalAccountNo,
+                withdrawalTransactionSummary
+        );
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<UpdateDemandDepositAccountTransferRequest> entity = new HttpEntity<>(request, headers);
+
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+                baseurl + "/edu/demandDeposit/updateDemandDepositAccountTransfer",
+                entity,
+                Map.class
+        );
+
+        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            throw new HeybobException(ExceptionStatus.FINANCE_API_NOT_FOUND);
+        }
+
+        log.info("계좌 이체 API - 정산 완료");
     }
 
 }

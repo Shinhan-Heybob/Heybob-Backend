@@ -3,7 +3,7 @@ package com.shinhan.heybob.domain.settlement.controller;
 import com.shinhan.heybob.common.user.UserPrincipalDetails;
 import com.shinhan.heybob.domain.settlement.dto.SettlementRequestDto;
 import com.shinhan.heybob.domain.settlement.dto.SettlementResponseDto;
-import com.shinhan.heybob.domain.settlement.service.TransactionService;
+import com.shinhan.heybob.domain.settlement.service.SettlementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,10 +12,10 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/settlement")
+@RequestMapping("/settle")
 public class SettlementController {
 
-    private final TransactionService transactionService;
+    private final SettlementService settlementService;
 
     @PostMapping("/create/{chatRoomId}")
     public ResponseEntity<Void> createSettlement(
@@ -23,36 +23,45 @@ public class SettlementController {
             @RequestBody SettlementRequestDto requestDto,
             @PathVariable Long chatRoomId
     ) {
-        transactionService.createSettlement(
+        settlementService.createSettlement(
                 userPrincipal.getUserId(), requestDto.participantsUserIds(), requestDto.totalAmount(), chatRoomId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PutMapping("/update/{chatRoomId}")
+    @PutMapping("/{chatRoomId}/update")
     public ResponseEntity<Void> updateSettlement(
             @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
             @RequestBody SettlementRequestDto requestDto,
             @PathVariable Long chatRoomId
     ) {
-        transactionService.updateSettlement(
+        settlementService.updateSettlement(
                 userPrincipal.getUserId(), requestDto.participantsUserIds(), requestDto.totalAmount(), chatRoomId);
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
 
-    @PostMapping("/notify/{chatRoomId}")
+    @PostMapping("/{chatRoomId}/notify")
     public ResponseEntity<Void> notifySettlement(
             @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
             @PathVariable Long chatRoomId
     ) {
-        transactionService.notifySettlement(chatRoomId, userPrincipal.getUserId());
+        settlementService.notifySettlement(chatRoomId, userPrincipal.getUserId());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @GetMapping("/{chatRoomId}")
+    @GetMapping("/{chatRoomId}/info")
     public ResponseEntity<SettlementResponseDto> getSettlementInfo(
             @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
             @PathVariable Long chatRoomId
     ) {
-        return ResponseEntity.ok(transactionService.getSettlementInfo(userPrincipal.getUserId(), chatRoomId));
+        return ResponseEntity.ok(settlementService.getSettlementInfo(userPrincipal.getUserId(), chatRoomId));
+    }
+
+    @PostMapping("/{chatRoomId}/pay")
+    public ResponseEntity<Void> paySettlement(
+            @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
+            @PathVariable Long chatRoomId
+    ) {
+        settlementService.paySettlement(userPrincipal.getUserId(), chatRoomId);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }
