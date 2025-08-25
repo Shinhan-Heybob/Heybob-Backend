@@ -8,7 +8,6 @@ import java.util.List;
 
 
 public record CreateSettlementRequestDto(
-        @NotNull Long mealAppointmentId,
         @Min(1) int totalAmount,
         @NotEmpty List<Long> participantsUserIds
 ) {}

@@ -32,4 +32,6 @@ public interface MealAppointmentRepository extends JpaRepository<MealAppointment
     List<MealAppointment> findByAppointmentDate(@Param("date") LocalDate date);
 
     Optional<MealAppointment> findById(Long mealappointmentId);
+
+    Optional<MealAppointment> findByChatRoomId(Long chatRoomId);
 }

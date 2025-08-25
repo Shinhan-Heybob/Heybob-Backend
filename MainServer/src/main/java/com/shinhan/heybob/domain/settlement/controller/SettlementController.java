@@ -2,6 +2,7 @@ package com.shinhan.heybob.domain.settlement.controller;
 
 import com.shinhan.heybob.common.user.UserPrincipalDetails;
 import com.shinhan.heybob.domain.settlement.dto.CreateSettlementRequestDto;
+import com.shinhan.heybob.domain.settlement.service.SettlementFacade;
 import com.shinhan.heybob.domain.settlement.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,18 +16,16 @@ import org.springframework.web.bind.annotation.*;
 public class SettlementController {
 
     private final TransactionService transactionService;
+    private final SettlementFacade settlementFacade;
 
-    @PostMapping("/create")
+    @PostMapping("/{chatRoomId}/create")
     public ResponseEntity<Void> createSettlement(
             @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
-            @RequestBody CreateSettlementRequestDto requestDto
+            @RequestBody CreateSettlementRequestDto requestDto,
+            @PathVariable Long chatRoomId
     ) {
-        transactionService.createSettlement(userPrincipal.getUserId(), requestDto);
+        settlementFacade.inputSettlementInfo(chatRoomId, userPrincipal.getUserId(), requestDto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PatchMapping("/update")
-    public ResponseEntity<Void> updateSettlement(
-            @AuthenticationPrincipal
-    )
 }
