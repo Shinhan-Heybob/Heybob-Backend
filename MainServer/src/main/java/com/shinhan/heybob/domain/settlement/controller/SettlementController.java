@@ -1,8 +1,10 @@
 package com.shinhan.heybob.domain.settlement.controller;
 
 import com.shinhan.heybob.common.user.UserPrincipalDetails;
+import com.shinhan.heybob.domain.settlement.dto.SettlementPageResponseDto;
 import com.shinhan.heybob.domain.settlement.dto.SettlementRequestDto;
 import com.shinhan.heybob.domain.settlement.dto.SettlementResponseDto;
+import com.shinhan.heybob.domain.settlement.service.SettlementQueryService;
 import com.shinhan.heybob.domain.settlement.service.SettlementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 public class SettlementController {
 
     private final SettlementService settlementService;
+    private final SettlementQueryService settlementQueryService;
 
     @PostMapping("/create/{chatRoomId}")
     public ResponseEntity<Void> createSettlement(
@@ -64,4 +67,15 @@ public class SettlementController {
         settlementService.paySettlement(userPrincipal.getUserId(), chatRoomId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
+
+    /**
+     * 채팅 ID로 정산, 모임 조회
+     * @param chatRoomId
+     * @return
+     */
+    @GetMapping("/{chatRoomId}/page")
+    public ResponseEntity<SettlementPageResponseDto> getPage(@PathVariable Long chatRoomId) {
+        return ResponseEntity.ok(settlementQueryService.getSettlementPageByChatRoom(chatRoomId));
+    }
+
 }
