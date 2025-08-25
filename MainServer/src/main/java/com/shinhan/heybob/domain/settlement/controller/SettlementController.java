@@ -2,6 +2,7 @@ package com.shinhan.heybob.domain.settlement.controller;
 
 import com.shinhan.heybob.common.user.UserPrincipalDetails;
 import com.shinhan.heybob.domain.settlement.dto.SettlementRequestDto;
+import com.shinhan.heybob.domain.settlement.dto.SettlementResponseDto;
 import com.shinhan.heybob.domain.settlement.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -47,4 +48,10 @@ public class SettlementController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
+    @GetMapping("/{chatRoomId}")
+    public ResponseEntity<SettlementResponseDto> getSettlementInfo(
+            @PathVariable Long chatRoomId
+    ) {
+        return ResponseEntity.ok(transactionService.getSettlementInfo(chatRoomId));
+    }
 }

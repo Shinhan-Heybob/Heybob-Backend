@@ -7,6 +7,7 @@ import com.shinhan.heybob.domain.meal.repository.MealAppointmentRepository;
 import com.shinhan.heybob.domain.notification.dto.ChatEventMessageDto;
 import com.shinhan.heybob.domain.notification.model.NotificationEventType;
 import com.shinhan.heybob.domain.notification.publisher.RedisStreamPublisher;
+import com.shinhan.heybob.domain.settlement.dto.SettlementResponseDto;
 import com.shinhan.heybob.domain.settlement.entity.Settlement;
 import com.shinhan.heybob.domain.settlement.entity.SettlementParticipant;
 import com.shinhan.heybob.domain.settlement.model.SettlementStatus;
@@ -192,6 +193,30 @@ public class TransactionServiceImpl implements TransactionService{
 
         log.info("Settlement started and event published: settlementId={}, chatRoomId={}",
                 settlement.getId(), settlement.getMealAppointment().getChatRoomId());
+    }
+
+    @Transactional
+    @Override
+    public SettlementResponseDto getSettlementInfo(Long chatRoomId) {
+        MealAppointment meal = mealAppointmentRepository.findByChatRoomId(chatRoomId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND));
+
+        Settlement settlement = settlementRepository.findByMealAppointment(meal)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.SETTLEMENT_NOT_FOUND));
+
+        if (settlement.getStatus() != SettlementStatus.CREATED) {
+            throw new HeybobException(ExceptionStatus.SETTLEMENT_STATUS_BAD_REQUEST);
+        }
+
+        if (settlement.getMealAppointment().getChatRoomId() == null) {
+            throw new HeybobException(ExceptionStatus.NOT_FOUND_CHAT_ROOM_ID);
+        }
+
+        return new  SettlementResponseDto(
+                settlement.getTotalAmount(),
+                settlement.getParticipantsCount(),
+                settlement.getPerHeadAmount()
+        );
     }
 
 }
