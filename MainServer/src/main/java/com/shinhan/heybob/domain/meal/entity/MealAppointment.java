@@ -1,6 +1,7 @@
 package com.shinhan.heybob.domain.meal.entity;
 
 import com.shinhan.heybob.common.entity.BaseTime;
+import com.shinhan.heybob.domain.settlement.entity.Settlement;
 import com.shinhan.heybob.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -50,6 +51,11 @@ public class MealAppointment extends BaseTime {
 
     @Column(name = "chat_room_id")
     private Long chatRoomId;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "settlement_id")
+    private Settlement settlement;
+
 
     public void updateStatus(MealAppointmentStatus status) {
         this.status = status;

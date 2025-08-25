@@ -25,7 +25,7 @@ public class Settlement extends BaseTime {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "meal_appointment_id", nullable = false)
     private MealAppointment mealAppointment;
 

@@ -2,6 +2,7 @@ package com.shinhan.heybob.domain.settlement.entity;
 
 import com.shinhan.heybob.common.entity.BaseTime;
 import com.shinhan.heybob.domain.settlement.model.TransferStatus;
+import com.shinhan.heybob.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,8 +35,9 @@ public class SettlementParticipant extends BaseTime {
             foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Settlement settlement;
 
-    @Column(name = "participant_user_id", nullable = false)
-    private Long participantUserId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User participantUser;
 
     // 참가자별 청구 금액(그때의 스냅샷, 보통 per_head와 동일)
     @Column(name = "amount", nullable = false)
