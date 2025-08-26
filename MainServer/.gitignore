@@ -3,7 +3,8 @@
 build
 .gradle
 .iml
-/build/
+build
+build/
 ../ChatServer/build/
 ../ChatServer/build/reports/
 *.html
