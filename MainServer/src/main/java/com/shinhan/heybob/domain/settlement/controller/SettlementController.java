@@ -32,7 +32,7 @@ public class SettlementController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PutMapping("/{chatRoomId}/update")
+    @PatchMapping("/{chatRoomId}/update")
     public ResponseEntity<Void> updateSettlement(
             @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
             @RequestBody @Valid SettlementRequestDto requestDto,
