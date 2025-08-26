@@ -26,7 +26,19 @@ public enum ExceptionStatus {
     DUPLICATE_PARTICIPANT(HttpStatus.BAD_REQUEST, 400, "이미 참여 중인 사용자입니다."),
     CHAT_ROOM_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, 500, "채팅방 생성에 실패했습니다."),
     PAST_APPOINTMENT_TIME(HttpStatus.BAD_REQUEST, 400, "과거 시간으로는 밥약을 생성할 수 없습니다."),
-    CHAT_INTEGRATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, 500, "채팅 서버 연동에 실패했습니다.");
+    CHAT_INTEGRATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, 500, "채팅 서버 연동에 실패했습니다."),
+    INVALID_PASSWORD(HttpStatus.BAD_REQUEST, 400, "비밀번호가 유효하지 않습니다."),
+
+    // LECTURE
+    DUPLICATED_LECTURE_TIME(HttpStatus.BAD_REQUEST, 400, "강의 시간이 겹칩니다"),
+    LECTURE_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "존재하지 않는 강의입니다."),
+
+    //TIMETABLE
+    TIMETABLE_NOT_FOUND(HttpStatus.NOT_FOUND,404, "존재하지 않는 시간표입니다."),
+
+    // EXTERNAL FINANCE USER
+    FINANCE_API_NOT_FOUND(HttpStatus.BAD_REQUEST, 400, "금융 API 연결 실패했습니다."),
+    EMPTY_USER_KEY(HttpStatus.NOT_FOUND, 404, "userKey가 비어있습니다.");
 
     private final int status;
     private final int customCode;

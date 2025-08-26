@@ -1,7 +1,9 @@
 package com.shinhan.heybob.domain.user.entity;
 
 import com.shinhan.heybob.common.entity.BaseTime;
+import com.shinhan.heybob.domain.timetable.entity.Timetable;
 import jakarta.persistence.*;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,7 +19,7 @@ public class User extends BaseTime {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id")
+    @Column(name = "id")
     private Long id;
 
     @Column(name = "user_name", nullable = false)
@@ -37,6 +39,9 @@ public class User extends BaseTime {
 
     @Column(name = "user_department", nullable = false, updatable = false)
     private String department;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Timetable> timetableList;
 
     public void updateProfileUrl(String newProfileUrl) {
         this.profileUrl = newProfileUrl;
