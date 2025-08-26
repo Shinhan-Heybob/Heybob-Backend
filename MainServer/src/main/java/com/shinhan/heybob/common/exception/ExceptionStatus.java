@@ -48,7 +48,10 @@ public enum ExceptionStatus {
     SETTLEMENT_INITIATOR_FORBIDDEN(HttpStatus.FORBIDDEN, 403,"정산 개시자만 시작할 수 있습니다."),
 
     // REDIS
-    REDIS_STREAM_FAIL_TO_PUBLISH(HttpStatus.BAD_REQUEST, 400, "Redis Stream 발행 실패했습니다.");
+    REDIS_STREAM_FAIL_TO_PUBLISH(HttpStatus.BAD_REQUEST, 400, "Redis Stream 발행 실패했습니다."),
+
+    // SAVINGS
+    BAD_REQUEST_SAVINGS_CYCLE(HttpStatus.BAD_REQUEST, 400, "적금 횟수 계산 실패");
 
     private final int status;
     private final int customCode;

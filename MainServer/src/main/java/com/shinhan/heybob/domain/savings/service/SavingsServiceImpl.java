@@ -11,6 +11,7 @@ import com.shinhan.heybob.domain.meal.repository.MealAppointmentRepository;
 import com.shinhan.heybob.domain.savings.dto.CreateAccountRequest;
 import com.shinhan.heybob.domain.savings.entity.SavingsAccount;
 import com.shinhan.heybob.domain.savings.repository.SavingsAccountRepository;
+import com.shinhan.heybob.domain.savings.repository.SavingsPlanRepository;
 import com.shinhan.heybob.domain.user.entity.User;
 import com.shinhan.heybob.domain.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -37,6 +38,7 @@ public class SavingsServiceImpl implements SavingsService {
     private final RestTemplate restTemplate;
     private final UserRepository userRepository;
     private final MealAppointmentRepository mealAppointmentRepository;
+    private final SavingsPlanRepository savingsPlanRepository;
 
     @Value("${ssafy.finance.base-url}")
     private String baseurl;
@@ -110,6 +112,40 @@ public class SavingsServiceImpl implements SavingsService {
                         .ownerUser(creator)
                         .build()
         );
+
+        int cycles = totalAmount / perAmount; // 회수 계산 (나머지는 정책에 따라 처리)
+        if (cycles <= 0) throw new HeybobException(ExceptionStatus.BAD_REQUEST_SAVINGS_CYCLE);
+
+        var saved = savingsAccountRepository.save(
+                SavingsAccount.builder()
+                        .accountNo(accountNo)
+                        .mealAppointment(mealAppointment)
+                        .ownerUser(creator)
+                        .build()
+        );
+
+// 다음 알림 시각: 오늘 요일 기준, 예: 오전 9시 KST
+        var zone = java.time.ZoneId.of("Asia/Seoul");
+        var nowKst = java.time.ZonedDateTime.now(zone).toLocalDateTime();
+        var notifyTime = java.time.LocalTime.of(9, 0); // 정책에 맞게
+        var startDate = nowKst.toLocalDate();
+
+// 오늘 알림 시간이 이미 지났으면 다음 주
+        var firstNotifyAt = java.time.LocalDateTime.of(startDate, notifyTime);
+        if (!firstNotifyAt.isAfter(nowKst)) firstNotifyAt = firstNotifyAt.plusWeeks(1);
+
+        var plan = com.shinhan.heybob.domain.savings.entity.SavingsPlan.builder()
+                .savingsAccount(saved)
+                .perHeadBalance(perAmount)
+                .totalCycles(cycles)
+                .sentCycles(0)
+                .notifyDayOfWeek(firstNotifyAt.getDayOfWeek().getValue())
+                .notifyTime(notifyTime)
+                .nextNotifyAt(firstNotifyAt)
+                .status(com.shinhan.heybob.domain.savings.entity.SavingsPlan.PlanStatus.ACTIVE)
+                .build();
+
+        savingsPlanRepository.save(plan);
     }
 
     private void registerAutoWithdrawalAccount() {}
