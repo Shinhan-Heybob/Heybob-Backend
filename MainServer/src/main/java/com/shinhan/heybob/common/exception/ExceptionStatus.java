@@ -27,7 +27,7 @@ public enum ExceptionStatus {
     CHAT_ROOM_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, 500, "채팅방 생성에 실패했습니다."),
     PAST_APPOINTMENT_TIME(HttpStatus.BAD_REQUEST, 400, "과거 시간으로는 밥약을 생성할 수 없습니다."),
     CHAT_INTEGRATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, 500, "채팅 서버 연동에 실패했습니다."),
-    INVALID_PASSWORD(HttpStatus.BAD_REQUEST, 400, "비밀번호가 유효하지 않습니다."),
+//    INVALID_PASSWORD(HttpStatus.BAD_REQUEST, 400, "비밀번호가 유효하지 않습니다."),
 
     // LECTURE
     DUPLICATED_LECTURE_TIME(HttpStatus.BAD_REQUEST, 400, "강의 시간이 겹칩니다"),
