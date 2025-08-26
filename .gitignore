@@ -1,4 +1,8 @@
 *.yml
+application.yml
+.gradle
+.idea
+
 application.yml.gradle/
 build/
 **/build/
