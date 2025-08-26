@@ -61,6 +61,10 @@ public class LectureService {
                 lectureUpdateRequestDto.professor());
         lectureRepository.save(lecture);
     }
+
+    public void deleteLecture(Long lectureId) {
+        lectureRepository.deleteById(lectureId);
+    }
 }
 
 
