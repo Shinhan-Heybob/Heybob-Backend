@@ -4,8 +4,8 @@ build
 .gradle
 .iml
 /build/
-/ChatServer/build/
-/ChatServer/build/reports/
+../ChatServer/build/
+../ChatServer/build/reports/
 *.html
 bin
 /bin/
