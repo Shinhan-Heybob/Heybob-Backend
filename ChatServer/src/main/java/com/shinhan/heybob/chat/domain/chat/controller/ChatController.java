@@ -3,6 +3,7 @@ package com.shinhan.heybob.chat.domain.chat.controller;
 import com.shinhan.heybob.chat.domain.chat.dto.ChatMessageRequest;
 import com.shinhan.heybob.chat.domain.chat.dto.ChatMessageResponse;
 import com.shinhan.heybob.chat.domain.chat.service.ChatService;
+import com.shinhan.heybob.chat.domain.cafeteria.service.CafeteriaService;
 import com.shinhan.heybob.chat.global.error.ChatException;
 import com.shinhan.heybob.chat.global.error.ErrorCode;
 import com.shinhan.heybob.chat.global.error.ErrorResponse;
@@ -22,6 +23,7 @@ public class ChatController {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatService chatService;
+    private final CafeteriaService cafeteriaService;
 
     @MessageMapping("/chat/{roomId}")
     public void sendMessage(
@@ -73,6 +75,62 @@ public class ChatController {
             );
         } catch (Exception e) {
             log.error("WebSocket 예상치 못한 오류: roomId={}", roomId, e);
+            messagingTemplate.convertAndSendToUser(
+                headerAccessor.getSessionId(), 
+                "/queue/errors", 
+                ErrorResponse.of(ErrorCode.INTERNAL_SERVER_ERROR)
+            );
+        }
+    }
+    
+    @MessageMapping("/chat/{roomId}/cafeteria")
+    public void sendCafeteriaInfo(
+            @DestinationVariable String roomId,
+            SimpMessageHeaderAccessor headerAccessor
+    ) {
+        try {
+            log.info("학식 정보 요청: roomId={}", roomId);
+            
+            // 입력 검증
+            if (roomId == null || roomId.trim().isEmpty()) {
+                throw new ChatException(ErrorCode.ROOM_NOT_FOUND);
+            }
+            
+            // Main 서버에서 헤더로 사용자 정보 전달받음
+            String userId = headerAccessor.getFirstNativeHeader("X-User-Id");
+            String studentId = headerAccessor.getFirstNativeHeader("X-Student-Id");
+            String userName = headerAccessor.getFirstNativeHeader("X-User-Name");
+            String profileImageUrl = headerAccessor.getFirstNativeHeader("X-Profile-Image");
+            
+            // 개발용 우회 처리 (헤더가 없을 때)
+            if (userId == null || userName == null) {
+                log.info("헤더 없음 - 개발용 기본값 사용");
+                userId = "20000622";
+                studentId = "20000622";
+                userName = "개발테스트사용자";
+                profileImageUrl = "https://example.com/default-profile.jpg";
+            }
+            
+            // Redis에서 학식 정보 조회
+            String cafeteriaInfo = cafeteriaService.getTodayCafeteriaInfo();
+            
+            // 학식 정보 처리 및 브로드캐스트
+            ChatMessageResponse response = chatService.processCafeteriaInfo(roomId, userId, studentId, userName, profileImageUrl, cafeteriaInfo);
+            
+            // 해당 방의 모든 구독자에게 브로드캐스트
+            messagingTemplate.convertAndSend("/topic/room/" + roomId, response);
+            
+            log.info("학식 정보 브로드캐스트 완료: roomId={}, messageId={}", roomId, response.getMessageId());
+            
+        } catch (ChatException e) {
+            log.error("학식 정보 처리 실패: roomId={}, error={}", roomId, e.getMessage());
+            messagingTemplate.convertAndSendToUser(
+                headerAccessor.getSessionId(), 
+                "/queue/errors", 
+                ErrorResponse.of(e.getErrorCode())
+            );
+        } catch (Exception e) {
+            log.error("학식 정보 예상치 못한 오류: roomId={}", roomId, e);
             messagingTemplate.convertAndSendToUser(
                 headerAccessor.getSessionId(), 
                 "/queue/errors", 

@@ -12,6 +12,7 @@ import com.shinhan.heybob.chat.global.error.ChatException;
 import com.shinhan.heybob.chat.global.error.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -25,6 +26,7 @@ public class ChatServiceImpl implements ChatService {
     
     private final ChatStreamService chatStreamService;
     private final ChatRepository chatRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
     
     @Override
     public ChatMessageResponse processMessage(String roomId, String userId, String studentId, 
@@ -289,5 +291,72 @@ public class ChatServiceImpl implements ChatService {
             log.error("❌ MongoDB 직접 저장 실패: messageId={}", chatMessage.getId(), e);
             throw new ChatException(ErrorCode.MONGODB_CONNECTION_ERROR, e);
         }
+    }
+    
+    @Override
+    public ChatMessageResponse processCafeteriaInfo(String roomId, String userId, String studentId, 
+                                                   String userName, String profileImageUrl, String cafeteriaInfo) {
+        try {
+            log.info("🍚 학식 정보 처리 시작: roomId={}, userId={}", roomId, userId);
+            
+            // 파라미터로 받은 학식 정보 사용
+            String cafeteriaData = cafeteriaInfo;
+            
+            String messageId = UUID.randomUUID().toString();
+            LocalDateTime now = LocalDateTime.now();
+            
+            // 학식 정보 메시지 생성
+            String content = formatCafeteriaMessage(cafeteriaData);
+            
+            ChatMessage chatMessage = ChatMessage.builder()
+                .id(messageId)
+                .roomId(roomId)
+                .senderId(userId)
+                .studentId(studentId)
+                .senderName(userName)
+                .profileImageUrl(profileImageUrl)
+                .content(content)
+                .messageType(ChatMessage.MessageType.CAFETERIA_INFO)
+                .timestamp(now)
+                .paymentRequestData(null)
+                .paymentCompleteData(null)
+                .emergencyFallback(false)
+                .build();
+            
+            // MongoDB에 저장
+            saveMessage(chatMessage);
+            
+            // 응답 생성
+            ChatMessageResponse response = ChatMessageResponse.builder()
+                .messageId(messageId)
+                .roomId(roomId)
+                .senderId(userId)
+                .studentId(studentId)
+                .senderName(userName)
+                .profileImageUrl(profileImageUrl)
+                .content(content)
+                .messageType("CAFETERIA_INFO")
+                .timestamp(now)
+                .paymentRequestData(null)
+                .paymentCompleteData(null)
+                .build();
+            
+            log.info("✅ 학식 정보 처리 완료: messageId={}", messageId);
+            return response;
+            
+        } catch (Exception e) {
+            log.error("❌ 학식 정보 처리 실패: roomId={}, userId={}", roomId, userId, e);
+            throw new ChatException(ErrorCode.INTERNAL_SERVER_ERROR, e);
+        }
+    }
+    
+    
+    private String formatCafeteriaMessage(String cafeteriaData) {
+        if (cafeteriaData == null || cafeteriaData.contains("불러올 수 없습니다") || cafeteriaData.contains("오류가 발생")) {
+            return "📋 " + cafeteriaData;
+        }
+        
+        // CafeteriaService에서 이미 포맷된 데이터가 오므로 그대로 사용
+        return cafeteriaData;
     }
 }
