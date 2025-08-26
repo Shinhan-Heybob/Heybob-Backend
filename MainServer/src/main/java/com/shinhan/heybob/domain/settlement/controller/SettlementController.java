@@ -21,7 +21,7 @@ public class SettlementController {
     private final SettlementService settlementService;
     private final SettlementQueryService settlementQueryService;
 
-    @PostMapping("/create/{chatRoomId}")
+    @PostMapping("/{chatRoomId}/create")
     public ResponseEntity<Void> createSettlement(
             @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
             @RequestBody @Valid SettlementRequestDto requestDto,
