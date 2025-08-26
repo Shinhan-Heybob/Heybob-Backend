@@ -1,2 +1,7 @@
 *.yml
-application.yml
+application.yml.gradle/
+build/
+**/build/
+*.class
+*.jar
+
