@@ -48,7 +48,13 @@ public enum ExceptionStatus {
     SETTLEMENT_INITIATOR_FORBIDDEN(HttpStatus.FORBIDDEN, 403,"정산 개시자만 시작할 수 있습니다."),
 
     // REDIS
-    REDIS_STREAM_FAIL_TO_PUBLISH(HttpStatus.BAD_REQUEST, 400, "Redis Stream 발행 실패했습니다.");
+    REDIS_STREAM_FAIL_TO_PUBLISH(HttpStatus.BAD_REQUEST, 400, "Redis Stream 발행 실패했습니다."),
+
+    // SAVINGS
+    SAVINGS_ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "적금 계좌를 찾을 수 없습니다."),
+    SAVINGS_PLAN_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "적금 이체 알림 관리를 찾을 수 없습니다."),
+    SAVINGS_PLAN_COMPLETED(HttpStatus.BAD_REQUEST, 400, "이미 완료된 플랜입니다."),
+    BAD_REQUEST_SAVINGS_CYCLE(HttpStatus.BAD_REQUEST, 400, "적금 횟수 계산 실패");
 
     private final int status;
     private final int customCode;

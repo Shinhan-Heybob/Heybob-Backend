@@ -7,5 +7,6 @@ import lombok.Getter;
 @Builder
 public class AuthLoginResponseDto {
 
+    private Long userId;
     private String refreshToken;
 }

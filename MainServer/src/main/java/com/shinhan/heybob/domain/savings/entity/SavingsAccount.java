@@ -1,4 +1,4 @@
-package com.shinhan.heybob.domain.savings;
+package com.shinhan.heybob.domain.savings.entity;
 
 import com.shinhan.heybob.common.entity.BaseTime;
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
