@@ -23,7 +23,7 @@ public class RetryMechanism {
     public void scheduleRetry(ServerMessage failedMessage, Exception error, 
                              Runnable retryAction) {
         try {
-            int currentRetry = failedMessage.getRetryCount() == null ? 0 : failedMessage.getRetryCount();
+            int currentRetry = failedMessage.getRetryCount();
             
             if (currentRetry >= MAX_RETRY_COUNT) {
                 log.error("💀 최대 재시도 횟수 초과, 메시지 포기: messageId={}, messageType={}", 
@@ -95,8 +95,8 @@ public class RetryMechanism {
     }
     
     private void handleRoomCreationFailure(ServerMessage message, Exception error) {
-        log.error("🏠 채팅방 생성 최종 실패: messageId={}, bob약Id={}", 
-            message.getMessageId(), message.getPayload().get("bob약Id"));
+        log.error("🏠 채팅방 생성 최종 실패: messageId={}, mealAppointmentId={}", 
+            message.getMessageId(), message.getPayload().get("mealAppointmentId"));
         
         // TODO: 사용자에게 채팅방 생성 실패 알림
     }

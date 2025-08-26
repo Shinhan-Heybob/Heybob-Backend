@@ -3,7 +3,8 @@ package com.shinhan.heybob.chat.domain.chat.service;
 import com.shinhan.heybob.chat.domain.chat.dto.ChatHistoryResponse;
 import com.shinhan.heybob.chat.domain.chat.dto.ChatMessageRequest;
 import com.shinhan.heybob.chat.domain.chat.dto.ChatMessageResponse;
-import com.shinhan.heybob.chat.domain.chat.dto.SettlementData;
+import com.shinhan.heybob.chat.domain.chat.dto.PaymentRequestData;
+import com.shinhan.heybob.chat.domain.chat.dto.PaymentCompleteData;
 import com.shinhan.heybob.chat.domain.chat.dto.UiState;
 import com.shinhan.heybob.chat.domain.chat.model.ChatMessage;
 import com.shinhan.heybob.chat.domain.chat.repository.ChatRepository;
@@ -14,7 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -66,9 +68,7 @@ public class ChatServiceImpl implements ChatService {
     }
     
     private boolean isFinancialMessage(String messageType) {
-        return List.of("PAYMENT_REQUEST", "SETTLEMENT_REQUEST", "PAYMENT_CONFIRM", "PAYMENT_COMPLETE",
-                      "SETTLEMENT_ACCEPT", "SETTLEMENT_REJECT", "SETTLEMENT_CANCEL", "SETTLEMENT_TIMEOUT")
-                   .contains(messageType);
+        return List.of("PAYMENT_REQUEST", "PAYMENT_COMPLETE").contains(messageType);
     }
     
     private ChatMessageResponse processSettlementMessage(String roomId, String userId, String studentId,
@@ -84,41 +84,38 @@ public class ChatServiceImpl implements ChatService {
                 .messageType(request.getMessageType())
                 .timestamp(LocalDateTime.now());
         
-        // 정산 요청 메시지인 경우
-        if ("PAYMENT_REQUEST".equals(request.getMessageType()) || "SETTLEMENT_REQUEST".equals(request.getMessageType())) {
-            SettlementData settlementData = createSettlementData(roomId, request);
-            responseBuilder.settlementData(settlementData);
-        } else if (request.getSettlementData() != null) {
-            // 정산 응답 등 기존 정산 데이터가 있는 경우 복사
-            responseBuilder.settlementData(request.getSettlementData());
+        // 결제 요청 메시지인 경우
+        if ("PAYMENT_REQUEST".equals(request.getMessageType())) {
+            PaymentRequestData paymentRequestData = createPaymentRequestData(roomId, userName, request);
+            responseBuilder.paymentRequestData(paymentRequestData);
         }
         
-        ChatMessageResponse response = responseBuilder.build();
+        // 결제 완료 메시지인 경우 
+        if ("PAYMENT_COMPLETE".equals(request.getMessageType()) && request.getPaymentCompleteData() != null) {
+            // Main 서버에서 이미 구성된 데이터를 그대로 사용
+            responseBuilder.paymentCompleteData(request.getPaymentCompleteData());
+        }
         
-        // UI 상태 생성
-        UiState uiState = createUiState(userId, request.getMessageType(), response.getSettlementData());
-        response.setUiState(uiState);
-        
-        return response;
+        return responseBuilder.build();
     }
     
-    private SettlementData createSettlementData(String roomId, ChatMessageRequest request) {
+    private PaymentRequestData createPaymentRequestData(String roomId, String userName, ChatMessageRequest request) {
         String settlementId = UUID.randomUUID().toString();
         
-        // 간단한 정산 데이터 생성
-        String requesterName = "사용자";
+        // 간단한 결제 요청 데이터 생성
+        String requesterName = userName;
         Integer requestAmount = 12000;
         
-        if (request.getSettlementData() != null) {
-            if (request.getSettlementData().getRequesterName() != null) {
-                requesterName = request.getSettlementData().getRequesterName();
+        if (request.getPaymentRequestData() != null) {
+            if (request.getPaymentRequestData().getRequesterName() != null) {
+                requesterName = request.getPaymentRequestData().getRequesterName();
             }
-            if (request.getSettlementData().getRequestAmount() != null) {
-                requestAmount = request.getSettlementData().getRequestAmount();
+            if (request.getPaymentRequestData().getRequestAmount() != null) {
+                requestAmount = request.getPaymentRequestData().getRequestAmount();
             }
         }
         
-        return SettlementData.builder()
+        return PaymentRequestData.builder()
                 .settlementId(settlementId)
                 .roomId(roomId)
                 .requesterName(requesterName)
@@ -127,24 +124,17 @@ public class ChatServiceImpl implements ChatService {
                 .build();
     }
     
-    private UiState createUiState(String userId, String messageType, SettlementData settlementData) {
-        if (settlementData == null) {
-            return null;
-        }
-        
-        // 단순화된 UI 상태 - 모든 사용자가 정산 페이지로 이동 가능
-        return UiState.builder()
-                .isRequester(false)  // Main 페이지에서 확인
-                .userResponseStatus("unknown")  // Main 페이지에서 확인
-                .availableActions(Arrays.asList("go_to_settlement"))  // 정산 페이지로 이동만 가능
-                .isExpired(false)
-                .build();
-    }
     
     private void saveDirectlyToMongoDB(ChatMessageResponse response) {
         try {
+            String messageId = response.getMessageId();
+            if (messageId == null || messageId.trim().isEmpty()) {
+                messageId = UUID.randomUUID().toString();
+                log.warn("MessageId가 null이었습니다. 새로 생성: {}", messageId);
+            }
+            
             ChatMessage message = ChatMessage.builder()
-                    .id(response.getMessageId())
+                    .id(messageId)  // MongoDB _id (messageId 역할)
                     .roomId(response.getRoomId())
                     .senderId(response.getSenderId())
                     .studentId(response.getStudentId())
@@ -153,9 +143,12 @@ public class ChatServiceImpl implements ChatService {
                     .content(response.getContent())
                     .messageType(ChatMessage.MessageType.valueOf(response.getMessageType()))
                     .timestamp(response.getTimestamp())
-                    .settlementData(response.getSettlementData())
+                    .paymentRequestData(response.getPaymentRequestData())
+                    .paymentCompleteData(response.getPaymentCompleteData())
+                    .emergencyFallback(false)
                     .build();
             
+            log.info("MongoDB 저장 시도: messageId={}, content={}", messageId, response.getContent());
             chatRepository.save(message);
         } catch (Exception e) {
             log.error("MongoDB 저장 실패: messageId={}", response.getMessageId(), e);
@@ -212,7 +205,7 @@ public class ChatServiceImpl implements ChatService {
     
     private ChatMessageResponse convertToResponse(ChatMessage message) {
         ChatMessageResponse response = ChatMessageResponse.builder()
-                .messageId(message.getId())
+                .messageId(message.getId())  // _id를 messageId로 사용
                 .roomId(message.getRoomId())
                 .senderId(message.getSenderId())
                 .studentId(message.getStudentId())
@@ -221,14 +214,9 @@ public class ChatServiceImpl implements ChatService {
                 .content(message.getContent())
                 .messageType(message.getMessageType().name())
                 .timestamp(message.getTimestamp())
-                .settlementData(message.getSettlementData())
+                .paymentRequestData(message.getPaymentRequestData())
+                .paymentCompleteData(message.getPaymentCompleteData())
                 .build();
-        
-        // UI 상태 재생성 (조회 시점 기준)
-        if (message.getSettlementData() != null) {
-            UiState uiState = createUiState(message.getSenderId(), message.getMessageType().name(), message.getSettlementData());
-            response.setUiState(uiState);
-        }
         
         return response;
     }
@@ -284,6 +272,22 @@ public class ChatServiceImpl implements ChatService {
         } catch (Exception e) {
             log.error("채팅 히스토리 조회 실패: roomId={}, beforeMessageId={}", roomId, beforeMessageId, e);
             throw new ChatException(ErrorCode.MONGODB_QUERY_ERROR, e);
+        }
+    }
+    
+    @Override
+    public void saveMessage(ChatMessage chatMessage) {
+        try {
+            log.info("💾 MongoDB 직접 저장 시도: messageId={}, content={}", 
+                chatMessage.getId(), chatMessage.getContent());
+            
+            chatRepository.save(chatMessage);
+            
+            log.info("✅ MongoDB 직접 저장 완료: messageId={}", chatMessage.getId());
+            
+        } catch (Exception e) {
+            log.error("❌ MongoDB 직접 저장 실패: messageId={}", chatMessage.getId(), e);
+            throw new ChatException(ErrorCode.MONGODB_CONNECTION_ERROR, e);
         }
     }
 }

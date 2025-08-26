@@ -1,0 +1,87 @@
+package com.shinhan.heybob.domain.meal.service;
+
+import com.shinhan.heybob.common.chat.dto.ChatBroadcastRequest;
+import com.shinhan.heybob.common.chat.service.ChatMessageService;
+import com.shinhan.heybob.domain.meal.entity.MealAppointment;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class ChatIntegrationServiceImpl implements ChatIntegrationService {
+    
+    private final ChatMessageService chatMessageService;
+    
+    @Override
+    public Long createChatRoom(MealAppointment mealAppointment) {
+        try {
+            // 참여자 ID 목록 생성
+            List<String> participantIds = mealAppointment.getParticipants().stream()
+                .map(participant -> participant.getUser().getId().toString())
+                .collect(Collectors.toList());
+            
+            // 메타데이터 준비
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("mealAppointmentId", mealAppointment.getId().toString());
+            
+            // 공통 서비스를 통해 채팅방 생성
+            CompletableFuture<Long> chatRoomFuture = chatMessageService.createChatRoom(
+                mealAppointment.getName(),
+                mealAppointment.getCreator().getId().toString(),
+                participantIds,
+                metadata
+            );
+            
+            // 응답 대기 (타임아웃 5초)
+            Long chatRoomId = chatRoomFuture.get(5, java.util.concurrent.TimeUnit.SECONDS);
+            log.info("✅ 채팅방 생성 완료: 밥약ID={}, 채팅방ID={}", mealAppointment.getId(), chatRoomId);
+            return chatRoomId;
+            
+        } catch (Exception e) {
+            log.error("❌ 채팅방 생성 실패: 밥약ID={}", mealAppointment.getId(), e);
+            // Fallback: 더미 채팅방 ID 반환
+            Long fallbackRoomId = System.currentTimeMillis() % 1000000;
+            log.warn("⚠️ Fallback 채팅방 ID 사용: {}", fallbackRoomId);
+            return fallbackRoomId;
+        }
+    }
+    
+    
+    @Override
+    public String sendSettlementBroadcast(String settlementId, String roomId, String requesterName, 
+                                        Integer requestAmount, String message) {
+        try {
+            // TODO: 실제로는 requesterName으로 사용자를 찾아서 정보를 가져와야 함
+            // 지금은 더미 데이터로 처리
+            ChatBroadcastRequest request = ChatBroadcastRequest.builder()
+                .settlementId(settlementId)
+                .roomId(roomId)
+                .requesterId(999L)  // 더미 ID
+                .requesterName(requesterName)
+                .requesterStudentId("2024999")  // 더미 학번
+                .requesterProfileImg("/profile/default.jpg")  // 더미 프로필
+                .requestAmount(requestAmount)
+                .message(message)
+                .type(ChatBroadcastRequest.BroadcastType.PAYMENT)
+                .build();
+            
+            // 공통 서비스를 통해 정산 브로드캐스트 전송
+            String messageId = chatMessageService.sendSettlementBroadcast(request);
+            
+            log.info("✅ 정산 브로드캐스트 전송 완료: messageId={}, settlementId={}, roomId={}", 
+                messageId, settlementId, roomId);
+            
+            return messageId;
+            
+        } catch (Exception e) {
+            log.error("❌ 정산 브로드캐스트 전송 실패: settlementId={}, roomId={}", settlementId, roomId, e);
+            throw new RuntimeException("정산 브로드캐스트 전송 실패: " + e.getMessage());
+        }
+    }
+}
