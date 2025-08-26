@@ -3,10 +3,7 @@ package com.shinhan.heybob.domain.meal.service;
 import com.shinhan.heybob.common.exception.ExceptionStatus;
 import com.shinhan.heybob.common.exception.HeybobException;
 import com.shinhan.heybob.domain.meal.dto.request.CreateMealAppointmentRequest;
-import com.shinhan.heybob.domain.meal.dto.request.ScheduleComparisonRequest;
 import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentDetailResponse;
-import com.shinhan.heybob.domain.meal.dto.response.ScheduleComparisonResponse;
-import com.shinhan.heybob.domain.meal.dto.response.TimeSlotDto;
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
 import com.shinhan.heybob.domain.meal.entity.MealParticipant;
 import com.shinhan.heybob.domain.meal.repository.MealAppointmentRepository;
@@ -23,7 +20,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -36,35 +32,6 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
     private final MealParticipantRepository mealParticipantRepository;
     private final UserRepository userRepository;
     private final ChatIntegrationService chatIntegrationService;
-
-    @Override
-    public ScheduleComparisonResponse compareSchedules(ScheduleComparisonRequest request) {
-        if (request.getParticipantIds() == null || request.getParticipantIds().isEmpty()) {
-            throw new HeybobException(ExceptionStatus.INVALID_PARTICIPANT_LIST);
-        }
-
-        List<User> participants = userRepository.findByIdIn(request.getParticipantIds());
-        
-        if (participants.isEmpty()) {
-            throw new HeybobException(ExceptionStatus.USER_NOT_FOUND);
-        }
-
-        if (participants.size() != request.getParticipantIds().size()) {
-            throw new HeybobException(ExceptionStatus.INVALID_PARTICIPANT_LIST);
-        }
-
-        List<UserResponseDto> participantDtos = participants.stream()
-                .map(UserResponseDto::new)
-                .collect(Collectors.toList());
-
-        List<TimeSlotDto> timeSlots = generateDummyTimeSlots(participants);
-
-        return ScheduleComparisonResponse.builder()
-                .date(request.getDate())
-                .participants(participantDtos)
-                .availableSlots(timeSlots)
-                .build();
-    }
 
     @Override
     @Transactional
@@ -152,37 +119,6 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
         }
     }
 
-    private List<TimeSlotDto> generateDummyTimeSlots(List<User> participants) {
-        List<TimeSlotDto> slots = new ArrayList<>();
-        LocalTime startTime = LocalTime.of(11, 30);
-        LocalTime endTime = LocalTime.of(14, 30);
-
-        List<String> participantNames = participants.stream()
-                .map(User::getName)
-                .collect(Collectors.toList());
-
-        while (!startTime.isAfter(endTime)) {
-            int availableCount = ThreadLocalRandom.current().nextInt(0, participants.size() + 1);
-            
-            List<String> availableUsers = new ArrayList<>();
-            if (availableCount > 0) {
-                Collections.shuffle(participantNames);
-                availableUsers = participantNames.subList(0, availableCount);
-            }
-
-            TimeSlotDto slot = TimeSlotDto.builder()
-                    .time(startTime.toString())
-                    .availableCount(availableCount)
-                    .availableUsers(new ArrayList<>(availableUsers))
-                    .isSelectable(availableCount > 0)
-                    .build();
-
-            slots.add(slot);
-            startTime = startTime.plusMinutes(30);
-        }
-
-        return slots;
-    }
 
     private MealAppointmentDetailResponse convertToDetailResponse(MealAppointment mealAppointment) {
         return convertToDetailResponse(mealAppointment, mealAppointment.getChatRoomId());

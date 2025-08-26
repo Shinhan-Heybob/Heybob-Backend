@@ -4,9 +4,8 @@ import com.shinhan.heybob.common.chat.dto.ChatBroadcastRequest;
 import com.shinhan.heybob.common.chat.dto.ServerMessage;
 import com.shinhan.heybob.common.chat.service.ChatMessageService;
 import com.shinhan.heybob.domain.meal.dto.request.CreateMealAppointmentRequest;
-import com.shinhan.heybob.domain.meal.dto.request.ScheduleComparisonRequest;
 import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentDetailResponse;
-import com.shinhan.heybob.domain.meal.dto.response.ScheduleComparisonResponse;
+import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentIdResponse;
 import com.shinhan.heybob.domain.meal.service.ChatIntegrationService;
 import com.shinhan.heybob.domain.meal.service.MealAppointmentService;
 import jakarta.validation.Valid;
@@ -30,18 +29,15 @@ public class MealAppointmentController {
     private final ChatIntegrationService chatIntegrationService;
     private final ChatMessageService chatMessageService;
 
-    @PostMapping("/schedules/compare")
-    public ResponseEntity<ScheduleComparisonResponse> compareSchedules(
-            @RequestBody @Valid ScheduleComparisonRequest request) {
-        ScheduleComparisonResponse response = mealAppointmentService.compareSchedules(request);
-        return ResponseEntity.ok(response);
-    }
 
     @PostMapping
-    public ResponseEntity<MealAppointmentDetailResponse> createMealAppointment(
+    public ResponseEntity<MealAppointmentIdResponse> createMealAppointment(
             @RequestBody @Valid CreateMealAppointmentRequest request) {
         MealAppointmentDetailResponse response = mealAppointmentService.createMealAppointment(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        MealAppointmentIdResponse idResponse = MealAppointmentIdResponse.builder()
+                .id(response.getId())
+                .build();
+        return ResponseEntity.status(HttpStatus.CREATED).body(idResponse);
     }
 
     @GetMapping("/{appointmentId}")
