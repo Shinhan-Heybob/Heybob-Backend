@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface SavingsPlanRepository extends JpaRepository<SavingsPlan, Integer> {
@@ -28,4 +29,6 @@ public interface SavingsPlanRepository extends JpaRepository<SavingsPlan, Intege
     default SavingsPlan findOneForUpdate(@Param("id") Long id) {
         return null;
     }
+
+    Optional<SavingsPlan> findBySavingsAccount_Id(Long savingsAccountId);
 }

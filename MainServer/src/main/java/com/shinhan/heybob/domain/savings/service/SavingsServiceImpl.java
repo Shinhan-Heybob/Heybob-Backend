@@ -7,13 +7,20 @@ import com.shinhan.heybob.domain.financePersonal.dto.FinanceHeader;
 import com.shinhan.heybob.domain.financePersonal.repository.ExternalFinanceUserRepository;
 import com.shinhan.heybob.domain.financePersonal.repository.PersonalAccountRepository;
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
+import com.shinhan.heybob.domain.meal.entity.MealParticipant;
 import com.shinhan.heybob.domain.meal.repository.MealAppointmentRepository;
+import com.shinhan.heybob.domain.meal.repository.MealParticipantRepository;
 import com.shinhan.heybob.domain.savings.dto.CreateAccountRequest;
 import com.shinhan.heybob.domain.savings.entity.SavingsAccount;
+import com.shinhan.heybob.domain.savings.entity.SavingsDeposit;
+import com.shinhan.heybob.domain.savings.entity.SavingsPlan;
 import com.shinhan.heybob.domain.savings.repository.SavingsAccountRepository;
+import com.shinhan.heybob.domain.savings.repository.SavingsDepositRepository;
 import com.shinhan.heybob.domain.savings.repository.SavingsPlanRepository;
+import com.shinhan.heybob.domain.settlement.dto.UpdateDemandDepositAccountTransferRequest;
 import com.shinhan.heybob.domain.user.entity.User;
 import com.shinhan.heybob.domain.user.repository.UserRepository;
+import io.jsonwebtoken.Header;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,9 +46,11 @@ public class SavingsServiceImpl implements SavingsService {
     private final UserRepository userRepository;
     private final MealAppointmentRepository mealAppointmentRepository;
     private final SavingsPlanRepository savingsPlanRepository;
+    private final MealParticipantRepository mealParticipantRepository;
+    private final SavingsDepositRepository savingsDepositRepository;
 
     @Value("${ssafy.finance.base-url}")
-    private String baseurl;
+    private String baseUrl;
 
     @Value("${ssafy.finance.api-key}")
     private String apiKey;
@@ -86,7 +95,7 @@ public class SavingsServiceImpl implements SavingsService {
         HttpEntity<CreateAccountRequest> entity = new HttpEntity<>(request, headers);
 
         ResponseEntity<Map> response = restTemplate.postForEntity(
-                baseurl + "/edu/savings/createAccount",
+                baseUrl + "/edu/savings/createAccount",
                 entity,
                 Map.class
         );
@@ -148,5 +157,125 @@ public class SavingsServiceImpl implements SavingsService {
         savingsPlanRepository.save(plan);
     }
 
-    private void registerAutoWithdrawalAccount() {}
+    @Transactional
+    @Override
+    public void paySavingsAccount(Long userId, Long chatRoomId) {
+        String username = userRepository.findById(userId).get().getName();
+
+        MealAppointment mealAppointment = mealAppointmentRepository.findByChatRoomId(chatRoomId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND));
+        Long mealId = mealAppointment.getId();
+        String mealName = mealAppointment.getName();
+
+        // 사용자가 밥약 참여자인지 검증
+        if (!mealParticipantRepository.existsByMealAppointment_IdAndUser_Id(mealId, userId)) {
+            throw new HeybobException(ExceptionStatus.USER_NOT_FOUND);
+        }
+
+        // 1) 계좌/플랜 조회
+        SavingsAccount account = savingsAccountRepository.findByMealAppointment_Id(mealId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.SAVINGS_ACCOUNT_NOT_FOUND));
+
+        SavingsPlan plan = savingsPlanRepository.findBySavingsAccount_Id(account.getId())
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.SAVINGS_PLAN_NOT_FOUND));
+
+        if (plan.getStatus() == SavingsPlan.PlanStatus.COMPLETED) {
+            throw new HeybobException(ExceptionStatus.SAVINGS_PLAN_COMPLETED);
+        }
+
+        // "현재 회차" 계산: 보낸 알림 수 + 1 (알림 전 선납 허용 정책이면 그대로 사용)
+        int currentCycle = Math.min(plan.getSentCycles() + 1, plan.getTotalCycles());
+
+        // 2) 이 회차에 이미 성공 납입했는지
+        boolean alreadyPaid = savingsDepositRepository
+                .existsBySavingsAccount_IdAndParticipantUser_IdAndCycleNoAndStatus(
+                        account.getId(), userId, currentCycle, SavingsDeposit.TransferStatus.SUCCESS);
+        if (alreadyPaid) {
+            return; // 멱등 처리: 조용히 성공 반환
+        }
+
+        // 3) 외부 이체 준비
+        String userKey = externalFinanceUserRepository.findUserKeyByUserRealId(userId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.EMPTY_USER_KEY));
+
+        Long extUserId = externalFinanceUserRepository.findIdByUserRealId(userId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.FINANCE_API_NOT_FOUND));
+
+        String fromAccountNo = personalAccountRepository.findAccountNoByExternalFinanceUserId(extUserId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.FINANCE_API_NOT_FOUND));
+
+        String toAccountNo = account.getAccountNo();
+        int amount = plan.getPerHeadBalance();
+        String idemKey = java.util.UUID.randomUUID().toString();
+
+        // 4) 원장 레코드(PENDING) 선기록 (멱등/감사 목적)
+        SavingsDeposit deposit = savingsDepositRepository.findBySavingsAccount_IdAndParticipantUser_IdAndCycleNo(
+                account.getId(), userId, currentCycle
+        ).orElseGet(() -> SavingsDeposit.builder()
+                .savingsAccount(account)
+                .participantUser(com.shinhan.heybob.domain.user.entity.User.builder().id(userId).build())
+                .cycleNo(currentCycle)
+                .amount(amount)
+                .idempotencyKey(idemKey)
+                .build());
+
+        savingsDepositRepository.save(deposit);
+
+        // 5) 외부 이체 호출 (샘플; 실제 스펙에 맞게 DTO/URL 교체)
+        FinanceHeader header = new FinanceHeader(
+                "updateDemandDepositAccountTransfer",
+                KSTUtil.nowDateKst(),
+                KSTUtil.nowTimeKst(),
+                "00100",
+                "001",
+                "updateDemandDepositAccountTransfer",
+                KSTUtil.makeUniqueNo(),
+                apiKey,
+                userKey
+        );
+
+        UpdateDemandDepositAccountTransferRequest request = new UpdateDemandDepositAccountTransferRequest(
+                header,
+                toAccountNo,
+                "1/N 모으기 " + username,
+                String.valueOf(amount),
+                fromAccountNo,
+                "1/N 모으기 " + mealName
+        );
+
+        var entity = new org.springframework.http.HttpEntity<>(request, jsonHeaders());
+        ResponseEntity<Map> resp = restTemplate.postForEntity(
+                baseUrl + "/edu/demandDeposit/updateDemandDepositAccountTransfer", entity, Map.class
+        );
+
+        if (!resp.getStatusCode().is2xxSuccessful() || resp.getBody() == null) {
+            deposit.markFailed();
+            savingsDepositRepository.save(deposit);
+            throw new HeybobException(ExceptionStatus.FINANCE_API_NOT_FOUND);
+        }
+
+        Object txId = null;
+        Map body = resp.getBody();
+        if (body != null) {
+            Object recObj = body.get("REC");
+            if (recObj instanceof Map<?,?> rec) {
+                txId = rec.get("transactionUniqueNo");
+            }
+        }
+        String externalTxId = txId != null ? txId.toString() : "";;
+
+        // 6) 성공 처리
+        deposit.markSuccess(externalTxId);
+        savingsDepositRepository.save(deposit);
+
+        // (선택) 채팅 알림 “OO님 적금 입금 완료” 발송은 여기서 afterCommit으로
+        // TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {...});
+    }
+
+    private HttpHeaders jsonHeaders() {
+        var h = new HttpHeaders();
+        h.setContentType(MediaType.APPLICATION_JSON);
+        return h;
+    }
+
 }
