@@ -95,8 +95,8 @@ public class RetryMechanism {
     }
     
     private void handleRoomCreationFailure(ServerMessage message, Exception error) {
-        log.error("🏠 채팅방 생성 최종 실패: messageId={}, bob약Id={}", 
-            message.getMessageId(), message.getPayload().get("bob약Id"));
+        log.error("🏠 채팅방 생성 최종 실패: messageId={}, mealAppointmentId={}", 
+            message.getMessageId(), message.getPayload().get("mealAppointmentId"));
         
         // TODO: 사용자에게 채팅방 생성 실패 알림
     }

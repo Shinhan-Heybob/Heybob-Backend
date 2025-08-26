@@ -1,7 +1,7 @@
 package com.shinhan.heybob.domain.test.service;
 
-import com.shinhan.heybob.domain.meal.dto.ServerMessage;
-import com.shinhan.heybob.domain.test.dto.SettlementBroadcastRequest;
+import com.shinhan.heybob.common.chat.dto.ChatBroadcastRequest;
+import com.shinhan.heybob.common.chat.dto.ServerMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -22,7 +22,7 @@ public class TestServiceImpl implements TestService {
     private static final String MAIN_TO_CHAT_STREAM = "main-to-chat-stream";
     
     @Override
-    public String sendSettlementBroadcast(SettlementBroadcastRequest request) {
+    public String sendSettlementBroadcast(ChatBroadcastRequest request) {
         try {
             String messageId = UUID.randomUUID().toString();
             
@@ -30,7 +30,10 @@ public class TestServiceImpl implements TestService {
             Map<String, Object> payload = new HashMap<>();
             payload.put("settlementId", request.getSettlementId());
             payload.put("roomId", request.getRoomId());
+            payload.put("requesterId", request.getRequesterId());
             payload.put("requesterName", request.getRequesterName());
+            payload.put("requesterStudentId", request.getRequesterStudentId());
+            payload.put("requesterProfileImg", request.getRequesterProfileImg());
             payload.put("requestAmount", request.getRequestAmount());
             payload.put("message", request.getMessage());
             
@@ -63,7 +66,7 @@ public class TestServiceImpl implements TestService {
     }
     
     @Override
-    public String sendSavingsBroadcast(SettlementBroadcastRequest request) {
+    public String sendSavingsBroadcast(ChatBroadcastRequest request) {
         try {
             String messageId = UUID.randomUUID().toString();
             
@@ -71,7 +74,10 @@ public class TestServiceImpl implements TestService {
             Map<String, Object> payload = new HashMap<>();
             payload.put("settlementId", request.getSettlementId());
             payload.put("roomId", request.getRoomId());
+            payload.put("requesterId", request.getRequesterId());
             payload.put("requesterName", request.getRequesterName());
+            payload.put("requesterStudentId", request.getRequesterStudentId());
+            payload.put("requesterProfileImg", request.getRequesterProfileImg());
             payload.put("requestAmount", request.getRequestAmount());
             payload.put("message", request.getMessage());
             

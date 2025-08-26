@@ -79,14 +79,14 @@ public class MainServerCommunicationServiceImpl implements MainServerCommunicati
     }
     
     @Override
-    public void createRoom(String bob약Id, String creatorUserId, String roomName, List<String> initialMembers) {
+    public void createRoom(String mealAppointmentId, String creatorUserId, String roomName, List<String> initialMembers) {
         ServerMessage message = ServerMessage.builder()
                 .messageId(UUID.randomUUID().toString())
                 .messageType(ServerMessage.MessageType.CREATE_ROOM)
                 .sourceServer(SERVER_NAME)
                 .targetServer(TARGET_SERVER)
                 .timestamp(LocalDateTime.now())
-                .payload(PayloadBuilder.createRoomPayload(bob약Id, creatorUserId, roomName, initialMembers))
+                .payload(PayloadBuilder.createRoomPayload(mealAppointmentId, creatorUserId, roomName, initialMembers))
                 .retryCount(0)
                 .expiryTime(LocalDateTime.now().plusMinutes(5))
                 .build();

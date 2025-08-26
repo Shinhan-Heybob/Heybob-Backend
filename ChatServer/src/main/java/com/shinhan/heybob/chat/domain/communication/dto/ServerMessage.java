@@ -42,9 +42,9 @@ public class ServerMessage {
         
         // Payment 관련 (Main → Chat)
         PAYMENT_REQUEST,       // 정산 요청 브로드캐스트
-        PAYMENT_COMPLETED,     // 정산 완료 알림
+        PAYMENT_COMPLETE,      // 정산 완료 알림
         SAVINGS_REQUEST,       // 적금 요청 브로드캐스트
-        SAVINGS_COMPLETED,     // 적금 완료 알림
+        SAVINGS_COMPLETE,      // 적금 완료 알림
         
         // 공통
         ERROR_RESPONSE,        // 에러 응답

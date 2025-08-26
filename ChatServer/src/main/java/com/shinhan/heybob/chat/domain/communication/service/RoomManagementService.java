@@ -21,17 +21,17 @@ public class RoomManagementService {
     /**
      * 채팅방 생성 (밥약 생성시 호출)
      */
-    public void createChatRoom(String bob약Id, String creatorUserId, String roomName, 
+    public void createChatRoom(String mealAppointmentId, String creatorUserId, String roomName, 
                               List<String> initialMembers) {
         try {
-            log.info("📢 채팅방 생성 요청: bob약Id={}, creator={}, members={}", 
-                bob약Id, creatorUserId, initialMembers.size());
+            log.info("📢 채팅방 생성 요청: mealAppointmentId={}, creator={}, members={}", 
+                mealAppointmentId, creatorUserId, initialMembers.size());
             
             // Main 서버에 채팅방 생성 요청
-            mainServerCommunicationService.createRoom(bob약Id, creatorUserId, roomName, initialMembers);
+            mainServerCommunicationService.createRoom(mealAppointmentId, creatorUserId, roomName, initialMembers);
             
         } catch (Exception e) {
-            log.error("❌ 채팅방 생성 요청 실패: bob약Id={}", bob약Id, e);
+            log.error("❌ 채팅방 생성 요청 실패: mealAppointmentId={}", mealAppointmentId, e);
             throw e;
         }
     }

@@ -7,10 +7,10 @@ import java.util.Map;
 public class PayloadBuilder {
     
     // 채팅방 생성 요청 페이로드
-    public static Map<String, Object> createRoomPayload(String bob약Id, String creatorUserId, 
+    public static Map<String, Object> createRoomPayload(String mealAppointmentId, String creatorUserId, 
                                                         String roomName, List<String> initialMembers) {
         Map<String, Object> payload = new HashMap<>();
-        payload.put("bob약Id", bob약Id);
+        payload.put("mealAppointmentId", mealAppointmentId);
         payload.put("creatorUserId", creatorUserId);
         payload.put("roomName", roomName);
         payload.put("initialMembers", initialMembers);
@@ -60,12 +60,12 @@ public class PayloadBuilder {
     
     // 채팅방 멤버 정보 응답 페이로드
     public static Map<String, Object> roomMembersResponsePayload(String roomId, List<Map<String, Object>> members,
-                                                                String roomStatus, String bob약Id) {
+                                                                String roomStatus, String mealAppointmentId) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("roomId", roomId);
         payload.put("members", members);
         payload.put("roomStatus", roomStatus);
-        payload.put("bob약Id", bob약Id);
+        payload.put("mealAppointmentId", mealAppointmentId);
         return payload;
     }
     

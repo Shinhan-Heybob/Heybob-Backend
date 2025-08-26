@@ -161,13 +161,17 @@ public class MainResponseConsumer {
                     break;
                     
                 case PAYMENT_REQUEST:
-                case SAVINGS_REQUEST:
-                    // Payment 요청 처리 (기존 handleSettlementBroadcast 재사용)
+                    // 정산 요청 처리
                     messageHandler.handleSettlementBroadcast(message);
                     break;
                     
-                case PAYMENT_COMPLETED:
-                case SAVINGS_COMPLETED:
+                case SAVINGS_REQUEST:
+                    // 적금 요청 처리
+                    messageHandler.handleSavingsBroadcast(message);
+                    break;
+                    
+                case PAYMENT_COMPLETE:
+                case SAVINGS_COMPLETE:
                     // Payment 완료 알림 처리
                     messageHandler.handleNotification(message);
                     break;
@@ -396,13 +400,13 @@ public class MainResponseConsumer {
     private void handleCreateRoom(ServerMessage message) {
         try {
             Map<String, Object> payload = message.getPayload();
-            String bob약Id = (String) payload.get("bob약Id");
+            String mealAppointmentId = (String) payload.get("mealAppointmentId");
             String creatorUserId = (String) payload.get("creatorUserId");
             String roomName = (String) payload.get("roomName");
             List<String> initialMembers = (List<String>) payload.get("initialMembers");
             
-            log.info("📢 채팅방 생성 요청 수신: bob약Id={}, creator={}, roomName={}", 
-                bob약Id, creatorUserId, roomName);
+            log.info("📢 채팅방 생성 요청 수신: mealAppointmentId={}, creator={}, roomName={}", 
+                mealAppointmentId, creatorUserId, roomName);
             
             // 채팅방 ID 생성 (실제로는 DB에 저장하고 ID를 받아야 함)
             Long chatRoomId = System.currentTimeMillis() % 1000000;
@@ -416,7 +420,7 @@ public class MainResponseConsumer {
                 .timestamp(LocalDateTime.now())
                 .payload(Map.of(
                     "chatRoomId", chatRoomId,
-                    "bob약Id", bob약Id,
+                    "mealAppointmentId", mealAppointmentId,
                     "roomName", roomName,
                     "success", true,
                     "message", "채팅방이 성공적으로 생성되었습니다"

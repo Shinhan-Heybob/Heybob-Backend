@@ -14,7 +14,7 @@ public interface MainServerCommunicationService {
     CompletableFuture<ServerMessage> sendMessageWithResponse(ServerMessage message, long timeoutMs);
     
     // === 채팅방 관련 ===
-    void createRoom(String bob약Id, String creatorUserId, String roomName, List<String> initialMembers);
+    void createRoom(String mealAppointmentId, String creatorUserId, String roomName, List<String> initialMembers);
     CompletableFuture<ServerMessage> joinRoom(String roomId, String userId, String userName, String studentId);
     CompletableFuture<List<Map<String, Object>>> getRoomMembers(String roomId, String requesterId);
     

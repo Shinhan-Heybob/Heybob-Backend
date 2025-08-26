@@ -1,8 +1,8 @@
 package com.shinhan.heybob.domain.test.service;
 
-import com.shinhan.heybob.domain.test.dto.SettlementBroadcastRequest;
+import com.shinhan.heybob.common.chat.dto.ChatBroadcastRequest;
 
 public interface TestService {
-    String sendSettlementBroadcast(SettlementBroadcastRequest request);
-    String sendSavingsBroadcast(SettlementBroadcastRequest request);
+    String sendSettlementBroadcast(ChatBroadcastRequest request);
+    String sendSavingsBroadcast(ChatBroadcastRequest request);
 }
