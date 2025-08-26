@@ -255,11 +255,11 @@ public class MessageHandler {
                 .messageType("PAYMENT_REQUEST")
                 .timestamp(chatMessage.getTimestamp())
                 .paymentRequestData(PaymentRequestData.builder()
-                    .settlementId(settlementData.getSettlementId())
-                    .roomId(settlementData.getRoomId())
-                    .requesterName(settlementData.getRequesterName())
-                    .requestAmount(settlementData.getRequestAmount())
-                    .settlementUrl(settlementData.getSettlementUrl())
+                    .settlementId(paymentData.getSettlementId())
+                    .roomId(paymentData.getRoomId())
+                    .requesterName(paymentData.getRequesterName())
+                    .requestAmount(paymentData.getRequestAmount())
+                    .settlementUrl(paymentData.getSettlementUrl())
                     .build())
                 .uiState(UiState.builder()
                     .isRequester(false)
@@ -273,11 +273,11 @@ public class MessageHandler {
             messagingTemplate.convertAndSend("/topic/room/" + roomId, settlementMessage);
             
             log.info("📨 정산 메시지 브로드캐스트 완료: roomId={}, settlementId={}, messageId={}", 
-                roomId, settlementData.getSettlementId(), messageId);
+                roomId, paymentData.getSettlementId(), messageId);
                 
         } catch (Exception e) {
             log.error("❌ 정산 메시지 저장/전송 실패: roomId={}, settlementId={}", 
-                roomId, settlementData.getSettlementId(), e);
+                roomId, paymentData.getSettlementId(), e);
         }
     }
     
