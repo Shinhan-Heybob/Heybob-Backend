@@ -6,6 +6,8 @@ import com.shinhan.heybob.domain.lecture.dto.LectureDto;
 import com.shinhan.heybob.domain.lecture.entity.Lecture;
 import com.shinhan.heybob.domain.lecture.repository.LectureRepository;
 import com.shinhan.heybob.domain.lecture.service.LectureService;
+import com.shinhan.heybob.domain.timetable.dto.TimetableCompareGetRequestDto;
+import com.shinhan.heybob.domain.timetable.dto.TimetableCompareGetResponseDto;
 import com.shinhan.heybob.domain.timetable.dto.TimetableCreateRequestDto;
 import com.shinhan.heybob.domain.timetable.dto.TimetableGetResponseDto;
 import com.shinhan.heybob.domain.timetable.entity.Timetable;
@@ -58,5 +60,9 @@ public class TimetableService {
 
     public void deleteTimeTable(Long timeTableId){
         timetableRepository.deleteById(timeTableId);
+    }
+
+    public TimetableCompareGetResponseDto compareTimetables(TimetableCompareGetRequestDto timetableCompareGetRequestDto){
+        return TimetableCompareGetResponseDto.builder().build();
     }
 }
