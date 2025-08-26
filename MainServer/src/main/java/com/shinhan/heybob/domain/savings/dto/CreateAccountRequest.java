@@ -1,4 +1,4 @@
-package com.shinhan.heybob.domain.savings.controller;
+package com.shinhan.heybob.domain.savings.dto;
 
 import com.shinhan.heybob.domain.financePersonal.dto.FinanceHeader;
 

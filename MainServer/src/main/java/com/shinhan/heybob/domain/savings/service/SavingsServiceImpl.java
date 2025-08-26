@@ -4,15 +4,13 @@ import com.shinhan.heybob.common.exception.ExceptionStatus;
 import com.shinhan.heybob.common.exception.HeybobException;
 import com.shinhan.heybob.common.util.KSTUtil;
 import com.shinhan.heybob.domain.financePersonal.dto.FinanceHeader;
-import com.shinhan.heybob.domain.financePersonal.dto.PersonalAccountBalanceResponseDto;
 import com.shinhan.heybob.domain.financePersonal.repository.ExternalFinanceUserRepository;
 import com.shinhan.heybob.domain.financePersonal.repository.PersonalAccountRepository;
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
 import com.shinhan.heybob.domain.meal.repository.MealAppointmentRepository;
-import com.shinhan.heybob.domain.savings.controller.CreateAccountRequest;
+import com.shinhan.heybob.domain.savings.dto.CreateAccountRequest;
 import com.shinhan.heybob.domain.savings.entity.SavingsAccount;
 import com.shinhan.heybob.domain.savings.repository.SavingsAccountRepository;
-import com.shinhan.heybob.domain.settlement.dto.UpdateDemandDepositAccountTransferRequest;
 import com.shinhan.heybob.domain.user.entity.User;
 import com.shinhan.heybob.domain.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -51,7 +49,7 @@ public class SavingsServiceImpl implements SavingsService {
 
     @Transactional
     @Override
-    public void createSavingsAccount(Long userId, Long mealId) {
+    public void createSavingsAccount(Long userId, Long mealId, int perAmount, int totalAmount) {
         String userKey = externalFinanceUserRepository.findUserKeyByUserRealId(userId)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.EMPTY_USER_KEY));
 
@@ -113,4 +111,6 @@ public class SavingsServiceImpl implements SavingsService {
                         .build()
         );
     }
+
+    private void registerAutoWithdrawalAccount() {}
 }
