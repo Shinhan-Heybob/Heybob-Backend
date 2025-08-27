@@ -1,6 +1,7 @@
 package com.shinhan.heybob.domain.meal.entity;
 
 import com.shinhan.heybob.common.entity.BaseTime;
+import com.shinhan.heybob.domain.settlement.entity.Settlement;
 import com.shinhan.heybob.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;

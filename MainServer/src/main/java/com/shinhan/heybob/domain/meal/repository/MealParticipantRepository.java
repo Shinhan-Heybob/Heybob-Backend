@@ -9,7 +9,7 @@ import java.util.List;
 @Repository
 public interface MealParticipantRepository extends JpaRepository<MealParticipant, Long> {
     
-    List<MealParticipant> findByMealAppointmentId(Long mealAppointmentId);
+    List<MealParticipant> findByMealAppointment_Id(Long mealAppointmentId);
     
-    boolean existsByMealAppointmentIdAndUserId(Long mealAppointmentId, Long userId);
+    boolean existsByMealAppointment_IdAndUser_Id(Long mealAppointmentId, Long userId);
 }

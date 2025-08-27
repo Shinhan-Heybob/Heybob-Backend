@@ -65,6 +65,7 @@ public class AuthServiceImpl implements AuthService {
         return createAccessToken(refreshToken);
     }
 
+    @Transactional
     @Override
     public UserResponseDto signup(UserCreateRequestDto userCreateRequestDto) {
         log.info("User Create RequestDto: {}", userCreateRequestDto);
@@ -93,6 +94,8 @@ public class AuthServiceImpl implements AuthService {
         // userKey로 계좌 생성
         financeAccountService.createDemandDepositAccount(externalFinanceUserId, userKey);
 
+        financeAccountService.deposit(createdUser.getId(), 100000);
+
         log.info("[FinanceAccountService] userKey로 계좌 생성 완료");
 
         return new UserResponseDto(createdUser);
@@ -114,6 +117,7 @@ public class AuthServiceImpl implements AuthService {
         String refreshToken = jwtUtil.generateRefreshToken((UserPrincipalDetails) userDetails);
 
         return AuthResponseDto.builder()
+                .userId(user.getId())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
