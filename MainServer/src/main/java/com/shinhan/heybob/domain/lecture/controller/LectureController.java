@@ -9,24 +9,26 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@RequestMapping("/timetable/lecture")
+@RequestMapping("/timetable")
 @RequiredArgsConstructor
 @RestController
 public class LectureController {
 
     private final LectureService lectureService;
 
-    @PostMapping("/{timeTableId}")
+    @PostMapping("/lecture/{timetableId}")
     public ResponseEntity<?> createLecture(@RequestBody LectureCreateRequestDto lectureCreateRequestDto,
-                                           @PathVariable Long timeTableId) {
-        lectureService.createLecture(lectureCreateRequestDto, timeTableId);
+                                           @PathVariable Long timetableId) {
+        lectureService.createLecture(lectureCreateRequestDto, timetableId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PatchMapping("/{lectureId}")
-    public ResponseEntity<?> updateLecture(@RequestBody LectureUpdateRequestDto lectureUpdateRequestDto,
-                                           @PathVariable Long lectureId) {
-        lectureService.updateLecture(lectureUpdateRequestDto, lectureId);
+    @PatchMapping("/{timetableId}/lecture/{lectureId}")
+    public ResponseEntity<?> updateLecture(
+            @PathVariable Long timetableId,
+            @RequestBody LectureUpdateRequestDto lectureUpdateRequestDto,
+            @PathVariable Long lectureId) {
+        lectureService.updateLecture(timetableId, lectureUpdateRequestDto, lectureId);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
