@@ -9,7 +9,6 @@ import com.shinhan.heybob.domain.financePersonal.util.UserAccountUtil;
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
 import com.shinhan.heybob.domain.meal.repository.MealAppointmentRepository;
 import com.shinhan.heybob.domain.notification.service.ChatBroadcastSender;
-import com.shinhan.heybob.domain.notification.service.ChatMessageService;
 import com.shinhan.heybob.domain.settlement.dto.SettlementCreateResponseDto;
 import com.shinhan.heybob.domain.settlement.dto.SettlementResponseDto;
 import com.shinhan.heybob.domain.settlement.dto.UpdateDemandDepositAccountTransferRequest;
