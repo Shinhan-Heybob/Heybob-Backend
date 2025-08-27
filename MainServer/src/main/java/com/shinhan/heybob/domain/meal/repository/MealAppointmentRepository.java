@@ -1,6 +1,7 @@
 package com.shinhan.heybob.domain.meal.repository;
 
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
+import com.shinhan.heybob.domain.meal.entity.MealType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -30,4 +31,16 @@ public interface MealAppointmentRepository extends JpaRepository<MealAppointment
            "WHERE ma.appointmentDate = :date " +
            "ORDER BY ma.appointmentTime")
     List<MealAppointment> findByAppointmentDate(@Param("date") LocalDate date);
+    
+    @Query("SELECT DISTINCT ma FROM MealAppointment ma " +
+           "LEFT JOIN FETCH ma.participants p " +
+           "LEFT JOIN FETCH ma.creator " +
+           "WHERE (p.user.id = :userId OR ma.creator.id = :userId) " +
+           "AND ma.type = :type " +
+           "ORDER BY ma.appointmentDate DESC, ma.appointmentTime DESC")
+    List<MealAppointment> findByUserIdAndTypeWithParticipants(@Param("userId") Long userId, @Param("type") MealType type);
+    
+    List<MealAppointment> findAllByCreatorId(Long userId);
+    
+    List<MealAppointment> findAllByCreatorIdAndType(Long userId, MealType type);
 }

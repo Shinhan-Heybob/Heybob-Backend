@@ -14,7 +14,8 @@ public enum ErrorCode {
     
     // 인증/인가 에러
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "CHAT_100", "인증이 필요합니다."),
-    USER_INFO_MISSING(HttpStatus.BAD_REQUEST, "CHAT_101", "사용자 정보가 누락되었습니다."),
+    FORBIDDEN(HttpStatus.FORBIDDEN, "CHAT_101", "접근이 금지되었습니다."),
+    USER_INFO_MISSING(HttpStatus.BAD_REQUEST, "CHAT_102", "사용자 정보가 누락되었습니다."),
     
     // 채팅 관련 에러
     ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT_200", "채팅방을 찾을 수 없습니다."),

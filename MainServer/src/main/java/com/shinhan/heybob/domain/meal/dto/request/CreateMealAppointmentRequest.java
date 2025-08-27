@@ -1,5 +1,6 @@
 package com.shinhan.heybob.domain.meal.dto.request;
 
+import com.shinhan.heybob.domain.meal.entity.MealType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -34,4 +35,7 @@ public class CreateMealAppointmentRequest {
     private List<Long> participantIds;
 
     private Long creatorId;
+    
+    @Builder.Default
+    private MealType mealType = MealType.MEAL_APPOINTMENT;
 }

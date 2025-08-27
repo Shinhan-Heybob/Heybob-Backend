@@ -3,9 +3,6 @@ package com.shinhan.heybob.chat.domain.chat.service;
 import com.shinhan.heybob.chat.domain.chat.dto.ChatHistoryResponse;
 import com.shinhan.heybob.chat.domain.chat.dto.ChatMessageRequest;
 import com.shinhan.heybob.chat.domain.chat.dto.ChatMessageResponse;
-import com.shinhan.heybob.chat.domain.chat.dto.PaymentRequestData;
-import com.shinhan.heybob.chat.domain.chat.dto.PaymentCompleteData;
-import com.shinhan.heybob.chat.domain.chat.dto.UiState;
 import com.shinhan.heybob.chat.domain.chat.model.ChatMessage;
 import com.shinhan.heybob.chat.domain.chat.repository.ChatRepository;
 import com.shinhan.heybob.chat.global.error.ChatException;
@@ -27,36 +24,28 @@ public class ChatServiceImpl implements ChatService {
     private final ChatStreamService chatStreamService;
     private final ChatRepository chatRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final MessageDispatcher messageDispatcher;
     
     @Override
     public ChatMessageResponse processMessage(String roomId, String userId, String studentId, 
                                             String userName, String profileImageUrl, ChatMessageRequest request) {
         
         try {
-            // 입력 검증
-            if (roomId == null || roomId.trim().isEmpty()) {
-                throw new ChatException(ErrorCode.ROOM_NOT_FOUND);
-            }
-            if (request == null || request.getContent() == null || request.getContent().trim().isEmpty()) {
-                throw new ChatException(ErrorCode.INVALID_REQUEST);
-            }
-            if (request.getMessageType() == null) {
-                throw new ChatException(ErrorCode.INVALID_MESSAGE_TYPE);
+            // 금융 메시지는 WebSocket으로 생성 불가 (메인 서버에서만 가능)
+            if (messageDispatcher.isFinancialMessage(request.getMessageType())) {
+                throw new ChatException(ErrorCode.FORBIDDEN, 
+                        "금융 메시지는 WebSocket으로 생성할 수 없습니다. 메인 서버에서만 처리됩니다.");
             }
             
-            // 정산 관련 메시지 처리
-            ChatMessageResponse response = processSettlementMessage(roomId, userId, studentId, userName, profileImageUrl, request);
+            // MessageDispatcher를 통한 일반 메시지 처리
+            ChatMessageResponse response = messageDispatcher.dispatch(
+                    roomId, userId, studentId, userName, profileImageUrl, request);
             
-            // 메시지 중요도에 따른 처리 방식 분리
-            if (isFinancialMessage(request.getMessageType())) {
-                // 중요한 금융 알림은 Redis Stream → MongoDB (유실 방지)
-                chatStreamService.saveToStream(response);
-                log.info("금융 메시지 Redis Stream 저장: messageType={}, messageId={}", request.getMessageType(), response.getMessageId());
-            } else {
-                // 일반 채팅은 바로 MongoDB 저장 (빠른 처리)
-                saveDirectlyToMongoDB(response);
-                log.info("일반 메시지 MongoDB 직접 저장: messageType={}, messageId={}", request.getMessageType(), response.getMessageId());
-            }
+            // 일반 메시지는 MongoDB 직접 저장
+            // (금융 메시지는 MessageHandler에서 처리하므로 여기서는 일반 메시지만)
+            saveDirectlyToMongoDB(response);
+            log.info("일반 메시지 MongoDB 직접 저장: messageType={}, messageId={}", 
+                    request.getMessageType(), response.getMessageId());
             
             return response;
             
@@ -68,64 +57,6 @@ public class ChatServiceImpl implements ChatService {
             throw new ChatException(ErrorCode.MESSAGE_SAVE_FAILED, e);
         }
     }
-    
-    private boolean isFinancialMessage(String messageType) {
-        return List.of("PAYMENT_REQUEST", "PAYMENT_COMPLETE").contains(messageType);
-    }
-    
-    private ChatMessageResponse processSettlementMessage(String roomId, String userId, String studentId,
-                                                        String userName, String profileImageUrl, ChatMessageRequest request) {
-        ChatMessageResponse.ChatMessageResponseBuilder responseBuilder = ChatMessageResponse.builder()
-                .messageId(UUID.randomUUID().toString())
-                .roomId(roomId)
-                .senderId(userId)
-                .studentId(studentId)
-                .senderName(userName)
-                .profileImageUrl(profileImageUrl)
-                .content(request.getContent())
-                .messageType(request.getMessageType())
-                .timestamp(LocalDateTime.now());
-        
-        // 결제 요청 메시지인 경우
-        if ("PAYMENT_REQUEST".equals(request.getMessageType())) {
-            PaymentRequestData paymentRequestData = createPaymentRequestData(roomId, userName, request);
-            responseBuilder.paymentRequestData(paymentRequestData);
-        }
-        
-        // 결제 완료 메시지인 경우 
-        if ("PAYMENT_COMPLETE".equals(request.getMessageType()) && request.getPaymentCompleteData() != null) {
-            // Main 서버에서 이미 구성된 데이터를 그대로 사용
-            responseBuilder.paymentCompleteData(request.getPaymentCompleteData());
-        }
-        
-        return responseBuilder.build();
-    }
-    
-    private PaymentRequestData createPaymentRequestData(String roomId, String userName, ChatMessageRequest request) {
-        String settlementId = UUID.randomUUID().toString();
-        
-        // 간단한 결제 요청 데이터 생성
-        String requesterName = userName;
-        Integer requestAmount = 12000;
-        
-        if (request.getPaymentRequestData() != null) {
-            if (request.getPaymentRequestData().getRequesterName() != null) {
-                requesterName = request.getPaymentRequestData().getRequesterName();
-            }
-            if (request.getPaymentRequestData().getRequestAmount() != null) {
-                requestAmount = request.getPaymentRequestData().getRequestAmount();
-            }
-        }
-        
-        return PaymentRequestData.builder()
-                .settlementId(settlementId)
-                .roomId(roomId)
-                .requesterName(requesterName)
-                .requestAmount(requestAmount)
-                .settlementUrl("/main/settlement/" + settlementId)
-                .build();
-    }
-    
     
     private void saveDirectlyToMongoDB(ChatMessageResponse response) {
         try {

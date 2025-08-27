@@ -22,5 +22,4 @@ public class ChatMessageResponse {
     private LocalDateTime timestamp;
     private PaymentRequestData paymentRequestData;  // 결제 요청 데이터
     private PaymentCompleteData paymentCompleteData; // 결제 완료 데이터
-    private UiState uiState;  // UI 상태 정보
 }

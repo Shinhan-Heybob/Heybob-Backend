@@ -3,6 +3,7 @@ package com.shinhan.heybob.chat.domain.chat.controller;
 import com.shinhan.heybob.chat.domain.chat.dto.ChatHistoryResponse;
 import com.shinhan.heybob.chat.domain.chat.dto.ChatMessageResponse;
 import com.shinhan.heybob.chat.domain.chat.service.ChatService;
+import com.shinhan.heybob.chat.domain.cafeteria.service.CafeteriaService;
 import com.shinhan.heybob.chat.global.error.ChatException;
 import com.shinhan.heybob.chat.global.error.ErrorCode;
 import lombok.RequiredArgsConstructor;
