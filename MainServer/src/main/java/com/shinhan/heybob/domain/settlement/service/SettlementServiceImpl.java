@@ -117,6 +117,9 @@ public class SettlementServiceImpl implements SettlementService {
 
         participantRepository.saveAll(rows);
 
+        // Main -> Chat : 정산 생성 알림 보내기
+
+
         log.info("Settlement created successfully");
     }
 
