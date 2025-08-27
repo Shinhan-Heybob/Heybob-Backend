@@ -1,6 +1,5 @@
 package com.shinhan.heybob.domain.notification.service;
 
-import com.shinhan.heybob.domain.notification.dto.ChatBroadcastRequest;
 import com.shinhan.heybob.domain.notification.dto.ServerMessage;
 
 import java.util.Map;
