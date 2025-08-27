@@ -55,7 +55,10 @@ public enum ExceptionStatus {
     SAVINGS_ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "적금 계좌를 찾을 수 없습니다."),
     SAVINGS_PLAN_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "적금 이체 알림 관리를 찾을 수 없습니다."),
     SAVINGS_PLAN_COMPLETED(HttpStatus.BAD_REQUEST, 400, "이미 완료된 플랜입니다."),
-    BAD_REQUEST_SAVINGS_CYCLE(HttpStatus.BAD_REQUEST, 400, "적금 횟수 계산 실패");
+    BAD_REQUEST_SAVINGS_CYCLE(HttpStatus.BAD_REQUEST, 400, "적금 횟수 계산 실패"),
+
+    //CHAT
+    NOT_FOUND_CHAT_ROOM_ID(HttpStatus.NOT_FOUND, 404, "채팅 id를 찾을 수 없습니다.");
 
     private final int status;
     private final int customCode;
