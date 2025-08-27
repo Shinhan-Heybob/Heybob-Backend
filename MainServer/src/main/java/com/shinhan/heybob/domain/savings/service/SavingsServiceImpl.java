@@ -9,6 +9,7 @@ import com.shinhan.heybob.domain.financePersonal.repository.PersonalAccountRepos
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
 import com.shinhan.heybob.domain.meal.repository.MealAppointmentRepository;
 import com.shinhan.heybob.domain.meal.repository.MealParticipantRepository;
+import com.shinhan.heybob.domain.notification.service.ChatBroadcastSender;
 import com.shinhan.heybob.domain.savings.dto.CreateAccountRequest;
 import com.shinhan.heybob.domain.savings.entity.SavingsAccount;
 import com.shinhan.heybob.domain.savings.entity.SavingsDeposit;
@@ -28,6 +29,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
@@ -46,6 +49,7 @@ public class SavingsServiceImpl implements SavingsService {
     private final SavingsPlanRepository savingsPlanRepository;
     private final MealParticipantRepository mealParticipantRepository;
     private final SavingsDepositRepository savingsDepositRepository;
+    private final ChatBroadcastSender chatBroadcastSender;
 
     @Value("${ssafy.finance.base-url}")
     private String baseUrl;
@@ -153,6 +157,37 @@ public class SavingsServiceImpl implements SavingsService {
                 .build();
 
         savingsPlanRepository.save(plan);
+
+        // ✅ 적금 요청 브로드캐스트 (방이 있는 경우에만)
+        Long chatRoomId = mealAppointment.getChatRoomId();
+        if (chatRoomId != null) {
+            String content = String.format("%s님이 적금을 요청했습니다. 1/N 금액: %,d원",
+                    creator.getName(), perAmount);
+
+            // afterCommit으로 안전하게 전송
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            chatBroadcastSender.sendSavingsRequest(
+                                    String.valueOf(chatRoomId),                 // roomId
+                                    String.valueOf(creator.getId()),            // senderId
+                                    creator.getStudentId(),                     // studentId
+                                    creator.getName(),                          // senderName
+                                    creator.getProfileUrl(),                    // profileImageUrl
+                                    content,                                    // 상단 content (채팅에 보일 문장)
+                                    String.valueOf(saved.getId()),               // settlementId(=saving 식별자)
+                                    String.valueOf(creator.getId()),            // requesterId
+                                    creator.getName(),                          // requesterName
+                                    creator.getStudentId(),                     // requesterStudentId
+                                    creator.getProfileUrl(),                    // requesterProfileImg
+                                    perAmount,                                   // requestAmount (이번 회차 1/N 금액)
+                                    "http://localhost:8080/savings/" + chatRoomId + "/pay"
+                            );
+                        }
+                    }
+            );
+        }
     }
 
     @Transactional
