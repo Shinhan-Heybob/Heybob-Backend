@@ -7,6 +7,6 @@ import java.util.List;
 
 @Builder
 public record TimetableCompareGetResponseDto(
-        List<LocalTime> timeList
+        List<TimeslotDto> timeslots
 ) {
 }

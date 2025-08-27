@@ -9,6 +9,6 @@ public record TimeslotDto(
 
         LocalTime endTime,
 
-        List<User> availablePeople
+        List<String> availablePeopleName
 ) {
 }
