@@ -54,20 +54,24 @@ public class ChatIntegrationServiceImpl implements ChatIntegrationService {
     
     
     @Override
-    public String sendSettlementBroadcast(String settlementId, String roomId, String requesterName, 
-                                        Integer requestAmount, String message) {
+    public String sendSettlementBroadcast(Long settlementId, Long chatRoomId, Long requesterId, String requesterName,
+                                          String requesterStudentId, String requesterProfileImg, Integer requestAmount
+    ) {
         try {
-            // TODO: 실제로는 requesterName으로 사용자를 찾아서 정보를 가져와야 함
+            String settlementIdStr = String.valueOf(settlementId);
+            String chatRoomIdStr = String.valueOf(chatRoomId);
+
+
             // 지금은 더미 데이터로 처리
             ChatBroadcastRequest request = ChatBroadcastRequest.builder()
-                .settlementId(settlementId)
-                .roomId(roomId)
-                .requesterId(999L)  // 더미 ID
+                .settlementId(settlementIdStr)
+                .roomId(chatRoomIdStr)
+                .requesterId(requesterId)  // 더미 ID
                 .requesterName(requesterName)
-                .requesterStudentId("2024999")  // 더미 학번
-                .requesterProfileImg("/profile/default.jpg")  // 더미 프로필
+                .requesterStudentId(requesterStudentId)  // 더미 학번
+                .requesterProfileImg(requesterProfileImg) // 더미 프로필
                 .requestAmount(requestAmount)
-                .message(message)
+                .message("")
                 .type(ChatBroadcastRequest.BroadcastType.PAYMENT)
                 .build();
             
@@ -75,12 +79,12 @@ public class ChatIntegrationServiceImpl implements ChatIntegrationService {
             String messageId = chatMessageService.sendSettlementBroadcast(request);
             
             log.info("✅ 정산 브로드캐스트 전송 완료: messageId={}, settlementId={}, roomId={}", 
-                messageId, settlementId, roomId);
+                messageId, settlementId, chatRoomId);
             
             return messageId;
             
         } catch (Exception e) {
-            log.error("❌ 정산 브로드캐스트 전송 실패: settlementId={}, roomId={}", settlementId, roomId, e);
+            log.error("❌ 정산 브로드캐스트 전송 실패: settlementId={}, roomId={}", settlementId, chatRoomId, e);
             throw new RuntimeException("정산 브로드캐스트 전송 실패: " + e.getMessage());
         }
     }

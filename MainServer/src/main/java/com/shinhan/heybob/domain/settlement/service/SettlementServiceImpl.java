@@ -10,6 +10,7 @@ import com.shinhan.heybob.domain.financePersonal.repository.ExternalFinanceUserR
 import com.shinhan.heybob.domain.financePersonal.util.UserAccountUtil;
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
 import com.shinhan.heybob.domain.meal.repository.MealAppointmentRepository;
+import com.shinhan.heybob.domain.meal.service.ChatIntegrationService;
 import com.shinhan.heybob.domain.notification.dto.ChatEventMessageDto;
 import com.shinhan.heybob.domain.notification.model.NotificationEventType;
 import com.shinhan.heybob.domain.notification.publisher.RedisStreamPublisher;
@@ -55,6 +56,7 @@ public class SettlementServiceImpl implements SettlementService {
     private final UserAccountUtil userAccountUtil;
     private final ExternalFinanceUserRepository externalFinanceUserRepository;
     private final RestTemplate restTemplate;
+    private final ChatIntegrationService chatIntegrationService;
 
     @Value("${ssafy.finance.base-url}")
     private String baseurl;
@@ -118,7 +120,15 @@ public class SettlementServiceImpl implements SettlementService {
         participantRepository.saveAll(rows);
 
         // Main -> Chat : 정산 생성 알림 보내기
-
+        chatIntegrationService.sendSettlementBroadcast(
+                saved.getId(),
+                chatRoomId,
+                initiator.getId(),
+                initiator.getName(),
+                initiator.getStudentId(),
+                initiator.getProfileUrl(),
+                totalAmount
+        );
 
         log.info("Settlement created successfully");
     }
