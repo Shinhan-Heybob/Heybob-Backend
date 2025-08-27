@@ -23,7 +23,6 @@ public class SettlementController {
     private final SettlementService settlementService;
     private final SettlementQueryService settlementQueryService;
     private final ChatIntegrationService chatIntegrationService;
-    private final UserRepository userRepository;
 
     @PostMapping("/{chatRoomId}/create")
     public ResponseEntity<Map<String, Object>> createSettlement(
