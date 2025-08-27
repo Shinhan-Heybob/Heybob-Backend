@@ -1,5 +1,6 @@
 package com.shinhan.heybob.domain.meal.dto.response;
 
+import com.shinhan.heybob.domain.meal.entity.MealType;
 import com.shinhan.heybob.domain.user.dto.UserResponseDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,6 +26,7 @@ public class MealAppointmentDetailResponse {
     private UserResponseDto creator;
     private List<UserResponseDto> participants;
     private String status;
+    private MealType mealType;
     private Long chatRoomId;
     private LocalDateTime createdAt;
 }

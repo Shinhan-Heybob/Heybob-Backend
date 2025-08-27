@@ -38,6 +38,7 @@ public class ChatMessage {
         PAYMENT_REQUEST,    // 송금 요청 "이지민님이 정산을 요청했습니다. (12000원 정산하기)"
         PAYMENT_COMPLETE,   // 정산 완료 "정산이 완료되었습니다"
         SAVINGS_REQUEST,    // 적금 요청 "이지민님이 적금을 요청했습니다. (12000원 적금하기)"
-        SAVINGS_COMPLETE    // 적금 완료 "적금이 완료되었습니다"
+        SAVINGS_COMPLETE,   // 적금 완료 "적금이 완료되었습니다"
+        CAFETERIA_INFO      // 학식 정보 "오늘의 학식 정보입니다"
     }
 }

@@ -27,7 +27,10 @@
       "Read(/C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\MainServer\\src\\main\\java\\com\\shinhan\\heybob\\domain\\test\\controller/**)",
       "Read(/C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\MainServer\\src\\main\\java\\com\\shinhan\\heybob\\domain\\test\\service/**)",
       "Read(/C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\MainServer/**)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Read(/C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\MainServer\\src\\main\\java\\com\\shinhan\\heybob\\domain\\meal\\service/**)",
+      "Read(/C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\MainServer/**)",
+      "Bash(./gradlew:*)"
     ],
     "deny": [],
     "ask": []
