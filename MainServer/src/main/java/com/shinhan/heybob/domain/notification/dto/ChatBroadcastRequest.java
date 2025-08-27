@@ -1,4 +1,4 @@
-package com.shinhan.heybob.common.chat.dto;
+package com.shinhan.heybob.domain.notification.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

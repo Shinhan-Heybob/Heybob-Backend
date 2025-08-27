@@ -2,8 +2,11 @@ package com.shinhan.heybob.domain.settlement.repository;
 
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
 import com.shinhan.heybob.domain.settlement.entity.Settlement;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -34,6 +37,10 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
        where m.chatRoomId = :chatRoomId
     """)
     Optional<Settlement> findDetailByChatRoomId(Long chatRoomId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from Settlement s where s.id = :id")
+    Optional<Settlement> findByIdForUpdate(@Param("id") Long id);
 
 }
 

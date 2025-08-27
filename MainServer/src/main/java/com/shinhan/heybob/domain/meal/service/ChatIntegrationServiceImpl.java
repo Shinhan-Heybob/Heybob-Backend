@@ -1,7 +1,8 @@
 package com.shinhan.heybob.domain.meal.service;
 
-import com.shinhan.heybob.common.chat.dto.ChatBroadcastRequest;
-import com.shinhan.heybob.common.chat.service.ChatMessageService;
+import com.shinhan.heybob.domain.notification.dto.ChatBroadcastRequest;
+import com.shinhan.heybob.domain.notification.dto.ServerMessage;
+import com.shinhan.heybob.domain.notification.service.ChatMessageService;
 import com.shinhan.heybob.common.exception.ExceptionStatus;
 import com.shinhan.heybob.common.exception.HeybobException;
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
@@ -9,8 +10,10 @@ import com.shinhan.heybob.domain.user.entity.User;
 import com.shinhan.heybob.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -22,6 +25,9 @@ public class ChatIntegrationServiceImpl implements ChatIntegrationService {
     
     private final ChatMessageService chatMessageService;
     private final UserRepository userRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    private static final String MAIN_TO_CHAT_STREAM = "main-to-chat-stream";
     
     @Override
     public Long createChatRoom(MealAppointment mealAppointment) {
@@ -98,7 +104,66 @@ public class ChatIntegrationServiceImpl implements ChatIntegrationService {
     }
 
     @Override
-    public String sendSettleRequestBroadcast(Long settlementId, Long chatRoomId, Long requesterId, String requesterName, String requesterStudentId, String requesterProfileImg, Integer requestAmount) {
+    public String sendSettlementPaymentComplete(Long settlementId, Long chatRoomId, Long recipientId,
+                                                String recipientName, int completedAmount
+    ) {
+        try {
+            String messageId = UUID.randomUUID().toString();
+
+            // 요청 페이로드 구성
+            Map<String, Object> paymentComplete = new HashMap<>();
+            paymentComplete.put("settlementId", String.valueOf(settlementId));
+            paymentComplete.put("roomId",       String.valueOf(chatRoomId));
+            paymentComplete.put("recipientId",  String.valueOf(recipientId));
+            paymentComplete.put("recipientName", recipientName);
+            paymentComplete.put("completedAmount", completedAmount);
+
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("paymentRequestData", null);
+            payload.put("paymentCompleteData", paymentComplete);
+
+            ServerMessage message = ServerMessage.builder()
+                    .messageId(UUID.randomUUID().toString())
+                    .messageType(ServerMessage.MessageType.PAYMENT_COMPLETE) // enum에 추가
+                    .sourceServer("MAIN")
+                    .targetServer("CHAT")
+                    .timestamp(LocalDateTime.now())
+                    .payload(payload)
+                    .retryCount(0)
+                    .expiryTime(LocalDateTime.now().plusMinutes(5))
+                    .build();
+
+            Map<String, Object> streamData = convertToStreamData(message);
+            log.info("🔍 (COMPLETE) Redis Stream 전송 데이터: {}", streamData);
+
+            redisTemplate.opsForStream().add(MAIN_TO_CHAT_STREAM, streamData);
+
+            log.info("✅ 정산 완료 브로드캐스트 전송 완료: messageId={}, settlementId={}",
+                    messageId, settlementId);
+
+            return messageId;
+        } catch (Exception e) {}
+
         return "";
+    }
+
+    private Map<String, Object> convertToStreamData(ServerMessage message) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("messageId", message.getMessageId());
+        data.put("messageType", message.getMessageType().name());
+        data.put("sourceServer", message.getSourceServer());
+        data.put("targetServer", message.getTargetServer());
+        data.put("timestamp", message.getTimestamp().toString());
+        data.put("retryCount", message.getRetryCount());
+        data.put("expiryTime", message.getExpiryTime().toString());
+
+        // payload 데이터를 payload_ 접두사와 함께 추가
+        if (message.getPayload() != null) {
+            for (Map.Entry<String, Object> entry : message.getPayload().entrySet()) {
+                data.put("payload_" + entry.getKey(), entry.getValue());
+            }
+        }
+
+        return data;
     }
 }

@@ -1,14 +1,10 @@
 package com.shinhan.heybob.domain.settlement.controller;
 
-import com.shinhan.heybob.common.exception.ExceptionStatus;
-import com.shinhan.heybob.common.exception.HeybobException;
 import com.shinhan.heybob.common.user.UserPrincipalDetails;
 import com.shinhan.heybob.domain.meal.service.ChatIntegrationService;
 import com.shinhan.heybob.domain.settlement.dto.*;
 import com.shinhan.heybob.domain.settlement.service.SettlementQueryService;
 import com.shinhan.heybob.domain.settlement.service.SettlementService;
-import com.shinhan.heybob.domain.test.dto.SettlementBroadcastRequest;
-import com.shinhan.heybob.domain.user.entity.User;
 import com.shinhan.heybob.domain.user.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,14 +26,13 @@ public class SettlementController {
     private final UserRepository userRepository;
 
     @PostMapping("/{chatRoomId}/create")
-    public ResponseEntity<SettlementCreateResponseDto> createSettlement(
+    public ResponseEntity<Map<String, Object>> createSettlement(
             @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
             @RequestBody @Valid SettlementRequestDto requestDto,
             @PathVariable Long chatRoomId
     ) {
-        SettlementCreateResponseDto responseDto = settlementService.createSettlement(
+        return settlementService.createSettlement(
                 userPrincipal.getUserId(), requestDto.participantsUserIds(), requestDto.totalAmount(), chatRoomId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
     @PatchMapping("/{chatRoomId}/update")
@@ -49,15 +44,6 @@ public class SettlementController {
         settlementService.updateSettlement(
                 userPrincipal.getUserId(), requestDto.participantsUserIds(), requestDto.totalAmount(), chatRoomId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-    }
-
-    @PostMapping("/{chatRoomId}/notify")
-    public ResponseEntity<Void> notifySettlement(
-            @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
-            @PathVariable Long chatRoomId
-    ) {
-        settlementService.notifySettlement(chatRoomId, userPrincipal.getUserId());
-        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @GetMapping("/{chatRoomId}/info")

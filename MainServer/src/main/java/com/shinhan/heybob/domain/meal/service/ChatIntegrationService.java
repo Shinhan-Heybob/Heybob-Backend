@@ -15,6 +15,6 @@ public interface ChatIntegrationService {
      */
     String sendSettlementBroadcast(Long settlementId, Long chatRoomId, Long requesterId, Integer requestAmount);
 
-    String sendSettleRequestBroadcast(Long settlementId, Long chatRoomId, Long requesterId, String requesterName,
-                                      String requesterStudentId, String requesterProfileImg, Integer requestAmount);
+    String sendSettlementPaymentComplete(Long settlementId, Long chatRoomId, Long recipientId,
+                                         String recipientName, int completedAmount);
 }

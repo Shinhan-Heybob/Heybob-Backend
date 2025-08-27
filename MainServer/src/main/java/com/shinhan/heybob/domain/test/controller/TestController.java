@@ -1,7 +1,7 @@
 package com.shinhan.heybob.domain.test.controller;
 
-import com.shinhan.heybob.common.chat.dto.ChatBroadcastRequest;
-import com.shinhan.heybob.common.chat.service.ChatMessageService;
+import com.shinhan.heybob.domain.notification.dto.ChatBroadcastRequest;
+import com.shinhan.heybob.domain.notification.service.ChatMessageService;
 import com.shinhan.heybob.domain.meal.dto.request.CreateMealAppointmentRequest;
 import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentDetailResponse;
 import com.shinhan.heybob.domain.meal.service.MealAppointmentService;
