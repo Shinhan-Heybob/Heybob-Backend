@@ -301,8 +301,33 @@ public class SavingsServiceImpl implements SavingsService {
         deposit.markSuccess(externalTxId);
         savingsDepositRepository.save(deposit);
 
-        // (선택) 채팅 알림 “OO님 적금 입금 완료” 발송은 여기서 afterCommit으로
-        // TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {...});
+        // ✅ 적금 납입 완료 브로드캐스트
+        User payer = userRepository.findById(userId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.USER_NOT_FOUND));
+
+        if (chatRoomId != null) {
+            String content = String.format("%s님이 %,d원을 적금했습니다.", payer.getName(), amount);
+
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override public void afterCommit() {
+                            chatBroadcastSender.sendSavingsComplete(
+                                    String.valueOf(chatRoomId),         // roomId
+                                    String.valueOf(payer.getId()),      // senderId
+                                    payer.getStudentId(),               // studentId
+                                    payer.getName(),                    // senderName
+                                    payer.getProfileUrl(),              // profileImageUrl
+                                    content,                            // 상단 content
+                                    String.valueOf(plan.getId()),       // settlementId(=saving 식별자)
+                                    String.valueOf(account.getId()),    // recipientId (예: 적금계좌 id)
+                                    "모임적금 1/N 모으기",                          // recipientName (컨슈머 예시와 동일)
+                                    amount                              // completedAmount
+                            );
+                        }
+                    }
+            );
+        }
+
     }
 
     private HttpHeaders jsonHeaders() {
