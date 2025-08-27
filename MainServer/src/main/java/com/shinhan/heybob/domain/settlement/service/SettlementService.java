@@ -1,12 +1,13 @@
 package com.shinhan.heybob.domain.settlement.service;
 
+import com.shinhan.heybob.domain.settlement.dto.SettlementCreateResponseDto;
 import com.shinhan.heybob.domain.settlement.dto.SettlementResponseDto;
 
 import java.util.List;
 
 public interface SettlementService {
 
-    SettlementResponseDto createSettlement(Long userId, List<Long> participantsUserId, int totalAmount, Long chatRoomId);
+    SettlementCreateResponseDto createSettlement(Long userId, List<Long> participantsUserId, int totalAmount, Long chatRoomId);
 
     void updateSettlement(Long userId, List<Long> participantsUserIds, int totalAmount, Long chatRoomId);
 

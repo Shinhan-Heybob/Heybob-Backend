@@ -10,12 +10,10 @@ public interface ChatIntegrationService {
      * Chat 서버에 정산 브로드캐스트 요청 전송
      * @param settlementId 정산 ID  
      * @param chatRoomId 채팅방 ID
-     * @param requesterName 요청자 이름
      * @param requestAmount 요청 금액
      * @return 전송된 메시지 ID
      */
-    String sendSettlementBroadcast(Long settlementId, Long chatRoomId, Long requesterId, String requesterName,
-                                   String requesterStudentId, String requesterProfileImg, Integer requestAmount);
+    String sendSettlementBroadcast(Long settlementId, Long chatRoomId, Long requesterId, Integer requestAmount);
 
     String sendSettleRequestBroadcast(Long settlementId, Long chatRoomId, Long requesterId, String requesterName,
                                       String requesterStudentId, String requesterProfileImg, Integer requestAmount);

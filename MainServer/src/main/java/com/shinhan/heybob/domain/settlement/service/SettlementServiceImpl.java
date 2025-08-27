@@ -14,6 +14,7 @@ import com.shinhan.heybob.domain.meal.service.ChatIntegrationService;
 import com.shinhan.heybob.domain.notification.dto.ChatEventMessageDto;
 import com.shinhan.heybob.domain.notification.model.NotificationEventType;
 import com.shinhan.heybob.domain.notification.publisher.RedisStreamPublisher;
+import com.shinhan.heybob.domain.settlement.dto.SettlementCreateResponseDto;
 import com.shinhan.heybob.domain.settlement.dto.SettlementResponseDto;
 import com.shinhan.heybob.domain.settlement.dto.UpdateDemandDepositAccountTransferRequest;
 import com.shinhan.heybob.domain.settlement.entity.Settlement;
@@ -69,7 +70,7 @@ public class SettlementServiceImpl implements SettlementService {
 
     @Transactional
     @Override
-    public SettlementResponseDto createSettlement(
+    public SettlementCreateResponseDto createSettlement(
             Long userId, List<Long> participantsUserIds, int totalAmount, Long chatRoomId
     ) {
         User initiator = userRepository.findById(userId)
@@ -119,17 +120,10 @@ public class SettlementServiceImpl implements SettlementService {
 
         participantRepository.saveAll(rows);
 
-        SettlementResponseDto responseDto =
-                new SettlementResponseDto(
+        SettlementCreateResponseDto responseDto =
+                new SettlementCreateResponseDto(
                         settlement.getId(),
-                        initiator.getId(),
-                        initiator.getName(),
-                        perHead,
-                        totalAmount,
-                        participantsCount,
-                        true,
-                        false,
-                        null
+                        perHead
                 );
 
         log.info("Settlement created successfully");

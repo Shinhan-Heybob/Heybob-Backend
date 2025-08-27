@@ -1,17 +1,23 @@
 package com.shinhan.heybob.domain.settlement.controller;
 
+import com.shinhan.heybob.common.exception.ExceptionStatus;
+import com.shinhan.heybob.common.exception.HeybobException;
 import com.shinhan.heybob.common.user.UserPrincipalDetails;
-import com.shinhan.heybob.domain.settlement.dto.SettlementPageResponseDto;
-import com.shinhan.heybob.domain.settlement.dto.SettlementRequestDto;
-import com.shinhan.heybob.domain.settlement.dto.SettlementResponseDto;
+import com.shinhan.heybob.domain.meal.service.ChatIntegrationService;
+import com.shinhan.heybob.domain.settlement.dto.*;
 import com.shinhan.heybob.domain.settlement.service.SettlementQueryService;
 import com.shinhan.heybob.domain.settlement.service.SettlementService;
+import com.shinhan.heybob.domain.test.dto.SettlementBroadcastRequest;
+import com.shinhan.heybob.domain.user.entity.User;
+import com.shinhan.heybob.domain.user.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,14 +26,16 @@ public class SettlementController {
 
     private final SettlementService settlementService;
     private final SettlementQueryService settlementQueryService;
+    private final ChatIntegrationService chatIntegrationService;
+    private final UserRepository userRepository;
 
     @PostMapping("/{chatRoomId}/create")
-    public ResponseEntity<SettlementResponseDto> createSettlement(
+    public ResponseEntity<SettlementCreateResponseDto> createSettlement(
             @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
             @RequestBody @Valid SettlementRequestDto requestDto,
             @PathVariable Long chatRoomId
     ) {
-        SettlementResponseDto responseDto = settlementService.createSettlement(
+        SettlementCreateResponseDto responseDto = settlementService.createSettlement(
                 userPrincipal.getUserId(), requestDto.participantsUserIds(), requestDto.totalAmount(), chatRoomId);
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
@@ -79,5 +87,32 @@ public class SettlementController {
         return ResponseEntity.ok(settlementQueryService.getSettlementPageByChatRoom(chatRoomId));
     }
 
-    @PostMapping({})
+    @PostMapping("/{chatRoomId}/broadcast/start")
+    public ResponseEntity<Map<String, Object>> sendSettlementStart(
+            @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
+            @PathVariable Long chatRoomId,
+            @RequestBody @Valid SettlementStartBroadcastRequestDto requestDto
+    ) {
+        try {
+            String messageId = chatIntegrationService.sendSettlementBroadcast(
+                    requestDto.settlementId(),
+                    chatRoomId,
+                    userPrincipal.getUserId(),
+                    requestDto.perHead()
+            );
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "messageId", messageId,
+                    "chatRoomId", chatRoomId,
+                    "settlementId", requestDto.settlementId(),
+                    "message", "정산 시작 브로드캐스트가 전송되었습니다."
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "success", false,
+                    "error", e.getMessage()
+            ));
+        }
+    }
 }

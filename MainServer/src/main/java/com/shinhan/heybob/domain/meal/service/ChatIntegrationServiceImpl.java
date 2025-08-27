@@ -2,7 +2,11 @@ package com.shinhan.heybob.domain.meal.service;
 
 import com.shinhan.heybob.common.chat.dto.ChatBroadcastRequest;
 import com.shinhan.heybob.common.chat.service.ChatMessageService;
+import com.shinhan.heybob.common.exception.ExceptionStatus;
+import com.shinhan.heybob.common.exception.HeybobException;
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
+import com.shinhan.heybob.domain.user.entity.User;
+import com.shinhan.heybob.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,6 +21,7 @@ import java.util.stream.Collectors;
 public class ChatIntegrationServiceImpl implements ChatIntegrationService {
     
     private final ChatMessageService chatMessageService;
+    private final UserRepository userRepository;
     
     @Override
     public Long createChatRoom(MealAppointment mealAppointment) {
@@ -54,15 +59,18 @@ public class ChatIntegrationServiceImpl implements ChatIntegrationService {
     
     
     @Override
-    public String sendSettlementBroadcast(Long settlementId, Long chatRoomId, Long requesterId, String requesterName,
-                                          String requesterStudentId, String requesterProfileImg, Integer requestAmount
+    public String sendSettlementBroadcast(Long settlementId, Long chatRoomId, Long requesterId, Integer requestAmount
     ) {
         try {
+            User initiator = userRepository.findById(requesterId)
+                    .orElseThrow(() -> new HeybobException(ExceptionStatus.USER_NOT_FOUND));
+
             String settlementIdStr = String.valueOf(settlementId);
             String chatRoomIdStr = String.valueOf(chatRoomId);
+            String requesterName = initiator.getName();
+            String requesterStudentId = initiator.getStudentId();
+            String requesterProfileImg = initiator.getProfileUrl();
 
-
-            // 지금은 더미 데이터로 처리
             ChatBroadcastRequest request = ChatBroadcastRequest.builder()
                 .settlementId(settlementIdStr)
                 .roomId(chatRoomIdStr)
