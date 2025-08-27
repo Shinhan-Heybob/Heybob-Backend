@@ -211,7 +211,6 @@ public class FinanceAccountServiceImpl implements FinanceAccountService{
                 .build();
     }
 
-    @Transactional
     @Override
     public void deposit(Long userId, int amount) {
         String userKey = externalFinanceUserRepository.findUserKeyByUserRealId(userId)
@@ -221,7 +220,7 @@ public class FinanceAccountServiceImpl implements FinanceAccountService{
         FinanceHeader header = new FinanceHeader(
                 "updateDemandDepositAccountDeposit",
                 KSTUtil.nowDateKst(),
-                KSTUtil.nowDateKst(),
+                KSTUtil.nowTimeKst(),
                 "00100",
                 "001",
                 "updateDemandDepositAccountDeposit",
