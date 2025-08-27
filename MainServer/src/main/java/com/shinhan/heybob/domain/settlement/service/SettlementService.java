@@ -1,6 +1,5 @@
 package com.shinhan.heybob.domain.settlement.service;
 
-import com.shinhan.heybob.domain.settlement.dto.SettlementCreateResponseDto;
 import com.shinhan.heybob.domain.settlement.dto.SettlementResponseDto;
 import org.springframework.http.ResponseEntity;
 
