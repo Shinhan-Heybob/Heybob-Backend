@@ -210,4 +210,45 @@ public class FinanceAccountServiceImpl implements FinanceAccountService{
                 .transactionHistoryDtoList(dtoList)
                 .build();
     }
+
+    @Override
+    public void deposit(Long userId, int amount) {
+        String userKey = externalFinanceUserRepository.findUserKeyByUserRealId(userId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.EMPTY_USER_KEY));
+        String accountNo = userAccountUtil.getPersonalAccountNoByUserRealId(userId);
+
+        FinanceHeader header = new FinanceHeader(
+                "updateDemandDepositAccountDeposit",
+                KSTUtil.nowDateKst(),
+                KSTUtil.nowTimeKst(),
+                "00100",
+                "001",
+                "updateDemandDepositAccountDeposit",
+                KSTUtil.makeUniqueNo(),
+                apiKey,
+                userKey
+        );
+
+        UpdateDemandDepositAccountDepositRequest request = new UpdateDemandDepositAccountDepositRequest(
+                header,
+                accountNo,
+                String.valueOf(amount),
+                "입금"
+        );
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<UpdateDemandDepositAccountDepositRequest> entity = new HttpEntity<>(request, headers);
+
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+                baseurl + "/edu/demandDeposit/updateDemandDepositAccountDeposit",
+                entity,
+                Map.class
+        );
+
+        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            throw new HeybobException(ExceptionStatus.FINANCE_API_NOT_FOUND);
+        }
+
+    }
 }

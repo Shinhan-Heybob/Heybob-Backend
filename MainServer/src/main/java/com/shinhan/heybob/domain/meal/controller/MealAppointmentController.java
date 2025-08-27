@@ -57,24 +57,24 @@ public class MealAppointmentController {
         try {
             // 밥약 정보 조회
             MealAppointmentDetailResponse appointment = mealAppointmentService.getMealAppointment(appointmentId);
-            
+
             String settlementId = (String) request.get("settlementId");
             String requesterName = (String) request.get("requesterName");
             Integer requestAmount = (Integer) request.get("requestAmount");
             String message = (String) request.get("message");
-            
+
             // 채팅방 ID를 roomId로 사용
             String roomId = appointment.getChatRoomId().toString();
-            
+
             // 정산 브로드캐스트 전송
             String messageId = chatIntegrationService.sendSettlementBroadcast(
-                settlementId, 
-                roomId, 
-                requesterName, 
-                requestAmount, 
+                settlementId,
+                roomId,
+                requesterName,
+                requestAmount,
                 message
             );
-            
+
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "messageId", messageId,
@@ -82,7 +82,7 @@ public class MealAppointmentController {
                 "chatRoomId", roomId,
                 "message", "정산 브로드캐스트가 전송되었습니다"
             ));
-            
+
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,

@@ -3,6 +3,7 @@ package com.shinhan.heybob.domain.user.controller;
 import com.shinhan.heybob.common.user.UserPrincipalDetails;
 import com.shinhan.heybob.domain.user.dto.UserResponseDto;
 import com.shinhan.heybob.domain.user.dto.UserUpdateProfileUrlRequestDto;
+import com.shinhan.heybob.domain.user.dto.UsersGetRequestDto;
 import com.shinhan.heybob.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -40,6 +41,14 @@ public class UserController {
             @PathVariable Long userId) {
         UserResponseDto user = userService.getUserById(userId);
         return ResponseEntity.ok(user);
+    }
+
+    @GetMapping("/get-friends")
+    public ResponseEntity<List<UserResponseDto>> getFriends(
+            @RequestBody UsersGetRequestDto requestDto
+    ){
+        List<UserResponseDto> users = userService.getUsersByIds(requestDto.userIds());
+        return ResponseEntity.ok(users);
     }
 
 }

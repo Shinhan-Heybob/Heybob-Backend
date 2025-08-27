@@ -35,7 +35,10 @@ public class AuthController {
 
         return ResponseEntity.ok()
                 .header(HEADER_AUTH, TOKEN_TYPE + authResponseDto.getAccessToken())
-                .body(AuthLoginResponseDto.builder().refreshToken(authResponseDto.getRefreshToken()).build());
+                .body(AuthLoginResponseDto.builder()
+                        .userId(authResponseDto.getUserId())
+                        .refreshToken(authResponseDto.getRefreshToken())
+                        .build());
     }
 
 }
