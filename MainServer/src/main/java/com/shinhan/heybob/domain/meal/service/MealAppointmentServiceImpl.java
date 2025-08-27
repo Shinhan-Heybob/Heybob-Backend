@@ -166,6 +166,12 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
         LocalDateTime now = LocalDateTime.now();
         
         return appointments.stream()
+                .sorted((a, b) -> {
+                    // 먼저 날짜, 시간 순으로 정렬
+                    LocalDateTime aDateTime = LocalDateTime.of(a.getAppointmentDate(), a.getAppointmentTime());
+                    LocalDateTime bDateTime = LocalDateTime.of(b.getAppointmentDate(), b.getAppointmentTime());
+                    return aDateTime.compareTo(bDateTime);
+                })
                 .map(appointment -> {
                     LocalDateTime appointmentDateTime = LocalDateTime.of(
                             appointment.getAppointmentDate(), 
@@ -181,8 +187,6 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
                             .creatorStudentId(creator.getStudentId())
                             .creatorDepartment(creator.getDepartment())
                             .chatRoomId(appointment.getChatRoomId())
-                            .appointmentDate(appointment.getAppointmentDate())
-                            .appointmentTime(appointment.getAppointmentTime())
                             .mealType(appointment.getType())
                             .isActive(isActive)
                             .build();
@@ -194,15 +198,6 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
                         return !appointment.isActive();
                     }
                     return true; // "all" 또는 다른 값일 경우 모두 반환
-                })
-                .sorted((a, b) -> {
-                    // 활성화된 밥약을 먼저 보여주고, 그 다음에 날짜순으로 정렬
-                    if (a.isActive() != b.isActive()) {
-                        return a.isActive() ? -1 : 1;
-                    }
-                    LocalDateTime aDateTime = LocalDateTime.of(a.getAppointmentDate(), a.getAppointmentTime());
-                    LocalDateTime bDateTime = LocalDateTime.of(b.getAppointmentDate(), b.getAppointmentTime());
-                    return aDateTime.compareTo(bDateTime);
                 })
                 .collect(Collectors.toList());
     }
@@ -249,6 +244,12 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
         LocalDateTime now = LocalDateTime.now();
         
         return appointments.stream()
+                .sorted((a, b) -> {
+                    // 먼저 날짜, 시간 순으로 정렬
+                    LocalDateTime aDateTime = LocalDateTime.of(a.getAppointmentDate(), a.getAppointmentTime());
+                    LocalDateTime bDateTime = LocalDateTime.of(b.getAppointmentDate(), b.getAppointmentTime());
+                    return aDateTime.compareTo(bDateTime);
+                })
                 .map(appointment -> {
                     LocalDateTime appointmentDateTime = LocalDateTime.of(
                             appointment.getAppointmentDate(), 
@@ -264,8 +265,6 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
                             .creatorStudentId(creator.getStudentId())
                             .creatorDepartment(creator.getDepartment())
                             .chatRoomId(appointment.getChatRoomId())
-                            .appointmentDate(appointment.getAppointmentDate())
-                            .appointmentTime(appointment.getAppointmentTime())
                             .mealType(appointment.getType())
                             .isActive(isActive)
                             .build();
@@ -277,15 +276,6 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
                         return !appointment.isActive();
                     }
                     return true; // "all" 또는 다른 값일 경우 모두 반환
-                })
-                .sorted((a, b) -> {
-                    // 활성화된 밥약을 먼저 보여주고, 그 다음에 날짜순으로 정렬
-                    if (a.isActive() != b.isActive()) {
-                        return a.isActive() ? -1 : 1;
-                    }
-                    LocalDateTime aDateTime = LocalDateTime.of(a.getAppointmentDate(), a.getAppointmentTime());
-                    LocalDateTime bDateTime = LocalDateTime.of(b.getAppointmentDate(), b.getAppointmentTime());
-                    return aDateTime.compareTo(bDateTime);
                 })
                 .collect(Collectors.toList());
     }
