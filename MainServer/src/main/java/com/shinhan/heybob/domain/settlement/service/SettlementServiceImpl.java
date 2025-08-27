@@ -327,7 +327,18 @@ public class SettlementServiceImpl implements SettlementService {
                 participantRepository.findBySettlement_IdAndParticipantUser_Id(settlement.getId(), userId)
                                 .orElseThrow(() -> new HeybobException(ExceptionStatus.SETTLEMENT_PARTICIPANT_BAD_REQUEST));
 
-        settlementParticipant.isSuccess();
+        settlementParticipant.markSuccess();
+        participantRepository.save(settlementParticipant);
+
+        boolean allPaid = settlement.getParticipants().stream()
+                .allMatch(SettlementParticipant::isSuccess);
+
+        if (allPaid) {
+            settlement.markCompleted();
+            settlementRepository.save(settlement);
+            log.info("정산 완료 처리됨: settlementId={}", settlement.getId());
+        }
+
         log.info("계좌 이체 API - 정산 완료");
     }
 
