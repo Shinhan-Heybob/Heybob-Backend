@@ -22,14 +22,14 @@ public class SettlementController {
     private final SettlementQueryService settlementQueryService;
 
     @PostMapping("/{chatRoomId}/create")
-    public ResponseEntity<Void> createSettlement(
+    public ResponseEntity<SettlementResponseDto> createSettlement(
             @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
             @RequestBody @Valid SettlementRequestDto requestDto,
             @PathVariable Long chatRoomId
     ) {
-        settlementService.createSettlement(
+        SettlementResponseDto responseDto = settlementService.createSettlement(
                 userPrincipal.getUserId(), requestDto.participantsUserIds(), requestDto.totalAmount(), chatRoomId);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
     @PatchMapping("/{chatRoomId}/update")
@@ -79,4 +79,5 @@ public class SettlementController {
         return ResponseEntity.ok(settlementQueryService.getSettlementPageByChatRoom(chatRoomId));
     }
 
+    @PostMapping({})
 }

@@ -69,7 +69,7 @@ public class SettlementServiceImpl implements SettlementService {
 
     @Transactional
     @Override
-    public void createSettlement(
+    public SettlementResponseDto createSettlement(
             Long userId, List<Long> participantsUserIds, int totalAmount, Long chatRoomId
     ) {
         User initiator = userRepository.findById(userId)
@@ -119,18 +119,21 @@ public class SettlementServiceImpl implements SettlementService {
 
         participantRepository.saveAll(rows);
 
-        // Main -> Chat : 정산 생성 알림 보내기
-        chatIntegrationService.sendSettlementBroadcast(
-                saved.getId(),
-                chatRoomId,
-                initiator.getId(),
-                initiator.getName(),
-                initiator.getStudentId(),
-                initiator.getProfileUrl(),
-                totalAmount
-        );
+        SettlementResponseDto responseDto =
+                new SettlementResponseDto(
+                        settlement.getId(),
+                        initiator.getId(),
+                        initiator.getName(),
+                        perHead,
+                        totalAmount,
+                        participantsCount,
+                        true,
+                        false,
+                        null
+                );
 
         log.info("Settlement created successfully");
+        return responseDto;
     }
 
     @Transactional

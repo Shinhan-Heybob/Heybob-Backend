@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface SettlementService {
 
-    void createSettlement(Long userId, List<Long> participantsUserId, int totalAmount, Long chatRoomId);
+    SettlementResponseDto createSettlement(Long userId, List<Long> participantsUserId, int totalAmount, Long chatRoomId);
 
     void updateSettlement(Long userId, List<Long> participantsUserIds, int totalAmount, Long chatRoomId);
 

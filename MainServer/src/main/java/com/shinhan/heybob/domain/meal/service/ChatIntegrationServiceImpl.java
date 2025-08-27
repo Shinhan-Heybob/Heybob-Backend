@@ -88,4 +88,9 @@ public class ChatIntegrationServiceImpl implements ChatIntegrationService {
             throw new RuntimeException("정산 브로드캐스트 전송 실패: " + e.getMessage());
         }
     }
+
+    @Override
+    public String sendSettleRequestBroadcast(Long settlementId, Long chatRoomId, Long requesterId, String requesterName, String requesterStudentId, String requesterProfileImg, Integer requestAmount) {
+        return "";
+    }
 }
