@@ -4,6 +4,7 @@ import com.shinhan.heybob.domain.meal.dto.request.CreateMealAppointmentRequest;
 import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentDetailResponse;
 import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentIdResponse;
 import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentListResponse;
+import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentStatisticsResponse;
 import com.shinhan.heybob.domain.meal.entity.MealType;
 import com.shinhan.heybob.domain.meal.service.ChatIntegrationService;
 import com.shinhan.heybob.domain.meal.service.MealAppointmentService;
@@ -105,5 +106,11 @@ public class MealAppointmentController {
         }
     }
 
+    @GetMapping("/statistics")
+    public ResponseEntity<MealAppointmentStatisticsResponse> getUserMealAppointmentStatistics(
+            @RequestParam Long userId) {
+        MealAppointmentStatisticsResponse response = mealAppointmentService.getUserMealAppointmentStatistics(userId);
+        return ResponseEntity.ok(response);
+    }
 
 }

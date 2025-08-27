@@ -43,4 +43,10 @@ public interface MealAppointmentRepository extends JpaRepository<MealAppointment
     List<MealAppointment> findAllByCreatorId(Long userId);
     
     List<MealAppointment> findAllByCreatorIdAndType(Long userId, MealType type);
+    
+    @Query("SELECT COUNT(DISTINCT ma) FROM MealAppointment ma " +
+           "LEFT JOIN ma.participants p " +
+           "WHERE (p.user.id = :userId OR ma.creator.id = :userId) " +
+           "AND ma.type = :type")
+    long countByUserIdAndType(@Param("userId") Long userId, @Param("type") MealType type);
 }

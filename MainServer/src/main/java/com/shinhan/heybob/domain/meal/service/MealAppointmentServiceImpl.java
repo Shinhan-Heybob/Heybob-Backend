@@ -5,6 +5,7 @@ import com.shinhan.heybob.common.exception.HeybobException;
 import com.shinhan.heybob.domain.meal.dto.request.CreateMealAppointmentRequest;
 import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentDetailResponse;
 import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentListResponse;
+import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentStatisticsResponse;
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
 import com.shinhan.heybob.domain.meal.entity.MealParticipant;
 import com.shinhan.heybob.domain.meal.entity.MealType;
@@ -278,5 +279,27 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
                     return true; // "all" 또는 다른 값일 경우 모두 반환
                 })
                 .collect(Collectors.toList());
+    }
+    
+    @Override
+    public MealAppointmentStatisticsResponse getUserMealAppointmentStatistics(Long userId) {
+        if (userId == null) {
+            throw new HeybobException(ExceptionStatus.USER_NOT_FOUND);
+        }
+
+        if (!userRepository.existsById(userId)) {
+            throw new HeybobException(ExceptionStatus.USER_NOT_FOUND);
+        }
+
+        long mealAppointmentCount = mealAppointmentRepository.countByUserIdAndType(userId, MealType.MEAL_APPOINTMENT);
+        long regularMeetingCount = mealAppointmentRepository.countByUserIdAndType(userId, MealType.REGULAR_MEETING);
+        long totalCount = mealAppointmentCount + regularMeetingCount;
+
+        return MealAppointmentStatisticsResponse.builder()
+                .userId(userId)
+                .mealAppointmentCount(mealAppointmentCount)
+                .regularMeetingCount(regularMeetingCount)
+                .totalCount(totalCount)
+                .build();
     }
 }
