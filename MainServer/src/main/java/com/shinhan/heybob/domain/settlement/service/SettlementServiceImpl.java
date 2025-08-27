@@ -323,6 +323,11 @@ public class SettlementServiceImpl implements SettlementService {
             throw new HeybobException(ExceptionStatus.FINANCE_API_NOT_FOUND);
         }
 
+        SettlementParticipant settlementParticipant =
+                participantRepository.findBySettlement_IdAndParticipantUser_Id(settlement.getId(), userId)
+                                .orElseThrow(() -> new HeybobException(ExceptionStatus.SETTLEMENT_PARTICIPANT_BAD_REQUEST));
+
+        settlementParticipant.isSuccess();
         log.info("계좌 이체 API - 정산 완료");
     }
 
