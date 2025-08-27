@@ -49,4 +49,6 @@ public interface MealAppointmentRepository extends JpaRepository<MealAppointment
            "WHERE (p.user.id = :userId OR ma.creator.id = :userId) " +
            "AND ma.type = :type")
     long countByUserIdAndType(@Param("userId") Long userId, @Param("type") MealType type);
+    
+    Optional<MealAppointment> findByChatRoomId(Long chatRoomId);
 }
