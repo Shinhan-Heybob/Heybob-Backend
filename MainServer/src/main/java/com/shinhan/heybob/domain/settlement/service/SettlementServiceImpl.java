@@ -152,9 +152,13 @@ public class SettlementServiceImpl implements SettlementService {
         int participantsCount = distinctIds.size();
         int perHead = totalAmount / participantsCount;
 
-        // 기존 참가자 제거 (orphanRemoval=true면 DELETE)
-        List<SettlementParticipant> oldRows = new ArrayList<>(settlement.getParticipants());
-        participantRepository.deleteAll(oldRows);
+        // 1) 기존 참가자 행을 '먼저' 삭제하고 DB에 즉시 반영
+        participantRepository.deleteBySettlementId(settlement.getId()); // flush 자동
+
+        // 2) 본문 값 갱신
+        settlement.setTotalAmount(totalAmount);
+        settlement.setPerHeadAmount(perHead);
+        settlement.setParticipantsCount(distinctIds.size());
 
         // 새 참가자 행 구성
         List<SettlementParticipant> newRows = distinctIds.stream()
@@ -165,11 +169,6 @@ public class SettlementServiceImpl implements SettlementService {
                         .transferStatus(TransferStatus.PENDING)
                         .build())
                 .toList();
-
-        // 정산 본문 값 갱신
-        settlement.setTotalAmount(totalAmount);
-        settlement.setPerHeadAmount(perHead);
-        settlement.setParticipantsCount(participantsCount);
 
         participantRepository.saveAll(newRows);
     }
