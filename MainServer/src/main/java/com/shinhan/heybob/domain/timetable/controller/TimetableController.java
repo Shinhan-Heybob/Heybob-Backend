@@ -1,5 +1,7 @@
 package com.shinhan.heybob.domain.timetable.controller;
 
+import com.shinhan.heybob.domain.timetable.dto.TimetableCompareGetRequestDto;
+import com.shinhan.heybob.domain.timetable.dto.TimetableCompareGetResponseDto;
 import com.shinhan.heybob.domain.timetable.dto.TimetableCreateRequestDto;
 import com.shinhan.heybob.domain.timetable.dto.TimetableGetResponseDto;
 import com.shinhan.heybob.domain.timetable.service.TimetableService;
@@ -31,5 +33,10 @@ public class TimetableController {
     public ResponseEntity<Void> deleteTimetable(@PathVariable Long timeTableId) {
         timetableService.deleteTimeTable(timeTableId);
         return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @GetMapping("/compare")
+    public ResponseEntity<TimetableCompareGetResponseDto> compareTimetables(@RequestBody TimetableCompareGetRequestDto timetableCompareGetRequestDto){
+        return ResponseEntity.ok(timetableService.compareTimetables(timetableCompareGetRequestDto));
     }
 }

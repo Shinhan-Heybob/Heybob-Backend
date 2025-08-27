@@ -25,7 +25,7 @@ public class LectureService {
         Timetable timetable = timetableRepository.findById(timeTableId)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.TIMETABLE_NOT_FOUND));
 
-        if(lectureRepository.existsByDayOfWeekAndTimeOverlap(lectureCreateRequestDto.dayOfWeek(),
+        if(lectureRepository.existsByTimetableIdAndDayOfWeekAndTimeOverlap(timetable.getId(), lectureCreateRequestDto.dayOfWeek(),
                 lectureCreateRequestDto.startTime(),
                 lectureCreateRequestDto.endTime()))
             throw new HeybobException(ExceptionStatus.DUPLICATED_LECTURE_TIME);
@@ -43,9 +43,10 @@ public class LectureService {
         lectureRepository.save(lecture);
     }
 
-    public void updateLecture(LectureUpdateRequestDto lectureUpdateRequestDto, Long lectureId) {
+    public void updateLecture(Long timetableId, LectureUpdateRequestDto lectureUpdateRequestDto, Long lectureId) {
 
-        if(lectureRepository.existsByDayOfWeekAndTimeOverlap(lectureUpdateRequestDto.dayOfWeek(),
+        if(lectureRepository.existsByTimetableIdAndDayOfWeekAndTimeOverlap(timetableId,
+                lectureUpdateRequestDto.dayOfWeek(),
                 lectureUpdateRequestDto.startTime(),
                 lectureUpdateRequestDto.endTime()))
             throw new HeybobException(ExceptionStatus.DUPLICATED_LECTURE_TIME);
