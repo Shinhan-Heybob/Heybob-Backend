@@ -3,6 +3,9 @@ package com.shinhan.heybob.domain.meal.controller;
 import com.shinhan.heybob.domain.meal.dto.request.CreateMealAppointmentRequest;
 import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentDetailResponse;
 import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentIdResponse;
+import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentListResponse;
+import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentStatisticsResponse;
+import com.shinhan.heybob.domain.meal.entity.MealType;
 import com.shinhan.heybob.domain.meal.service.ChatIntegrationService;
 import com.shinhan.heybob.domain.meal.service.MealAppointmentService;
 import jakarta.validation.Valid;
@@ -42,8 +45,20 @@ public class MealAppointmentController {
 
     @GetMapping
     public ResponseEntity<List<MealAppointmentDetailResponse>> getUserMealAppointments(
-            @RequestParam Long userId) {
-        List<MealAppointmentDetailResponse> response = mealAppointmentService.getUserMealAppointments(userId);
+            @RequestParam Long userId,
+            @RequestParam(defaultValue = "all") String type) {
+        MealType mealType = "all".equalsIgnoreCase(type) ? null : MealType.valueOf(type.toUpperCase());
+        List<MealAppointmentDetailResponse> response = mealAppointmentService.getUserMealAppointments(userId, mealType);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/list")
+    public ResponseEntity<List<MealAppointmentListResponse>> getUserMealAppointmentList(
+            @RequestParam Long userId,
+            @RequestParam(defaultValue = "all") String status,
+            @RequestParam(defaultValue = "all") String type) {
+        MealType mealType = "all".equalsIgnoreCase(type) ? null : MealType.valueOf(type.toUpperCase());
+        List<MealAppointmentListResponse> response = mealAppointmentService.getUserMealAppointmentList(userId, status, mealType);
         return ResponseEntity.ok(response);
     }
 
@@ -91,5 +106,11 @@ public class MealAppointmentController {
         }
     }
 
+    @GetMapping("/statistics")
+    public ResponseEntity<MealAppointmentStatisticsResponse> getUserMealAppointmentStatistics(
+            @RequestParam Long userId) {
+        MealAppointmentStatisticsResponse response = mealAppointmentService.getUserMealAppointmentStatistics(userId);
+        return ResponseEntity.ok(response);
+    }
 
 }

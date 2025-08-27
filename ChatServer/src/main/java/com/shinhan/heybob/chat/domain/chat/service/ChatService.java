@@ -21,4 +21,8 @@ public interface ChatService {
     
     // 메시지 직접 저장 (정산 메시지 등 특수 목적용)
     void saveMessage(ChatMessage chatMessage);
+    
+    // 학식 정보 처리
+    ChatMessageResponse processCafeteriaInfo(String roomId, String userId, String studentId, 
+                                           String userName, String profileImageUrl, String cafeteriaInfo);
 }

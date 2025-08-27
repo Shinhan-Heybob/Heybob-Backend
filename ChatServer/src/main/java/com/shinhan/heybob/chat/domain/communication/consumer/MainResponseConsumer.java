@@ -153,27 +153,20 @@ public class MainResponseConsumer {
                     communicationService.handleResponse(message);
                     break;
                     
+                // 4가지 주요 금융 메시지 타입
+                case PAYMENT_REQUEST:
+                case SAVINGS_REQUEST:
+                case PAYMENT_COMPLETE:
+                case SAVINGS_COMPLETE:
+                    // 모든 금융 관련 메시지는 통합 핸들러로 처리
+                    messageHandler.handleMessage(message);
+                    break;
+                    
+                // 기타 알림 메시지
                 case ROOM_STATUS_CHANGED:
                 case MEMBER_JOINED:
                 case MEMBER_LEFT:
-                    // 알림 메시지는 별도 핸들러에서 처리
-                    messageHandler.handleNotification(message);
-                    break;
-                    
-                case PAYMENT_REQUEST:
-                    // 정산 요청 처리
-                    messageHandler.handleSettlementBroadcast(message);
-                    break;
-                    
-                case SAVINGS_REQUEST:
-                    // 적금 요청 처리
-                    messageHandler.handleSavingsBroadcast(message);
-                    break;
-                    
-                case PAYMENT_COMPLETE:
-                case SAVINGS_COMPLETE:
-                    // Payment 완료 알림 처리
-                    messageHandler.handleNotification(message);
+                    messageHandler.handleMessage(message);
                     break;
                     
                 case ERROR_RESPONSE:

@@ -230,13 +230,15 @@ public class MainServerCommunicationServiceImpl implements MainServerCommunicati
         streamData.put("sourceServer", message.getSourceServer());
         streamData.put("targetServer", message.getTargetServer());
         streamData.put("timestamp", message.getTimestamp().toString());
-        streamData.put("retryCount", message.getRetryCount());
+        streamData.put("retryCount", String.valueOf(message.getRetryCount())); // int를 String으로 변환
         streamData.put("expiryTime", message.getExpiryTime() != null ? message.getExpiryTime().toString() : null);
         
-        // Payload를 JSON 문자열로 변환하여 저장
+        // Payload를 안전하게 문자열로 변환하여 저장
         if (message.getPayload() != null) {
             message.getPayload().forEach((key, value) -> {
-                streamData.put("payload_" + key, value);
+                if (value != null) {
+                    streamData.put("payload_" + key, value.toString()); // 모든 값을 String으로 변환
+                }
             });
         }
         

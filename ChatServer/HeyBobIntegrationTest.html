@@ -464,15 +464,20 @@
         
             
             <div id="testGuide" class="test-guide" style="display: none;">
-                <h4>📋 간단한 테스트 가이드</h4>
+                <h4>📋 테스트 가이드</h4>
                 <ol>
                     <li><strong>1단계:</strong> 두 사용자 모두 "연결" → "구독" 버튼 클릭</li>
-                    <li><strong>2단계:</strong> 메시지 입력으로 채팅 테스트</li>
-                    <li><strong>3단계:</strong> "💰 정산 요청" 또는 "🏦 적금 요청" 버튼으로 특수 메시지 테스트</li>
+                    <li><strong>2단계:</strong> 메시지 입력으로 일반 채팅 테스트</li>
+                    <li><strong>3단계:</strong> "💰 정산 요청", "🏦 적금 요청" 버튼으로 Main Server 연동 테스트</li>
+                    <li><strong>4단계:</strong> "🍚 학식 정보" 버튼으로 Chat Server 내부 기능 테스트</li>
                 </ol>
-                <p style="color: #666; font-size: 0.9em; margin-top: 15px;">
-                    💡 <strong>참고:</strong> Main Server(8080), Chat Server(8081) 모두 실행 필요
-                </p>
+                <div style="background: #f0f8ff; border: 1px solid #4299e1; border-radius: 8px; padding: 15px; margin-top: 15px;">
+                    <p style="color: #2c5aa0; font-size: 0.9em; margin: 0;">
+                        💡 <strong>중요:</strong> Main Server(8080), Chat Server(8081) 모두 실행 필요<br>
+                        ⚠️ 금융 메시지(정산/적금)는 Main Server를 통해서만 전송됩니다<br>
+                        ✅ 일반 채팅과 학식 정보는 Chat Server에서 직접 처리됩니다
+                    </p>
+                </div>
             </div>
         </div>
         
@@ -494,6 +499,7 @@
                     <button class="btn btn-warning btn-sm" onclick="disconnect(1)">해제</button>
                     <button class="btn btn-primary btn-sm" onclick="sendSettlement(1)">💰 정산 요청</button>
                     <button class="btn btn-info btn-sm" onclick="sendSavings(1)">🏦 적금 요청</button>
+                    <button class="btn btn-warning btn-sm" onclick="sendCafeteriaInfo(1)">🍚 학식 정보</button>
                 </div>
                 
                 <div id="messages1" class="messages"></div>
@@ -523,6 +529,7 @@
                     <button class="btn btn-warning btn-sm" onclick="disconnect(2)">해제</button>
                     <button class="btn btn-primary btn-sm" onclick="sendSettlement(2)">💰 정산 요청</button>
                     <button class="btn btn-info btn-sm" onclick="sendSavings(2)">🏦 적금 요청</button>
+                    <button class="btn btn-warning btn-sm" onclick="sendCafeteriaInfo(2)">🍚 학식 정보</button>
                 </div>
                 
                 <div id="messages2" class="messages"></div>
@@ -638,50 +645,71 @@
                     const isOwnMessage = chatMessage.senderId === users[userIndex].userId;
                     const messageType = isOwnMessage ? 'own' : 'other';
                     
-                    if (chatMessage.paymentRequestData || chatMessage.messageType === 'PAYMENT_REQUEST') {
-                        let paymentData = chatMessage.paymentRequestData;
-                        if (!paymentData && chatMessage.messageType === 'PAYMENT_REQUEST') {
-                            paymentData = {
+                    // MessageType에 따른 메시지 처리
+                    switch (chatMessage.messageType) {
+                        case 'CHAT':
+                            addMessage(userIndex, chatMessage.senderName, chatMessage.content, messageType, chatMessage.timestamp);
+                            break;
+                            
+                        case 'JOIN':
+                            addMessage(userIndex, 'System', `👋 ${chatMessage.senderName}님이 채팅방에 입장했습니다`, 'system', chatMessage.timestamp);
+                            break;
+                            
+                        case 'LEAVE':
+                            addMessage(userIndex, 'System', `👋 ${chatMessage.senderName}님이 채팅방을 나갔습니다`, 'system', chatMessage.timestamp);
+                            break;
+                            
+                        case 'PAYMENT_REQUEST':
+                            let paymentData = chatMessage.paymentRequestData || {
                                 settlementId: 'temp-' + Date.now(),
                                 requestAmount: 15000,
                                 settlementUrl: '/main/settlement/temp'
                             };
-                        }
-                        
-                        const combinedContent = `
-                            ${chatMessage.content}
-                            <div class="settlement-info">
-                                <button class="settlement-btn" onclick="window.open('${paymentData.settlementUrl}', '_blank')">
-                                    ${paymentData.requestAmount ? paymentData.requestAmount.toLocaleString() : '15,000'}원 송금하기
-                                </button>
-                            </div>
-                        `;
-                        addMessage(userIndex, chatMessage.senderName, combinedContent, 'settlement', chatMessage.timestamp);
-                    } else if (chatMessage.messageType === 'SAVINGS_REQUEST') {
-                        let paymentData = chatMessage.paymentRequestData;
-                        if (!paymentData) {
-                            paymentData = {
+                            
+                            const settlementContent = `
+                                ${chatMessage.content}
+                                <div class="settlement-info">
+                                    <button class="settlement-btn" onclick="window.open('${paymentData.settlementUrl}', '_blank')">
+                                        ${paymentData.requestAmount ? paymentData.requestAmount.toLocaleString() : '15,000'}원 송금하기
+                                    </button>
+                                </div>
+                            `;
+                            addMessage(userIndex, chatMessage.senderName, settlementContent, 'settlement', chatMessage.timestamp);
+                            break;
+                            
+                        case 'PAYMENT_COMPLETE':
+                            addMessage(userIndex, chatMessage.senderName, `✅ ${chatMessage.content}`, 'settlement', chatMessage.timestamp);
+                            break;
+                            
+                        case 'SAVINGS_REQUEST':
+                            let savingsData = chatMessage.paymentRequestData || {
                                 settlementId: 'temp-savings-' + Date.now(),
                                 requestAmount: 20000,
                                 settlementUrl: '/main/savings/temp'
                             };
-                        }
-                        
-                        const combinedContent = `
-                            ${chatMessage.content}
-                            <div class="settlement-info">
-                                <button class="settlement-btn" onclick="window.open('${paymentData.settlementUrl}', '_blank')">
-                                    ${paymentData.requestAmount ? paymentData.requestAmount.toLocaleString() : '20,000'}원 적금하기
-                                </button>
-                            </div>
-                        `;
-                        addMessage(userIndex, chatMessage.senderName, combinedContent, 'savings', chatMessage.timestamp);
-                    } else if (chatMessage.messageType === 'PAYMENT_COMPLETE') {
-                        addMessage(userIndex, chatMessage.senderName, chatMessage.content, 'settlement', chatMessage.timestamp);
-                    } else if (chatMessage.messageType === 'SAVINGS_COMPLETE') {
-                        addMessage(userIndex, chatMessage.senderName, chatMessage.content, 'savings', chatMessage.timestamp);
-                    } else {
-                        addMessage(userIndex, chatMessage.senderName, chatMessage.content, messageType, chatMessage.timestamp);
+                            
+                            const savingsContent = `
+                                ${chatMessage.content}
+                                <div class="settlement-info">
+                                    <button class="settlement-btn" onclick="window.open('${savingsData.settlementUrl}', '_blank')">
+                                        ${savingsData.requestAmount ? savingsData.requestAmount.toLocaleString() : '20,000'}원 적금하기
+                                    </button>
+                                </div>
+                            `;
+                            addMessage(userIndex, chatMessage.senderName, savingsContent, 'savings', chatMessage.timestamp);
+                            break;
+                            
+                        case 'SAVINGS_COMPLETE':
+                            addMessage(userIndex, chatMessage.senderName, `✅ ${chatMessage.content}`, 'savings', chatMessage.timestamp);
+                            break;
+                            
+                        case 'CAFETERIA_INFO':
+                            addMessage(userIndex, '🍚 학식봇', chatMessage.content, 'system', chatMessage.timestamp);
+                            break;
+                            
+                        default:
+                            addMessage(userIndex, chatMessage.senderName, chatMessage.content, messageType, chatMessage.timestamp);
+                            break;
                     }
                     
                 } catch (e) {
@@ -824,11 +852,60 @@
             });
         }
         
+        // 학식 정보 요청 전송 (Main Server API 호출)
+        function sendCafeteriaInfo(userIndex) {
+            const user = users[userIndex];
+            
+            const cafeteriaRequest = {
+                roomId: currentRoomId,
+                requesterName: user.userName,
+                message: `${user.userName}님이 학식 정보를 요청했습니다.`
+            };
+            
+            addMessage(userIndex, 'System', `🍚 Chat 서버로 학식 정보 요청 중...`, 'system');
+            
+            fetch(`http://localhost:8081/api/chat/${currentRoomId}/cafeteria`, {
+                method: 'POST',
+                mode: 'cors',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-User-Id': user.userId,
+                    'X-User-Name': encodeURIComponent(user.userName)
+                },
+                body: JSON.stringify(cafeteriaRequest)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('학식 정보 요청 응답:', data);
+                if (data.success) {
+                    addMessage(userIndex, 'System', `✅ 학식 정보 요청 성공`, 'system');
+                } else {
+                    addMessage(userIndex, 'System', `❌ 학식 정보 요청 실패: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('학식 정보 요청 실패:', error);
+                addMessage(userIndex, 'System', `❌ Chat 서버 학식 정보 요청 실패: ${error.message}`, 'error');
+            });
+        }
+        
         // 채팅 내역 로드
         function loadChatHistory(userIndex) {
             addMessage(userIndex, 'System', `📜 이전 채팅 기록 로딩 중...`, 'system');
             
-            fetch(`http://localhost:8081/api/chat/rooms/${currentRoomId}/messages?limit=20`)
+            fetch(`http://localhost:8081/api/chat/rooms/${currentRoomId}/messages?limit=20`, {
+                method: 'GET',
+                mode: 'cors',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-User-Id': `test-user-${userIndex}`
+                }
+            })
                 .then(response => {
                     if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     return response.json();
@@ -854,45 +931,71 @@
                             const isOwnMessage = msg.senderId === users[userIndex].userId;
                             const messageType = isOwnMessage ? 'own' : 'other';
                             
-                            // 정산/적금 메시지 특별 처리
-                            if (msg.paymentRequestData || msg.messageType === 'PAYMENT_REQUEST') {
-                                let paymentData = msg.paymentRequestData || {
-                                    settlementId: 'history-' + Date.now(),
-                                    requestAmount: 15000,
-                                    settlementUrl: '/main/settlement/temp'
-                                };
-                                
-                                const combinedContent = `
-                                    ${msg.content}
-                                    <div class="settlement-info">
-                                        <button class="settlement-btn" onclick="window.open('${paymentData.settlementUrl}', '_blank')">
-                                            ${paymentData.requestAmount ? paymentData.requestAmount.toLocaleString() : '15,000'}원 송금하기
-                                        </button>
-                                    </div>
-                                `;
-                                addMessage(userIndex, msg.senderName, combinedContent, 'settlement', msg.timestamp);
-                            } else if (msg.messageType === 'SAVINGS_REQUEST') {
-                                let paymentData = msg.paymentRequestData || {
-                                    settlementId: 'history-savings-' + Date.now(),
-                                    requestAmount: 20000,
-                                    settlementUrl: '/main/savings/temp'
-                                };
-                                
-                                const combinedContent = `
-                                    ${msg.content}
-                                    <div class="settlement-info">
-                                        <button class="settlement-btn" onclick="window.open('${paymentData.settlementUrl}', '_blank')">
-                                            ${paymentData.requestAmount ? paymentData.requestAmount.toLocaleString() : '20,000'}원 적금하기
-                                        </button>
-                                    </div>
-                                `;
-                                addMessage(userIndex, msg.senderName, combinedContent, 'savings', msg.timestamp);
-                            } else if (msg.messageType === 'PAYMENT_COMPLETE') {
-                                addMessage(userIndex, msg.senderName, msg.content, 'settlement', msg.timestamp);
-                            } else if (msg.messageType === 'SAVINGS_COMPLETE') {
-                                addMessage(userIndex, msg.senderName, msg.content, 'savings', msg.timestamp);
-                            } else {
-                                addMessage(userIndex, msg.senderName, msg.content, messageType, msg.timestamp);
+                            // MessageType에 따른 히스토리 메시지 처리
+                            switch (msg.messageType) {
+                                case 'CHAT':
+                                    addMessage(userIndex, msg.senderName, msg.content, messageType, msg.timestamp);
+                                    break;
+                                    
+                                case 'JOIN':
+                                    addMessage(userIndex, 'System', `👋 ${msg.senderName}님이 채팅방에 입장했습니다`, 'system', msg.timestamp);
+                                    break;
+                                    
+                                case 'LEAVE':
+                                    addMessage(userIndex, 'System', `👋 ${msg.senderName}님이 채팅방을 나갔습니다`, 'system', msg.timestamp);
+                                    break;
+                                    
+                                case 'PAYMENT_REQUEST':
+                                    let historyPaymentData = msg.paymentRequestData || {
+                                        settlementId: 'history-' + Date.now(),
+                                        requestAmount: 15000,
+                                        settlementUrl: '/main/settlement/temp'
+                                    };
+                                    
+                                    const historyCombinedContent = `
+                                        ${msg.content}
+                                        <div class="settlement-info">
+                                            <button class="settlement-btn" onclick="window.open('${historyPaymentData.settlementUrl}', '_blank')">
+                                                ${historyPaymentData.requestAmount ? historyPaymentData.requestAmount.toLocaleString() : '15,000'}원 송금하기
+                                            </button>
+                                        </div>
+                                    `;
+                                    addMessage(userIndex, msg.senderName, historyCombinedContent, 'settlement', msg.timestamp);
+                                    break;
+                                    
+                                case 'PAYMENT_COMPLETE':
+                                    addMessage(userIndex, msg.senderName, `✅ ${msg.content}`, 'settlement', msg.timestamp);
+                                    break;
+                                    
+                                case 'SAVINGS_REQUEST':
+                                    let historySavingsData = msg.paymentRequestData || {
+                                        settlementId: 'history-savings-' + Date.now(),
+                                        requestAmount: 20000,
+                                        settlementUrl: '/main/savings/temp'
+                                    };
+                                    
+                                    const historySavingsContent = `
+                                        ${msg.content}
+                                        <div class="settlement-info">
+                                            <button class="settlement-btn" onclick="window.open('${historySavingsData.settlementUrl}', '_blank')">
+                                                ${historySavingsData.requestAmount ? historySavingsData.requestAmount.toLocaleString() : '20,000'}원 적금하기
+                                            </button>
+                                        </div>
+                                    `;
+                                    addMessage(userIndex, msg.senderName, historySavingsContent, 'savings', msg.timestamp);
+                                    break;
+                                    
+                                case 'SAVINGS_COMPLETE':
+                                    addMessage(userIndex, msg.senderName, `✅ ${msg.content}`, 'savings', msg.timestamp);
+                                    break;
+                                    
+                                case 'CAFETERIA_INFO':
+                                    addMessage(userIndex, '🍚 학식봇', msg.content, 'system', msg.timestamp);
+                                    break;
+                                    
+                                default:
+                                    addMessage(userIndex, msg.senderName, msg.content, messageType, msg.timestamp);
+                                    break;
                             }
                         });
                     } else {
