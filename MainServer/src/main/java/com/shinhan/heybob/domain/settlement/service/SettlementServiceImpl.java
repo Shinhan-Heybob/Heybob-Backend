@@ -288,12 +288,12 @@ public class SettlementServiceImpl implements SettlementService {
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.EMPTY_USER_KEY));
 
         FinanceHeader header = new FinanceHeader(
-                "inquireDemandDepositAccountBalance",
+                "updateDemandDepositAccountTransfer",
                 KSTUtil.nowDateKst(),
                 KSTUtil.nowTimeKst(),
                 "00100",
                 "001",
-                "inquireDemandDepositAccountBalance",
+                "updateDemandDepositAccountTransfer",
                 KSTUtil.makeUniqueNo(),
                 apiKey,
                 userKey
