@@ -1,11 +1,10 @@
 package com.shinhan.heybob.domain.settlement.controller;
 
 import com.shinhan.heybob.common.user.UserPrincipalDetails;
-import com.shinhan.heybob.domain.meal.service.ChatIntegrationService;
+import com.shinhan.heybob.domain.notification.service.ChatIntegrationService;
 import com.shinhan.heybob.domain.settlement.dto.*;
 import com.shinhan.heybob.domain.settlement.service.SettlementQueryService;
 import com.shinhan.heybob.domain.settlement.service.SettlementService;
-import com.shinhan.heybob.domain.user.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

@@ -6,7 +6,7 @@ import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentIdResponse;
 import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentListResponse;
 import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentStatisticsResponse;
 import com.shinhan.heybob.domain.meal.entity.MealType;
-import com.shinhan.heybob.domain.meal.service.ChatIntegrationService;
+import com.shinhan.heybob.domain.notification.service.ChatIntegrationService;
 import com.shinhan.heybob.domain.meal.service.MealAppointmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/meal-appointments")  // context-path가 /api이므로 /meal-appointments만 사용

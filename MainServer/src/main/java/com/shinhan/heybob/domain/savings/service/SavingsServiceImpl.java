@@ -9,7 +9,7 @@ import com.shinhan.heybob.domain.financePersonal.repository.PersonalAccountRepos
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
 import com.shinhan.heybob.domain.meal.repository.MealAppointmentRepository;
 import com.shinhan.heybob.domain.meal.repository.MealParticipantRepository;
-import com.shinhan.heybob.domain.notification.service.ChatBroadcastSender;
+import com.shinhan.heybob.domain.notification.service.ChatBroadcastSenderImpl;
 import com.shinhan.heybob.domain.savings.dto.CreateAccountRequest;
 import com.shinhan.heybob.domain.savings.entity.SavingsAccount;
 import com.shinhan.heybob.domain.savings.entity.SavingsDeposit;
@@ -49,7 +49,7 @@ public class SavingsServiceImpl implements SavingsService {
     private final SavingsPlanRepository savingsPlanRepository;
     private final MealParticipantRepository mealParticipantRepository;
     private final SavingsDepositRepository savingsDepositRepository;
-    private final ChatBroadcastSender chatBroadcastSender;
+    private final ChatBroadcastSenderImpl chatBroadcastSenderImpl;
 
     @Value("${ssafy.finance.base-url}")
     private String baseUrl;
@@ -169,7 +169,7 @@ public class SavingsServiceImpl implements SavingsService {
                     new TransactionSynchronization() {
                         @Override
                         public void afterCommit() {
-                            chatBroadcastSender.sendSavingsRequest(
+                            chatBroadcastSenderImpl.sendSavingsRequest(
                                     String.valueOf(chatRoomId),                 // roomId
                                     String.valueOf(creator.getId()),            // senderId
                                     creator.getStudentId(),                     // studentId
@@ -311,7 +311,7 @@ public class SavingsServiceImpl implements SavingsService {
             TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {
                         @Override public void afterCommit() {
-                            chatBroadcastSender.sendSavingsComplete(
+                            chatBroadcastSenderImpl.sendSavingsComplete(
                                     String.valueOf(chatRoomId),         // roomId
                                     String.valueOf(payer.getId()),      // senderId
                                     payer.getStudentId(),               // studentId

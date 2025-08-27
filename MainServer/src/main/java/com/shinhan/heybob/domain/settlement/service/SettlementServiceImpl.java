@@ -8,7 +8,7 @@ import com.shinhan.heybob.domain.financePersonal.repository.ExternalFinanceUserR
 import com.shinhan.heybob.domain.financePersonal.util.UserAccountUtil;
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
 import com.shinhan.heybob.domain.meal.repository.MealAppointmentRepository;
-import com.shinhan.heybob.domain.notification.service.ChatBroadcastSender;
+import com.shinhan.heybob.domain.notification.service.ChatBroadcastSenderImpl;
 import com.shinhan.heybob.domain.settlement.dto.SettlementCreateResponseDto;
 import com.shinhan.heybob.domain.settlement.dto.SettlementResponseDto;
 import com.shinhan.heybob.domain.settlement.dto.UpdateDemandDepositAccountTransferRequest;
@@ -48,7 +48,7 @@ public class SettlementServiceImpl implements SettlementService {
     private final UserAccountUtil userAccountUtil;
     private final ExternalFinanceUserRepository externalFinanceUserRepository;
     private final RestTemplate restTemplate;
-    private final ChatBroadcastSender chatBroadcastSender;
+    private final ChatBroadcastSenderImpl chatBroadcastSenderImpl;
 
     @Value("${ssafy.finance.base-url}")
     private String baseurl;
@@ -120,7 +120,7 @@ public class SettlementServiceImpl implements SettlementService {
         String msg = String.format("정산 요청입니다. 1/N 금액: %,d원", perHead);
 
         // Notification: 채팅방
-        String messageId = chatBroadcastSender.sendPaymentRequest(
+        String messageId = chatBroadcastSenderImpl.sendPaymentRequest(
                 String.valueOf(chatRoomId),
                 String.valueOf(initiator.getId()),
                 initiator.getStudentId(),
@@ -322,7 +322,7 @@ public class SettlementServiceImpl implements SettlementService {
         String content = String.format("%s님이 %,d원을 송금했습니다.",
                 withdrawalUser.getName(), settlement.getPerHeadAmount());
 
-        chatBroadcastSender.sendPaymentComplete(
+        chatBroadcastSenderImpl.sendPaymentComplete(
                 String.valueOf(chatRoomId),                    // roomId
                 String.valueOf(withdrawalUser.getId()),        // senderId
                 withdrawalUser.getStudentId(),                 // studentId
