@@ -781,10 +781,8 @@
             };
             
             addMessage(userIndex, 'System', `💰 Main 서버로 정산 요청 전송 중...`, 'system');
-
-            const url = `http://localhost:8080/api/settle/${encodeURIComponent(currentRoomId)}/create`;
             
-            fetch(url, {
+            fetch('http://localhost:8080/api/test/send-settlement-broadcast', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -827,9 +825,7 @@
             
             addMessage(userIndex, 'System', `🏦 Main 서버로 적금 요청 전송 중...`, 'system');
 
-            const url = `http://localhost:8080/api/savings/${encodeURIComponent(currentRoomId)}/create`
-
-            fetch(url, {
+            fetch('http://localhost:8080/api/test/send-savings-broadcast', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
