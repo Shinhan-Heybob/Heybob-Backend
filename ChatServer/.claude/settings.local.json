@@ -30,7 +30,17 @@
       "Bash(grep:*)",
       "Read(/C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\MainServer\\src\\main\\java\\com\\shinhan\\heybob\\domain\\meal\\service/**)",
       "Read(/C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\MainServer/**)",
-      "Bash(./gradlew:*)"
+      "Bash(./gradlew:*)",
+      "Read(C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\MainServer\\src\\main\\java\\com\\shinhan\\heybob\\domain\\settlement\\controller/**)",
+      "Read(C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\MainServer\\src\\main\\java\\com\\shinhan\\heybob\\domain\\settlement\\dto/**)",
+      "Read(C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\MainServer\\src\\main\\java\\com\\shinhan\\heybob\\domain\\notification\\publisher/**)",
+      "Read(C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\MainServer\\src\\main\\java\\com\\shinhan\\heybob\\domain\\notification\\dto/**)",
+      "Read(C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\MainServer\\src\\main\\java\\com\\shinhan\\heybob\\common\\chat\\service/**)",
+      "Read(C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\MainServer\\src/**)",
+      "Read(C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\MainServer\\src\\main\\java\\com\\shinhan\\heybob\\domain\\meal\\service/**)",
+      "Read(C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\MainServer\\src\\main\\java\\com\\shinhan\\heybob\\domain\\test\\controller/**)",
+      "Read(C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\MainServer\\src\\main\\java\\com\\shinhan\\heybob\\domain\\meal/**)",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "ask": []

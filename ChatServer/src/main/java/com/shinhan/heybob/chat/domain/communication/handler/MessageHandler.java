@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -152,19 +153,43 @@ public class MessageHandler {
         log.info("✅ PAYMENT_COMPLETE 수신: roomId={}, settlementId={}, status={}", 
             roomId, settlementId, status);
         
-        // 정산 완료 메시지를 해당 방에 브로드캐스트
-        Map<String, Object> notification = Map.of(
-            "type", "PAYMENT_COMPLETE",
-            "roomId", roomId,
-            "settlementId", settlementId,
-            "status", status,
-            "paymentResults", paymentResults,
-            "totalAmount", totalAmount,
-            "message", completionMessage,
-            "timestamp", message.getTimestamp()
-        );
+        // 정산 완료 메시지를 ChatMessageResponse 형태로 변환하여 일반 채팅 토픽으로 전송
+        String messageId = UUID.randomUUID().toString();
         
-        messagingTemplate.convertAndSend("/topic/room/" + roomId + "/payment", notification);
+        // ChatMessageResponse 형태로 생성
+        ChatMessageResponse completeMessage = ChatMessageResponse.builder()
+            .messageId(messageId)
+            .roomId(roomId)
+            .senderId("system")
+            .senderName("시스템")
+            .content(completionMessage != null ? completionMessage : "정산이 완료되었습니다.")
+            .messageType("PAYMENT_COMPLETE")
+            .timestamp(LocalDateTime.now())
+            .paymentCompleteData(PaymentCompleteData.builder()
+                .settlementId(settlementId)
+                .roomId(roomId)
+                .completedAmount(totalAmount != null ? Integer.parseInt(totalAmount) : 0)
+                .build())
+            .build();
+        
+        // 완료 메시지에 추가 데이터 포함 (필요 시 클라이언트에서 파싱)
+        Map<String, Object> completeNotification = new HashMap<>();
+        completeNotification.put("messageId", messageId);
+        completeNotification.put("roomId", roomId);
+        completeNotification.put("senderId", "system");
+        completeNotification.put("senderName", "시스템");
+        completeNotification.put("content", completionMessage != null ? completionMessage : "정산이 완료되었습니다.");
+        completeNotification.put("messageType", "PAYMENT_COMPLETE");
+        completeNotification.put("timestamp", LocalDateTime.now().toString());
+        completeNotification.put("settlementId", settlementId);
+        completeNotification.put("status", status);
+        completeNotification.put("paymentResults", paymentResults);
+        completeNotification.put("totalAmount", totalAmount);
+        
+        // 일반 채팅 토픽으로 전송
+        messagingTemplate.convertAndSend("/topic/room/" + roomId, completeNotification);
+        
+        log.info("✅ 정산 완료 메시지를 일반 채팅 토픽으로 전송: roomId={}, messageId={}", roomId, messageId);
         
         // 개별 사용자에게도 결과 전송 (성공/실패)
         for (Map<String, Object> result : paymentResults) {
@@ -229,6 +254,7 @@ public class MessageHandler {
             
             // 정산 메시지 생성 및 방에 브로드캐스트
             log.info("🔍 broadcastPaymentMessage 호출 시작");
+            log.info("🔍 PaymentRequestData 전달 전 확인: requesterName={}", paymentData.getRequesterName());
             broadcastPaymentMessage(roomId, paymentData);
             log.info("🔍 broadcastPaymentMessage 호출 완료");
             
@@ -256,13 +282,17 @@ public class MessageHandler {
                 .paymentCompleteData(null)
                 .emergencyFallback(false)
                 .build();
+                
+            log.info("🔍 생성된 ChatMessage senderName: {}", chatMessage.getSenderName());
             
             // 2. 안전한 저장 (재시도 + Redis 백업)
             boolean saveSuccess = financialMessageService.saveFinancialMessageSafely(chatMessage);
             
             if (saveSuccess) {
                 // 3. 저장/백업 성공 시 WebSocket 브로드캐스트
+                log.info("🔍 브로드캐스트 전 paymentData 확인: requesterName={}", paymentData.getRequesterName());
                 ChatMessageResponse settlementMessage = createPaymentResponse(messageId, roomId, chatMessage, paymentData);
+                log.info("🔍 생성된 ChatMessageResponse senderName: {}", settlementMessage.getSenderName());
                 messagingTemplate.convertAndSend("/topic/room/" + roomId, settlementMessage);
                 
                 log.info("✅ 정산 메시지 처리 완료 (MongoDB 저장 또는 Redis 백업): roomId={}, settlementId={}, messageId={}", 
@@ -287,8 +317,8 @@ public class MessageHandler {
         return ChatMessageResponse.builder()
             .messageId(messageId)
             .roomId(roomId)
-            .senderId("system")
-            .senderName("시스템")
+            .senderId(paymentData.getRequesterId() != null ? paymentData.getRequesterId().toString() : "system")
+            .senderName(paymentData.getRequesterName())  // 실제 요청자 이름 사용
             .content(chatMessage.getContent())
             .messageType("PAYMENT_REQUEST")
             .timestamp(chatMessage.getTimestamp())
@@ -376,19 +406,27 @@ public class MessageHandler {
         log.info("✅ SAVINGS_COMPLETE 수신: roomId={}, savingsId={}, status={}", 
             roomId, savingsId, status);
         
-        // 적금 완료 메시지를 해당 방에 브로드캐스트
-        Map<String, Object> notification = Map.of(
-            "type", "SAVINGS_COMPLETE",
-            "roomId", roomId,
-            "savingsId", savingsId,
-            "status", status,
-            "savingsResults", savingsResults,
-            "totalAmount", totalAmount,
-            "message", completionMessage,
-            "timestamp", message.getTimestamp()
-        );
+        // 적금 완료 메시지를 ChatMessageResponse 형태로 변환하여 일반 채팅 토픽으로 전송
+        String messageId = UUID.randomUUID().toString();
         
-        messagingTemplate.convertAndSend("/topic/room/" + roomId + "/savings", notification);
+        // 완료 메시지에 추가 데이터 포함 (필요 시 클라이언트에서 파싱)
+        Map<String, Object> completeNotification = new HashMap<>();
+        completeNotification.put("messageId", messageId);
+        completeNotification.put("roomId", roomId);
+        completeNotification.put("senderId", "system");
+        completeNotification.put("senderName", "시스템");
+        completeNotification.put("content", completionMessage != null ? completionMessage : "적금이 완료되었습니다.");
+        completeNotification.put("messageType", "SAVINGS_COMPLETE");
+        completeNotification.put("timestamp", LocalDateTime.now().toString());
+        completeNotification.put("savingsId", savingsId);
+        completeNotification.put("status", status);
+        completeNotification.put("savingsResults", savingsResults);
+        completeNotification.put("totalAmount", totalAmount);
+        
+        // 일반 채팅 토픽으로 전송
+        messagingTemplate.convertAndSend("/topic/room/" + roomId, completeNotification);
+        
+        log.info("✅ 적금 완료 메시지를 일반 채팅 토픽으로 전송: roomId={}, messageId={}", roomId, messageId);
         
         // 개별 사용자에게도 결과 전송
         for (Map<String, Object> result : savingsResults) {
