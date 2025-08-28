@@ -17,23 +17,23 @@ public class SavingsController {
 
     private final SavingsService savingsService;
 
-    @PostMapping("/{mealId}/create")
+    @PostMapping("/{chatId}/create")
     public ResponseEntity<Void> createSavingsAccount(
             @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
-            @PathVariable Long mealId,
+            @PathVariable Long chatId,
             @RequestBody @Valid SavingsAccountCreateRequestDto requestDto
     ) {
         savingsService.createSavingsAccount(
-                userPrincipal.getUserId(), mealId, requestDto.perHeadBalance(), requestDto.totalAmount());
+                userPrincipal.getUserId(), chatId, requestDto.perHeadBalance(), requestDto.totalAmount());
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/{mealId}/pay")
+    @PostMapping("/{chatId}/pay")
     public ResponseEntity<Void> paySavingsAccount(
             @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
-            @PathVariable Long mealId
+            @PathVariable Long chatId
     ) {
-        savingsService.paySavingsAccount(userPrincipal.getUserId(), mealId);
+        savingsService.paySavingsAccount(userPrincipal.getUserId(), chatId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }
