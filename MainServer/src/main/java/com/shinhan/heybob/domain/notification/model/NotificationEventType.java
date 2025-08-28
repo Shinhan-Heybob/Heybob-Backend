@@ -1,4 +1,4 @@
-package com.shinhan.heybob.domain.notification;
+package com.shinhan.heybob.domain.notification.model;
 
 public enum NotificationEventType {
     REQUESTED,

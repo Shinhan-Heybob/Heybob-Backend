@@ -3,7 +3,7 @@ package com.shinhan.heybob.domain.notification.publisher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shinhan.heybob.common.exception.ExceptionStatus;
 import com.shinhan.heybob.common.exception.HeybobException;
-import com.shinhan.heybob.domain.notification.ChatEventMessageDto;
+import com.shinhan.heybob.domain.notification.dto.ChatEventMessageDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.connection.stream.ObjectRecord;

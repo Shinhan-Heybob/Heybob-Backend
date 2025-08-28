@@ -1,7 +1,7 @@
 package com.shinhan.heybob.domain.savings.scheduler;
 
-import com.shinhan.heybob.domain.notification.ChatEventMessageDto;
-import com.shinhan.heybob.domain.notification.NotificationEventType;
+import com.shinhan.heybob.domain.notification.dto.ChatEventMessageDto;
+import com.shinhan.heybob.domain.notification.model.NotificationEventType;
 import com.shinhan.heybob.domain.notification.publisher.RedisStreamPublisher;
 import com.shinhan.heybob.domain.savings.entity.SavingsPlan;
 import com.shinhan.heybob.domain.savings.repository.SavingsPlanRepository;

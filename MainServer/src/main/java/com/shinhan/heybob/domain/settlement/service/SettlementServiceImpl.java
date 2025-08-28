@@ -8,8 +8,8 @@ import com.shinhan.heybob.domain.financePersonal.repository.ExternalFinanceUserR
 import com.shinhan.heybob.domain.financePersonal.util.UserAccountUtil;
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
 import com.shinhan.heybob.domain.meal.repository.MealAppointmentRepository;
-import com.shinhan.heybob.domain.notification.ChatEventMessageDto;
-import com.shinhan.heybob.domain.notification.NotificationEventType;
+import com.shinhan.heybob.domain.notification.dto.ChatEventMessageDto;
+import com.shinhan.heybob.domain.notification.model.NotificationEventType;
 import com.shinhan.heybob.domain.notification.publisher.RedisStreamPublisher;
 import com.shinhan.heybob.domain.settlement.dto.SettlementResponseDto;
 import com.shinhan.heybob.domain.settlement.dto.UpdateDemandDepositAccountTransferRequest;
