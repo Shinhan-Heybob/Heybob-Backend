@@ -62,7 +62,7 @@ public class SavingsServiceImpl implements SavingsService {
 
     @Transactional
     @Override
-    public void createSavingsAccount(Long userId, Long mealId, int perAmount, int totalAmount) {
+    public void createSavingsAccount(Long userId, Long chatId, int perAmount, int totalAmount) {
         String userKey = externalFinanceUserRepository.findUserKeyByUserRealId(userId)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.EMPTY_USER_KEY));
 
@@ -113,7 +113,7 @@ public class SavingsServiceImpl implements SavingsService {
         User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.USER_NOT_FOUND));
 
-        MealAppointment mealAppointment = mealAppointmentRepository.findById(mealId)
+        MealAppointment mealAppointment = mealAppointmentRepository.findByChatRoomId(chatId)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND));
 
         savingsAccountRepository.save(
