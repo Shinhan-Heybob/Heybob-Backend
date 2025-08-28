@@ -397,7 +397,9 @@ public class MainResponseConsumer {
             String creatorUserId = (String) payload.get("creatorUserId");
             String roomName = (String) payload.get("roomName");
             String initialMembersStr = (String) payload.get("initialMembers");
-            List<String> initialMembers = List.of(initialMembersStr.split(","));
+            List<String> initialMembers = (initialMembersStr != null && !initialMembersStr.isEmpty()) 
+                ? List.of(initialMembersStr.split(",")) 
+                : List.of();
             
             log.info("📢 채팅방 생성 요청 수신: mealAppointmentId={}, creator={}, roomName={}", 
                 mealAppointmentId, creatorUserId, roomName);
@@ -405,26 +407,28 @@ public class MainResponseConsumer {
             // 채팅방 ID 생성 (실제로는 DB에 저장하고 ID를 받아야 함)
             Long chatRoomId = System.currentTimeMillis() % 1000000;
             
-            // 응답 메시지 생성
+            // 응답 메시지 생성 (원본 messageId를 correlationId로 사용)
+            Map<String, Object> responsePayload = new HashMap<>();
+            responsePayload.put("chatRoomId", chatRoomId);
+            responsePayload.put("mealAppointmentId", mealAppointmentId);
+            responsePayload.put("roomName", roomName);
+            responsePayload.put("success", true);
+            responsePayload.put("message", "채팅방이 성공적으로 생성되었습니다");
+            
             ServerMessage response = ServerMessage.builder()
                 .messageId(java.util.UUID.randomUUID().toString())
                 .messageType(ServerMessage.MessageType.ROOM_CREATED)
                 .sourceServer("CHAT")
                 .targetServer("MAIN")
                 .timestamp(LocalDateTime.now())
-                .payload(Map.of(
-                    "chatRoomId", chatRoomId,
-                    "mealAppointmentId", mealAppointmentId,
-                    "roomName", roomName,
-                    "success", true,
-                    "message", "채팅방이 성공적으로 생성되었습니다"
-                ))
+                .payload(responsePayload)
                 .retryCount(0)
                 .expiryTime(LocalDateTime.now().plusMinutes(5))
                 .build();
             
-            // CHAT_TO_MAIN_STREAM으로 응답 전송
+            // CHAT_TO_MAIN_STREAM으로 응답 전송 (correlationId 설정)
             Map<String, Object> streamData = convertToStreamData(response);
+            streamData.put("correlationId", message.getMessageId()); // 원본 요청의 messageId를 correlationId로 설정
             redisTemplate.opsForStream().add("chat-to-main-stream", streamData);
             
             log.info("✅ 채팅방 생성 응답 전송: chatRoomId={}, correlationId={}", 
