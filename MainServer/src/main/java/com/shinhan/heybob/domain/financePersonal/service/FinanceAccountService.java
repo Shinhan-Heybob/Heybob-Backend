@@ -16,4 +16,6 @@ public interface FinanceAccountService {
     PersonalAccountBalanceResponseDto getPersonalAccountBalance(Long userId);
 
     TransactionHistoryListResponseDto getTransactionHistoryList(Long userId, String startDate, String endDate);
+
+    void deposit(Long userId, int amount);
 }

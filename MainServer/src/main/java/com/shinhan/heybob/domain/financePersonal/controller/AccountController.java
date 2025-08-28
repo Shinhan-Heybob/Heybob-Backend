@@ -1,18 +1,12 @@
 package com.shinhan.heybob.domain.financePersonal.controller;
 
 import com.shinhan.heybob.common.user.UserPrincipalDetails;
-import com.shinhan.heybob.domain.financePersonal.dto.TransactionHistoryListResponseDto;
-import com.shinhan.heybob.domain.financePersonal.dto.PersonalAccountBalanceResponseDto;
-import com.shinhan.heybob.domain.financePersonal.dto.PersonalAccountNoResponseDto;
-import com.shinhan.heybob.domain.financePersonal.dto.TransactionHistoryDateRequestDto;
+import com.shinhan.heybob.domain.financePersonal.dto.*;
 import com.shinhan.heybob.domain.financePersonal.service.FinanceAccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -47,5 +41,14 @@ public class AccountController {
                 userPrincipal.getUserId(), dateRequestDto.getStartDate(), dateRequestDto.getEndDate()
         );
         return ResponseEntity.ok(dto);
+    }
+
+    @PostMapping("/deposit")
+    public ResponseEntity<Void> deposit(
+            @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
+            @RequestBody DepositAmountRequestDto requestDto
+    ) {
+       financeAccountService.deposit(userPrincipal.getUserId(), requestDto.amount());
+       return ResponseEntity.ok().build();
     }
 }

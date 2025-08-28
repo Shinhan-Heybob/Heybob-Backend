@@ -152,9 +152,13 @@ public class SettlementServiceImpl implements SettlementService {
         int participantsCount = distinctIds.size();
         int perHead = totalAmount / participantsCount;
 
-        // 기존 참가자 제거 (orphanRemoval=true면 DELETE)
-        List<SettlementParticipant> oldRows = new ArrayList<>(settlement.getParticipants());
-        participantRepository.deleteAll(oldRows);
+        // 1) 기존 참가자 행을 '먼저' 삭제하고 DB에 즉시 반영
+        participantRepository.deleteBySettlementId(settlement.getId()); // flush 자동
+
+        // 2) 본문 값 갱신
+        settlement.setTotalAmount(totalAmount);
+        settlement.setPerHeadAmount(perHead);
+        settlement.setParticipantsCount(distinctIds.size());
 
         // 새 참가자 행 구성
         List<SettlementParticipant> newRows = distinctIds.stream()
@@ -165,11 +169,6 @@ public class SettlementServiceImpl implements SettlementService {
                         .transferStatus(TransferStatus.PENDING)
                         .build())
                 .toList();
-
-        // 정산 본문 값 갱신
-        settlement.setTotalAmount(totalAmount);
-        settlement.setPerHeadAmount(perHead);
-        settlement.setParticipantsCount(participantsCount);
 
         participantRepository.saveAll(newRows);
     }
@@ -289,12 +288,12 @@ public class SettlementServiceImpl implements SettlementService {
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.EMPTY_USER_KEY));
 
         FinanceHeader header = new FinanceHeader(
-                "inquireDemandDepositAccountBalance",
+                "updateDemandDepositAccountTransfer",
                 KSTUtil.nowDateKst(),
                 KSTUtil.nowTimeKst(),
                 "00100",
                 "001",
-                "inquireDemandDepositAccountBalance",
+                "updateDemandDepositAccountTransfer",
                 KSTUtil.makeUniqueNo(),
                 apiKey,
                 userKey
@@ -322,6 +321,22 @@ public class SettlementServiceImpl implements SettlementService {
 
         if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
             throw new HeybobException(ExceptionStatus.FINANCE_API_NOT_FOUND);
+        }
+
+        SettlementParticipant settlementParticipant =
+                participantRepository.findBySettlement_IdAndParticipantUser_Id(settlement.getId(), userId)
+                                .orElseThrow(() -> new HeybobException(ExceptionStatus.SETTLEMENT_PARTICIPANT_BAD_REQUEST));
+
+        settlementParticipant.markSuccess();
+        participantRepository.save(settlementParticipant);
+
+        boolean allPaid = settlement.getParticipants().stream()
+                .allMatch(SettlementParticipant::isSuccess);
+
+        if (allPaid) {
+            settlement.markCompleted();
+            settlementRepository.save(settlement);
+            log.info("정산 완료 처리됨: settlementId={}", settlement.getId());
         }
 
         log.info("계좌 이체 API - 정산 완료");
