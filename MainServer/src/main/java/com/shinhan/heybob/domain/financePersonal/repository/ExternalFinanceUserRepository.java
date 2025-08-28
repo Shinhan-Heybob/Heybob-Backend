@@ -20,4 +20,7 @@ public interface ExternalFinanceUserRepository extends JpaRepository<ExternalFin
 
     @Query("select e.userKey from ExternalFinanceUser e where e.userRealId = :userRealId")
     Optional<String> findUserKeyByUserRealId(@Param("userRealId") Long userRealId);
+
+    @Query("select e.userRealId from ExternalFinanceUser e where e.id = :id")
+    Optional<Long> findUserRealIdById(@Param("id") Long id);
 }

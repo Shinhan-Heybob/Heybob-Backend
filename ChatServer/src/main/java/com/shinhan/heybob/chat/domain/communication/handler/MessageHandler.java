@@ -1,16 +1,23 @@
 package com.shinhan.heybob.chat.domain.communication.handler;
 
+import com.shinhan.heybob.chat.domain.chat.dto.PaymentCompleteData;
 import com.shinhan.heybob.chat.domain.communication.dto.ServerMessage;
 import com.shinhan.heybob.chat.domain.chat.dto.ChatMessageResponse;
+import com.shinhan.heybob.chat.domain.chat.dto.PaymentRequestData;
 import com.shinhan.heybob.chat.domain.chat.dto.SettlementData;
-import com.shinhan.heybob.chat.domain.chat.dto.UiState;
+import com.shinhan.heybob.chat.domain.chat.model.ChatMessage;
+import com.shinhan.heybob.chat.domain.chat.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -18,11 +25,36 @@ import java.util.*;
 public class MessageHandler {
     
     private final SimpMessagingTemplate messagingTemplate;
+    private final ChatService chatService;
+    private final FinancialMessageService financialMessageService;
     
     
-    public void handleNotification(ServerMessage message) {
+    /**
+     * 메시지 타입별 라우팅 처리
+     * 4가지 주요 타입: PAYMENT_REQUEST, SAVINGS_REQUEST, PAYMENT_COMPLETE, SAVINGS_COMPLETE
+     */
+    public void handleMessage(ServerMessage message) {
         try {
             switch (message.getMessageType()) {
+                // 요청 메시지
+                case PAYMENT_REQUEST:
+                    handlePaymentRequest(message);
+                    break;
+                    
+                case SAVINGS_REQUEST:
+                    handleSavingsRequest(message);
+                    break;
+                    
+                // 완료 메시지
+                case PAYMENT_COMPLETE:
+                    handlePaymentComplete(message);
+                    break;
+                    
+                case SAVINGS_COMPLETE:
+                    handleSavingsComplete(message);
+                    break;
+                    
+                // 기타 알림 메시지
                 case ROOM_STATUS_CHANGED:
                     handleRoomStatusChanged(message);
                     break;
@@ -35,15 +67,11 @@ public class MessageHandler {
                     handleMemberLeft(message);
                     break;
                     
-                case SETTLEMENT_COMPLETED:
-                    handleSettlementCompleted(message);
-                    break;
-                    
                 default:
-                    log.warn("⚠️ 처리되지 않은 알림 타입: {}", message.getMessageType());
+                    log.warn("⚠️ 처리되지 않은 메시지 타입: {}", message.getMessageType());
             }
         } catch (Exception e) {
-            log.error("❌ 알림 메시지 처리 실패: messageType={}, messageId={}", 
+            log.error("❌ 메시지 처리 실패: messageType={}, messageId={}", 
                 message.getMessageType(), message.getMessageId(), e);
         }
     }
@@ -110,7 +138,11 @@ public class MessageHandler {
         messagingTemplate.convertAndSend("/topic/room/" + roomId + "/members", notification);
     }
     
-    private void handleSettlementCompleted(ServerMessage message) {
+    /**
+     * Main 서버의 정산 완료 알림 처리
+     * PAYMENT_COMPLETE 메시지 타입 처리
+     */
+    private void handlePaymentComplete(ServerMessage message) {
         Map<String, Object> payload = message.getPayload();
         String roomId = (String) payload.get("roomId");
         String settlementId = (String) payload.get("settlementId");
@@ -119,22 +151,56 @@ public class MessageHandler {
         String totalAmount = (String) payload.get("totalAmount");
         String completionMessage = (String) payload.get("message");
         
-        log.info("💰 정산 완료 알림: roomId={}, settlementId={}, status={}", 
-            roomId, settlementId, status);
+        // 실제 사용자 정보 추출
+        Long requesterId = getLongFromPayload(payload, "requesterId", null);
+        String requesterName = (String) payload.get("requesterName");
+        String requesterStudentId = (String) payload.get("requesterStudentId");
+        String requesterProfileImg = (String) payload.get("requesterProfileImg");
         
-        // 정산 완료 메시지를 해당 방에 브로드캐스트
-        Map<String, Object> notification = Map.of(
-            "type", "SETTLEMENT_COMPLETED",
-            "roomId", roomId,
-            "settlementId", settlementId,
-            "status", status,
-            "paymentResults", paymentResults,
-            "totalAmount", totalAmount,
-            "message", completionMessage,
-            "timestamp", message.getTimestamp()
-        );
+        log.info("✅ PAYMENT_COMPLETE 수신: roomId={}, settlementId={}, requester={}, status={}", 
+            roomId, settlementId, requesterName, status);
         
-        messagingTemplate.convertAndSend("/topic/room/" + roomId + "/settlement", notification);
+        // 정산 완료 메시지를 ChatMessageResponse 형태로 변환하여 일반 채팅 토픽으로 전송
+        String messageId = UUID.randomUUID().toString();
+        
+        // ChatMessageResponse 형태로 생성 (실제 사용자 정보 사용)
+        ChatMessageResponse completeMessage = ChatMessageResponse.builder()
+            .messageId(messageId)
+            .roomId(roomId)
+            .senderId(requesterId != null ? requesterId.toString() : "system")
+            .studentId(requesterStudentId)  // 학번 추가
+            .senderName(requesterName != null ? requesterName : "시스템")
+            .profileImageUrl(requesterProfileImg)  // 프로필 이미지 추가
+            .content(completionMessage != null ? completionMessage : "정산이 완료되었습니다.")
+            .messageType("PAYMENT_COMPLETE")
+            .timestamp(LocalDateTime.now())
+            .paymentCompleteData(PaymentCompleteData.builder()
+                .settlementId(settlementId)
+                .roomId(roomId)
+                .completedAmount(totalAmount != null ? Integer.parseInt(totalAmount) : 0)
+                .build())
+            .build();
+        
+        // 완료 메시지에 추가 데이터 포함 (실제 사용자 정보 사용)
+        Map<String, Object> completeNotification = new HashMap<>();
+        completeNotification.put("messageId", messageId);
+        completeNotification.put("roomId", roomId);
+        completeNotification.put("senderId", requesterId != null ? requesterId.toString() : "system");
+        completeNotification.put("studentId", requesterStudentId);  // 학번 추가
+        completeNotification.put("senderName", requesterName != null ? requesterName : "시스템");
+        completeNotification.put("profileImageUrl", requesterProfileImg);  // 프로필 이미지 추가
+        completeNotification.put("content", completionMessage != null ? completionMessage : "정산이 완료되었습니다.");
+        completeNotification.put("messageType", "PAYMENT_COMPLETE");
+        completeNotification.put("timestamp", LocalDateTime.now().toString());
+        completeNotification.put("settlementId", settlementId);
+        completeNotification.put("status", status);
+        completeNotification.put("paymentResults", paymentResults);
+        completeNotification.put("totalAmount", totalAmount);
+        
+        // 일반 채팅 토픽으로 전송
+        messagingTemplate.convertAndSend("/topic/room/" + roomId, completeNotification);
+        
+        log.info("✅ 정산 완료 메시지를 일반 채팅 토픽으로 전송: roomId={}, messageId={}", roomId, messageId);
         
         // 개별 사용자에게도 결과 전송 (성공/실패)
         for (Map<String, Object> result : paymentResults) {
@@ -155,66 +221,364 @@ public class MessageHandler {
     }
     
     /**
-     * Main 서버의 정산 브로드캐스트 요청 처리 (단순화)
+     * Main 서버의 정산 요청 브로드캐스트 처리
+     * PAYMENT_REQUEST 메시지 타입 처리
      */
-    public void handleSettlementBroadcast(ServerMessage message) {
+    public void handlePaymentRequest(ServerMessage message) {
         try {
+            log.info("💰 정산 요청 브로드캐스트 처리 시작: messageId={}", message.getMessageId());
+            
             Map<String, Object> payload = message.getPayload();
+            log.info("🔍 Payload 내용: {}", payload);
+            
             String settlementId = (String) payload.get("settlementId");
             String roomId = (String) payload.get("roomId");
-            String requesterName = (String) payload.get("requesterName");
-            Integer requestAmount = (Integer) payload.get("requestAmount");
             
-            log.info("💰 Main 서버로부터 정산 브로드캐스트 요청: settlementId={}, roomId={}, requester={}", 
+            // 요청자 정보 추출
+            Long requesterId = getLongFromPayload(payload, "requesterId", null);
+            String requesterName = (String) payload.get("requesterName");
+            String requesterStudentId = (String) payload.get("requesterStudentId");
+            String requesterProfileImg = (String) payload.get("requesterProfileImg");
+            
+            // requestAmount 안전한 변환 (Redis Stream에서는 String으로 전달됨)
+            Integer requestAmount = getIntegerFromPayload(payload, "requestAmount", 15000);
+            
+            log.info("🔍 추출된 데이터: settlementId={}, roomId={}, requesterId={}, requester={}, studentId={}, amount={}", 
+                settlementId, roomId, requesterId, requesterName, requesterStudentId, requestAmount);
+            
+            log.info("💰 PAYMENT_REQUEST 수신: settlementId={}, roomId={}, requester={}", 
                 settlementId, roomId, requesterName);
             
-            // 단순한 정산 데이터 생성
-            SettlementData settlementData = SettlementData.builder()
+            // 정산 데이터 생성 (PaymentRequestData 사용)
+            PaymentRequestData paymentData = PaymentRequestData.builder()
                 .settlementId(settlementId)
                 .roomId(roomId)
+                .requesterId(requesterId)
                 .requesterName(requesterName)
+                .requesterStudentId(requesterStudentId)
+                .requesterProfileImg(requesterProfileImg)
                 .requestAmount(requestAmount)
                 .settlementUrl("/main/settlement/" + settlementId)
                 .build();
             
+            log.info("🔍 PaymentRequestData 생성 완료: {}", paymentData);
+            
             // 정산 메시지 생성 및 방에 브로드캐스트
-            broadcastSettlementMessage(roomId, settlementData);
+            log.info("🔍 broadcastPaymentMessage 호출 시작");
+            log.info("🔍 PaymentRequestData 전달 전 확인: requesterName={}", paymentData.getRequesterName());
+            broadcastPaymentMessage(roomId, paymentData);
+            log.info("🔍 broadcastPaymentMessage 호출 완료");
             
         } catch (Exception e) {
             log.error("❌ 정산 브로드캐스트 처리 실패: messageId={}", message.getMessageId(), e);
         }
     }
     
-    private void broadcastSettlementMessage(String roomId, SettlementData settlementData) {
+    private void broadcastPaymentMessage(String roomId, PaymentRequestData paymentData) {
         try {
-            // 모든 사용자에게 동일한 정산 메시지 전송
-            ChatMessageResponse settlementMessage = ChatMessageResponse.builder()
-                .messageId(UUID.randomUUID().toString())
+            String messageId = UUID.randomUUID().toString();
+            
+            // 1. 금융 메시지 객체 생성
+            ChatMessage chatMessage = ChatMessage.builder()
+                .id(messageId)
                 .roomId(roomId)
-                .senderId("system")
-                .senderName("시스템")
-                .content(String.format("%s님이 이체하기를 요청했습니다!", 
-                    settlementData.getRequesterName()))
-                .messageType("PAYMENT_REQUEST")
+                .senderId(paymentData.getRequesterId() != null ? paymentData.getRequesterId().toString() : "system")
+                .studentId(paymentData.getRequesterStudentId() != null ? paymentData.getRequesterStudentId() : "SYSTEM")
+                .senderName(paymentData.getRequesterName())
+                .profileImageUrl(paymentData.getRequesterProfileImg())
+                .content(String.format("%s님이 이체하기를 요청했습니다!", paymentData.getRequesterName()))
+                .messageType(ChatMessage.MessageType.PAYMENT_REQUEST)
                 .timestamp(LocalDateTime.now())
-                .settlementData(settlementData)
-                .uiState(UiState.builder()
-                    .isRequester(false)
-                    .userResponseStatus("unknown")
-                    .availableActions(Arrays.asList("go_to_settlement"))
-                    .isExpired(false)
-                    .build())
+                .paymentRequestData(paymentData)
+                .paymentCompleteData(null)
+                .emergencyFallback(false)
                 .build();
+                
+            log.info("🔍 생성된 ChatMessage senderName: {}", chatMessage.getSenderName());
             
-            // 해당 방의 모든 사용자에게 브로드캐스트
-            messagingTemplate.convertAndSend("/topic/room/" + roomId, settlementMessage);
+            // 2. 안전한 저장 (재시도 + Redis 백업)
+            boolean saveSuccess = financialMessageService.saveFinancialMessageSafely(chatMessage);
             
-            log.info("📨 정산 메시지 브로드캐스트 완료: roomId={}, settlementId={}", 
-                roomId, settlementData.getSettlementId());
+            if (saveSuccess) {
+                // 3. 저장/백업 성공 시 WebSocket 브로드캐스트
+                log.info("🔍 브로드캐스트 전 paymentData 확인: requesterName={}", paymentData.getRequesterName());
+                ChatMessageResponse settlementMessage = createPaymentResponse(messageId, roomId, chatMessage, paymentData);
+                log.info("🔍 생성된 ChatMessageResponse senderName: {}", settlementMessage.getSenderName());
+                messagingTemplate.convertAndSend("/topic/room/" + roomId, settlementMessage);
+                
+                log.info("✅ 정산 메시지 처리 완료 (MongoDB 저장 또는 Redis 백업): roomId={}, settlementId={}, messageId={}", 
+                    roomId, paymentData.getSettlementId(), messageId);
+                    
+            } else {
+                // 4. 완전 실패 시에만 에러 메시지 전송 (MongoDB, Redis 모두 실패)
+                sendErrorMessageToRoom(roomId, "시스템 오류로 정산 요청을 처리할 수 없습니다. 관리자에게 문의해주세요.");
+                log.error("💥 정산 메시지 완전 실패 (MongoDB + Redis 모두 실패): roomId={}, settlementId={}", 
+                    roomId, paymentData.getSettlementId());
+            }
                 
         } catch (Exception e) {
-            log.error("❌ 정산 메시지 전송 실패: roomId={}, settlementId={}", 
-                roomId, settlementData.getSettlementId(), e);
+            log.error("❌ 정산 메시지 처리 중 예상치 못한 오류: roomId={}, settlementId={}", 
+                roomId, paymentData.getSettlementId(), e);
+            sendErrorMessageToRoom(roomId, "시스템 오류가 발생했습니다. 관리자에게 문의해주세요.");
+        }
+    }
+    
+    private ChatMessageResponse createPaymentResponse(String messageId, String roomId, 
+                                                     ChatMessage chatMessage, PaymentRequestData paymentData) {
+        return ChatMessageResponse.builder()
+            .messageId(messageId)
+            .roomId(roomId)
+            .senderId(paymentData.getRequesterId() != null ? paymentData.getRequesterId().toString() : "system")
+            .studentId(paymentData.getRequesterStudentId())  // 학번 추가
+            .senderName(paymentData.getRequesterName())  // 실제 요청자 이름 사용
+            .profileImageUrl(paymentData.getRequesterProfileImg())  // 프로필 이미지 추가
+            .content(chatMessage.getContent())
+            .messageType("PAYMENT_REQUEST")
+            .timestamp(chatMessage.getTimestamp())
+            .paymentRequestData(PaymentRequestData.builder()
+                .settlementId(paymentData.getSettlementId())
+                .roomId(paymentData.getRoomId())
+                .requesterId(paymentData.getRequesterId())
+                .requesterName(paymentData.getRequesterName())
+                .requesterStudentId(paymentData.getRequesterStudentId())
+                .requesterProfileImg(paymentData.getRequesterProfileImg())
+                .requestAmount(paymentData.getRequestAmount())
+                .settlementUrl(paymentData.getSettlementUrl())
+                .build())
+            .build();
+    }
+    
+    private void sendErrorMessageToRoom(String roomId, String errorMessage) {
+        Map<String, Object> errorNotification = Map.of(
+            "type", "SYSTEM_ERROR",
+            "message", errorMessage,
+            "timestamp", LocalDateTime.now(),
+            "severity", "warning"
+        );
+        
+        messagingTemplate.convertAndSend("/topic/room/" + roomId + "/error", errorNotification);
+    }
+    
+    /**
+     * Payload에서 Integer 값을 안전하게 추출
+     */
+    private Integer getIntegerFromPayload(Map<String, Object> payload, String key, Integer defaultValue) {
+        Object value = payload.get(key);
+        if (value == null) return defaultValue;
+        
+        try {
+            if (value instanceof Integer) {
+                return (Integer) value;
+            } else if (value instanceof String) {
+                return Integer.parseInt((String) value);
+            } else {
+                return Integer.parseInt(value.toString());
+            }
+        } catch (NumberFormatException e) {
+            log.warn("⚠️ {} 변환 실패, 기본값 사용: {} -> {}", key, value, defaultValue);
+            return defaultValue;
+        }
+    }
+    
+    /**
+     * Payload에서 Long 값을 안전하게 추출
+     */
+    private Long getLongFromPayload(Map<String, Object> payload, String key, Long defaultValue) {
+        Object value = payload.get(key);
+        if (value == null) return defaultValue;
+        
+        try {
+            if (value instanceof Long) {
+                return (Long) value;
+            } else if (value instanceof Integer) {
+                return ((Integer) value).longValue();
+            } else if (value instanceof String) {
+                return Long.parseLong((String) value);
+            } else {
+                return Long.parseLong(value.toString());
+            }
+        } catch (NumberFormatException e) {
+            log.warn("⚠️ {} 변환 실패, 기본값 사용: {} -> {}", key, value, defaultValue);
+            return defaultValue;
+        }
+    }
+    
+    /**
+     * 적금 완료 알림 처리
+     */
+    /**
+     * Main 서버의 적금 완료 알림 처리
+     * SAVINGS_COMPLETE 메시지 타입 처리
+     */
+    private void handleSavingsComplete(ServerMessage message) {
+        Map<String, Object> payload = message.getPayload();
+        String roomId = (String) payload.get("roomId");
+        String savingsId = (String) payload.get("savingsId");
+        String status = (String) payload.get("status");
+        List<Map<String, Object>> savingsResults = (List<Map<String, Object>>) payload.get("savingsResults");
+        String totalAmount = (String) payload.get("totalAmount");
+        String completionMessage = (String) payload.get("message");
+        
+        // 실제 사용자 정보 추출
+        Long requesterId = getLongFromPayload(payload, "requesterId", null);
+        String requesterName = (String) payload.get("requesterName");
+        String requesterStudentId = (String) payload.get("requesterStudentId");
+        String requesterProfileImg = (String) payload.get("requesterProfileImg");
+        
+        log.info("✅ SAVINGS_COMPLETE 수신: roomId={}, savingsId={}, requester={}, status={}", 
+            roomId, savingsId, requesterName, status);
+        
+        // 적금 완료 메시지를 ChatMessageResponse 형태로 변환하여 일반 채팅 토픽으로 전송
+        String messageId = UUID.randomUUID().toString();
+        
+        // 완료 메시지에 실제 사용자 정보 사용
+        Map<String, Object> completeNotification = new HashMap<>();
+        completeNotification.put("messageId", messageId);
+        completeNotification.put("roomId", roomId);
+        completeNotification.put("senderId", requesterId != null ? requesterId.toString() : "system");
+        completeNotification.put("studentId", requesterStudentId);  // 학번 추가
+        completeNotification.put("senderName", requesterName != null ? requesterName : "시스템");
+        completeNotification.put("profileImageUrl", requesterProfileImg);  // 프로필 이미지 추가
+        completeNotification.put("content", completionMessage != null ? completionMessage : "적금이 완료되었습니다.");
+        completeNotification.put("messageType", "SAVINGS_COMPLETE");
+        completeNotification.put("timestamp", LocalDateTime.now().toString());
+        completeNotification.put("savingsId", savingsId);
+        completeNotification.put("status", status);
+        completeNotification.put("savingsResults", savingsResults);
+        completeNotification.put("totalAmount", totalAmount);
+        
+        // 일반 채팅 토픽으로 전송
+        messagingTemplate.convertAndSend("/topic/room/" + roomId, completeNotification);
+        
+        log.info("✅ 적금 완료 메시지를 일반 채팅 토픽으로 전송: roomId={}, messageId={}, sender={}", roomId, messageId, requesterName);
+        
+        // 개별 사용자에게도 결과 전송
+        for (Map<String, Object> result : savingsResults) {
+            String userId = (String) result.get("userId");
+            String userStatus = (String) result.get("status");
+            String userMessage = (String) result.get("message");
+            
+            Map<String, Object> userNotification = Map.of(
+                "type", "PERSONAL_SAVINGS_RESULT",
+                "savingsId", savingsId,
+                "status", userStatus,
+                "message", userMessage,
+                "timestamp", message.getTimestamp()
+            );
+            
+            messagingTemplate.convertAndSendToUser(userId, "/queue/savings", userNotification);
+        }
+    }
+    
+    /**
+     * Main 서버의 적금 요청 브로드캐스트 처리
+     * SAVINGS_REQUEST 메시지 타입 처리
+     */
+    public void handleSavingsRequest(ServerMessage message) {
+        try {
+            log.info("💰 적금 요청 브로드캐스트 처리 시작: messageId={}", message.getMessageId());
+            
+            Map<String, Object> payload = message.getPayload();
+            log.info("🔍 Payload 내용: {}", payload);
+            
+            String savingsId = (String) payload.get("settlementId");  // settlementId를 savingsId로 사용
+            String roomId = (String) payload.get("roomId");
+            
+            // 요청자 정보 추출
+            Long requesterId = getLongFromPayload(payload, "requesterId", null);
+            String requesterName = (String) payload.get("requesterName");
+            String requesterStudentId = (String) payload.get("requesterStudentId");
+            String requesterProfileImg = (String) payload.get("requesterProfileImg");
+            
+            Integer requestAmount = getIntegerFromPayload(payload, "requestAmount", 50000);
+            
+            log.info("🔍 추출된 적금 데이터: savingsId={}, roomId={}, requesterId={}, requester={}, amount={}", 
+                savingsId, roomId, requesterId, requesterName, requestAmount);
+            
+            log.info("💰 SAVINGS_REQUEST 수신: savingsId={}, roomId={}, requester={}", 
+                savingsId, roomId, requesterName);
+            
+            // 적금 데이터 생성
+            PaymentRequestData savingsData = PaymentRequestData.builder()
+                .settlementId(savingsId)
+                .roomId(roomId)
+                .requesterId(requesterId)
+                .requesterName(requesterName)
+                .requesterStudentId(requesterStudentId)
+                .requesterProfileImg(requesterProfileImg)
+                .requestAmount(requestAmount)
+                .settlementUrl("/main/savings/" + savingsId)
+                .build();
+            
+            log.info("🔍 SavingsData 생성 완료: {}", savingsData);
+            
+            // 적금 메시지 생성 및 방에 브로드캐스트
+            log.info("🔍 broadcastSavingsMessage 호출 시작");
+            broadcastSavingsMessage(roomId, savingsData);
+            log.info("🔍 broadcastSavingsMessage 호출 완료");
+            
+        } catch (Exception e) {
+            log.error("❌ 적금 브로드캐스트 처리 실패: messageId={}", message.getMessageId(), e);
+        }
+    }
+    
+    /**
+     * 적금 메시지 브로드캐스트 (안전한 저장 + 브로드캐스트)
+     */
+    private void broadcastSavingsMessage(String roomId, PaymentRequestData savingsData) {
+        try {
+            String messageId = UUID.randomUUID().toString();
+            
+            // 1. 적금 메시지 객체 생성
+            ChatMessage chatMessage = ChatMessage.builder()
+                .id(messageId)
+                .roomId(roomId)
+                .senderId(savingsData.getRequesterId() != null ? savingsData.getRequesterId().toString() : "system")
+                .studentId(savingsData.getRequesterStudentId() != null ? savingsData.getRequesterStudentId() : "SYSTEM")
+                .senderName(savingsData.getRequesterName())
+                .profileImageUrl(savingsData.getRequesterProfileImg())
+                .content(String.format("%s님이 적금 참여를 요청했습니다!", savingsData.getRequesterName()))
+                .messageType(ChatMessage.MessageType.SAVINGS_REQUEST)
+                .timestamp(LocalDateTime.now())
+                .paymentRequestData(savingsData)
+                .paymentCompleteData(null)
+                .emergencyFallback(false)
+                .build();
+            
+            // 2. 안전한 저장 (재시도 + Redis 백업)
+            boolean saveSuccess = financialMessageService.saveFinancialMessageSafely(chatMessage);
+            
+            if (saveSuccess) {
+                // 3. 저장/백업 성공 시 WebSocket 브로드캐스트
+                ChatMessageResponse savingsMessage = ChatMessageResponse.builder()
+                    .messageId(messageId)
+                    .roomId(roomId)
+                    .senderId(savingsData.getRequesterId() != null ? savingsData.getRequesterId().toString() : "system")
+                    .studentId(savingsData.getRequesterStudentId())  // 학번 추가
+                    .senderName(savingsData.getRequesterName())
+                    .profileImageUrl(savingsData.getRequesterProfileImg())  // 프로필 이미지 추가
+                    .content(chatMessage.getContent())
+                    .messageType("SAVINGS_REQUEST")
+                    .timestamp(chatMessage.getTimestamp())
+                    .paymentRequestData(savingsData)
+                    .build();
+                
+                messagingTemplate.convertAndSend("/topic/room/" + roomId, savingsMessage);
+                
+                log.info("✅ 적금 메시지 처리 완료 (MongoDB 저장 또는 Redis 백업): roomId={}, savingsId={}, messageId={}", 
+                    roomId, savingsData.getSettlementId(), messageId);
+                    
+            } else {
+                // 4. 완전 실패 시에만 에러 메시지 전송
+                sendErrorMessageToRoom(roomId, "시스템 오류로 적금 요청을 처리할 수 없습니다. 관리자에게 문의해주세요.");
+                log.error("💥 적금 메시지 완전 실패 (MongoDB + Redis 모두 실패): roomId={}, savingsId={}", 
+                    roomId, savingsData.getSettlementId());
+            }
+                
+        } catch (Exception e) {
+            log.error("❌ 적금 메시지 처리 중 예상치 못한 오류: roomId={}, savingsId={}", 
+                roomId, savingsData.getSettlementId(), e);
+            sendErrorMessageToRoom(roomId, "시스템 오류가 발생했습니다. 관리자에게 문의해주세요.");
         }
     }
 }

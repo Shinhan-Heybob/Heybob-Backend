@@ -3,14 +3,15 @@ package com.shinhan.heybob.domain.meal.service;
 import com.shinhan.heybob.common.exception.ExceptionStatus;
 import com.shinhan.heybob.common.exception.HeybobException;
 import com.shinhan.heybob.domain.meal.dto.request.CreateMealAppointmentRequest;
-import com.shinhan.heybob.domain.meal.dto.request.ScheduleComparisonRequest;
 import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentDetailResponse;
-import com.shinhan.heybob.domain.meal.dto.response.ScheduleComparisonResponse;
-import com.shinhan.heybob.domain.meal.dto.response.TimeSlotDto;
+import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentListResponse;
+import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentStatisticsResponse;
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
 import com.shinhan.heybob.domain.meal.entity.MealParticipant;
+import com.shinhan.heybob.domain.meal.entity.MealType;
 import com.shinhan.heybob.domain.meal.repository.MealAppointmentRepository;
 import com.shinhan.heybob.domain.meal.repository.MealParticipantRepository;
+import com.shinhan.heybob.domain.notification.service.ChatIntegrationService;
 import com.shinhan.heybob.domain.user.dto.UserResponseDto;
 import com.shinhan.heybob.domain.user.entity.User;
 import com.shinhan.heybob.domain.user.repository.UserRepository;
@@ -23,7 +24,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -36,35 +36,6 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
     private final MealParticipantRepository mealParticipantRepository;
     private final UserRepository userRepository;
     private final ChatIntegrationService chatIntegrationService;
-
-    @Override
-    public ScheduleComparisonResponse compareSchedules(ScheduleComparisonRequest request) {
-        if (request.getParticipantIds() == null || request.getParticipantIds().isEmpty()) {
-            throw new HeybobException(ExceptionStatus.INVALID_PARTICIPANT_LIST);
-        }
-
-        List<User> participants = userRepository.findByIdIn(request.getParticipantIds());
-        
-        if (participants.isEmpty()) {
-            throw new HeybobException(ExceptionStatus.USER_NOT_FOUND);
-        }
-
-        if (participants.size() != request.getParticipantIds().size()) {
-            throw new HeybobException(ExceptionStatus.INVALID_PARTICIPANT_LIST);
-        }
-
-        List<UserResponseDto> participantDtos = participants.stream()
-                .map(UserResponseDto::new)
-                .collect(Collectors.toList());
-
-        List<TimeSlotDto> timeSlots = generateDummyTimeSlots(participants);
-
-        return ScheduleComparisonResponse.builder()
-                .date(request.getDate())
-                .participants(participantDtos)
-                .availableSlots(timeSlots)
-                .build();
-    }
 
     @Override
     @Transactional
@@ -95,6 +66,7 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
                 .appointmentDate(request.getAppointmentDate())
                 .appointmentTime(request.getAppointmentTime())
                 .creator(creator)
+                .type(request.getMealType() != null ? request.getMealType() : MealType.MEAL_APPOINTMENT)
                 .build();
 
         mealAppointment = mealAppointmentRepository.save(mealAppointment);
@@ -110,8 +82,12 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
 
         Long chatRoomId = chatIntegrationService.createChatRoom(mealAppointment);
         log.info("채팅방 생성 완료: {}", chatRoomId);
+        
+        // chatRoomId를 데이터베이스에 저장
+        mealAppointment.setChatRoomId(chatRoomId);
+        mealAppointment = mealAppointmentRepository.save(mealAppointment);
 
-        return convertToDetailResponse(mealAppointment, chatRoomId);
+        return convertToDetailResponse(mealAppointment);
     }
 
     @Override
@@ -152,37 +128,6 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
         }
     }
 
-    private List<TimeSlotDto> generateDummyTimeSlots(List<User> participants) {
-        List<TimeSlotDto> slots = new ArrayList<>();
-        LocalTime startTime = LocalTime.of(11, 30);
-        LocalTime endTime = LocalTime.of(14, 30);
-
-        List<String> participantNames = participants.stream()
-                .map(User::getName)
-                .collect(Collectors.toList());
-
-        while (!startTime.isAfter(endTime)) {
-            int availableCount = ThreadLocalRandom.current().nextInt(0, participants.size() + 1);
-            
-            List<String> availableUsers = new ArrayList<>();
-            if (availableCount > 0) {
-                Collections.shuffle(participantNames);
-                availableUsers = participantNames.subList(0, availableCount);
-            }
-
-            TimeSlotDto slot = TimeSlotDto.builder()
-                    .time(startTime.toString())
-                    .availableCount(availableCount)
-                    .availableUsers(new ArrayList<>(availableUsers))
-                    .isSelectable(availableCount > 0)
-                    .build();
-
-            slots.add(slot);
-            startTime = startTime.plusMinutes(30);
-        }
-
-        return slots;
-    }
 
     private MealAppointmentDetailResponse convertToDetailResponse(MealAppointment mealAppointment) {
         return convertToDetailResponse(mealAppointment, mealAppointment.getChatRoomId());
@@ -202,8 +147,164 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
                 .creator(new UserResponseDto(mealAppointment.getCreator()))
                 .participants(participantDtos)
                 .status(mealAppointment.getStatus().name())
+                .mealType(mealAppointment.getType())
                 .chatRoomId(chatRoomId)
                 .createdAt(mealAppointment.getCreatedAt())
+                .build();
+    }
+
+    @Override
+    public List<MealAppointmentListResponse> getUserMealAppointmentList(Long userId) {
+        return getUserMealAppointmentList(userId, "all");
+    }
+
+    @Override
+    public List<MealAppointmentListResponse> getUserMealAppointmentList(Long userId, String status) {
+        if (userId == null) {
+            throw new HeybobException(ExceptionStatus.USER_NOT_FOUND);
+        }
+
+        if (!userRepository.existsById(userId)) {
+            throw new HeybobException(ExceptionStatus.USER_NOT_FOUND);
+        }
+
+        List<MealAppointment> appointments = mealAppointmentRepository.findByUserIdWithParticipants(userId);
+        LocalDateTime now = LocalDateTime.now();
+        
+        return appointments.stream()
+                .sorted((a, b) -> {
+                    // 먼저 날짜, 시간 순으로 정렬
+                    LocalDateTime aDateTime = LocalDateTime.of(a.getAppointmentDate(), a.getAppointmentTime());
+                    LocalDateTime bDateTime = LocalDateTime.of(b.getAppointmentDate(), b.getAppointmentTime());
+                    return aDateTime.compareTo(bDateTime);
+                })
+                .map(appointment -> {
+                    LocalDateTime appointmentDateTime = LocalDateTime.of(
+                            appointment.getAppointmentDate(), 
+                            appointment.getAppointmentTime()
+                    );
+                    boolean isActive = appointmentDateTime.isAfter(now);
+                    
+                    User creator = appointment.getCreator();
+                    return MealAppointmentListResponse.builder()
+                            .id(appointment.getId())
+                            .name(appointment.getName())
+                            .creatorName(creator.getName())
+                            .creatorStudentId(creator.getStudentId())
+                            .creatorDepartment(creator.getDepartment())
+                            .chatRoomId(appointment.getChatRoomId())
+                            .mealType(appointment.getType())
+                            .isActive(isActive)
+                            .build();
+                })
+                .filter(appointment -> {
+                    if ("active".equalsIgnoreCase(status)) {
+                        return appointment.isActive();
+                    } else if ("inactive".equalsIgnoreCase(status)) {
+                        return !appointment.isActive();
+                    }
+                    return true; // "all" 또는 다른 값일 경우 모두 반환
+                })
+                .collect(Collectors.toList());
+    }
+    
+    @Override
+    public List<MealAppointmentDetailResponse> getUserMealAppointments(Long userId, MealType type) {
+        if (userId == null) {
+            throw new HeybobException(ExceptionStatus.USER_NOT_FOUND);
+        }
+
+        if (!userRepository.existsById(userId)) {
+            throw new HeybobException(ExceptionStatus.USER_NOT_FOUND);
+        }
+
+        List<MealAppointment> appointments;
+        if (type == null) {
+            appointments = mealAppointmentRepository.findByUserIdWithParticipants(userId);
+        } else {
+            appointments = mealAppointmentRepository.findByUserIdAndTypeWithParticipants(userId, type);
+        }
+        
+        return appointments.stream()
+                .map(this::convertToDetailResponse)
+                .collect(Collectors.toList());
+    }
+    
+    @Override
+    public List<MealAppointmentListResponse> getUserMealAppointmentList(Long userId, String status, MealType type) {
+        if (userId == null) {
+            throw new HeybobException(ExceptionStatus.USER_NOT_FOUND);
+        }
+
+        if (!userRepository.existsById(userId)) {
+            throw new HeybobException(ExceptionStatus.USER_NOT_FOUND);
+        }
+
+        List<MealAppointment> appointments;
+        if (type == null) {
+            appointments = mealAppointmentRepository.findByUserIdWithParticipants(userId);
+        } else {
+            appointments = mealAppointmentRepository.findByUserIdAndTypeWithParticipants(userId, type);
+        }
+        
+        LocalDateTime now = LocalDateTime.now();
+        
+        return appointments.stream()
+                .sorted((a, b) -> {
+                    // 먼저 날짜, 시간 순으로 정렬
+                    LocalDateTime aDateTime = LocalDateTime.of(a.getAppointmentDate(), a.getAppointmentTime());
+                    LocalDateTime bDateTime = LocalDateTime.of(b.getAppointmentDate(), b.getAppointmentTime());
+                    return aDateTime.compareTo(bDateTime);
+                })
+                .map(appointment -> {
+                    LocalDateTime appointmentDateTime = LocalDateTime.of(
+                            appointment.getAppointmentDate(), 
+                            appointment.getAppointmentTime()
+                    );
+                    boolean isActive = appointmentDateTime.isAfter(now);
+                    
+                    User creator = appointment.getCreator();
+                    return MealAppointmentListResponse.builder()
+                            .id(appointment.getId())
+                            .name(appointment.getName())
+                            .creatorName(creator.getName())
+                            .creatorStudentId(creator.getStudentId())
+                            .creatorDepartment(creator.getDepartment())
+                            .chatRoomId(appointment.getChatRoomId())
+                            .mealType(appointment.getType())
+                            .isActive(isActive)
+                            .build();
+                })
+                .filter(appointment -> {
+                    if ("active".equalsIgnoreCase(status)) {
+                        return appointment.isActive();
+                    } else if ("inactive".equalsIgnoreCase(status)) {
+                        return !appointment.isActive();
+                    }
+                    return true; // "all" 또는 다른 값일 경우 모두 반환
+                })
+                .collect(Collectors.toList());
+    }
+    
+    @Override
+    public MealAppointmentStatisticsResponse getUserMealAppointmentStatistics(Long userId) {
+        if (userId == null) {
+            throw new HeybobException(ExceptionStatus.USER_NOT_FOUND);
+        }
+
+        if (!userRepository.existsById(userId)) {
+            throw new HeybobException(ExceptionStatus.USER_NOT_FOUND);
+        }
+
+        long mealAppointmentCount = mealAppointmentRepository.countByUserIdAndType(userId, MealType.MEAL_APPOINTMENT);
+        long regularMeetingCount = mealAppointmentRepository.countByUserIdAndType(userId, MealType.REGULAR_MEETING);
+        long totalCount = mealAppointmentCount + regularMeetingCount;
+
+        return MealAppointmentStatisticsResponse.builder()
+                .userId(userId)
+                .mealAppointmentCount(mealAppointmentCount)
+                .regularMeetingCount(regularMeetingCount)
+                .totalCount(totalCount)
                 .build();
     }
 }

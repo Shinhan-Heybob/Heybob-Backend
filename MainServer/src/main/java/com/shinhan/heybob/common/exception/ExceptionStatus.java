@@ -19,6 +19,16 @@ public enum ExceptionStatus {
     STUDENT_ID_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, 400, "이미 존재하는 학번입니다."),
     INVALID_PASSWORD(HttpStatus.BAD_REQUEST, 400, "비밀번호가 유효하지 않습니다."),
 
+    // MEAL APPOINTMENT
+    MEAL_APPOINTMENT_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "밥약 정보를 찾을 수 없습니다."),
+    INVALID_PARTICIPANT_LIST(HttpStatus.BAD_REQUEST, 400, "참여자 목록이 올바르지 않습니다."),
+    INVALID_APPOINTMENT_TIME(HttpStatus.BAD_REQUEST, 400, "약속 시간이 올바르지 않습니다."),
+    DUPLICATE_PARTICIPANT(HttpStatus.BAD_REQUEST, 400, "이미 참여 중인 사용자입니다."),
+    CHAT_ROOM_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, 500, "채팅방 생성에 실패했습니다."),
+    PAST_APPOINTMENT_TIME(HttpStatus.BAD_REQUEST, 400, "과거 시간으로는 밥약을 생성할 수 없습니다."),
+    CHAT_INTEGRATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, 500, "채팅 서버 연동에 실패했습니다."),
+//    INVALID_PASSWORD(HttpStatus.BAD_REQUEST, 400, "비밀번호가 유효하지 않습니다."),
+
     // LECTURE
     DUPLICATED_LECTURE_TIME(HttpStatus.BAD_REQUEST, 400, "강의 시간이 겹칩니다"),
     LECTURE_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "존재하지 않는 강의입니다."),
@@ -31,15 +41,7 @@ public enum ExceptionStatus {
     EMPTY_USER_KEY(HttpStatus.NOT_FOUND, 404, "userKey가 비어있습니다."),
     EMPTY_PARTICIPANTS_USER_IDS(HttpStatus.NOT_FOUND, 404,"정산 참여자 목록이 비어있습니다."),
     INVALID_TOTAL_AMOUNT(HttpStatus.BAD_REQUEST, 400, "정산 금액은 1원 이상이어야 합니다."),
-
-    // MEAL APPOINTMENT
-    MEAL_APPOINTMENT_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "밥약 정보를 찾을 수 없습니다."),
-    INVALID_PARTICIPANT_LIST(HttpStatus.BAD_REQUEST, 400, "참여자 목록이 올바르지 않습니다."),
-    INVALID_APPOINTMENT_TIME(HttpStatus.BAD_REQUEST, 400, "약속 시간이 올바르지 않습니다."),
-    DUPLICATE_PARTICIPANT(HttpStatus.BAD_REQUEST, 400, "이미 참여 중인 사용자입니다."),
-    CHAT_ROOM_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, 500, "채팅방 생성에 실패했습니다."),
-    PAST_APPOINTMENT_TIME(HttpStatus.BAD_REQUEST, 400, "과거 시간으로는 밥약을 생성할 수 없습니다."),
-    NOT_FOUND_CHAT_ROOM_ID(HttpStatus.NOT_FOUND, 404, "채팅 ID를 찾을 수 없습니다."),
+    EXTERNAL_FINANCE_USER_ID_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "ExternalFinanceUser의 id를 찾지 못했습니다."),
 
     // SETTLEMENT
     SETTLEMENT_STATUS_BAD_REQUEST(HttpStatus.BAD_REQUEST, 400, "생성 상태에서만 수정할 수 있습니다."),
@@ -54,7 +56,10 @@ public enum ExceptionStatus {
     SAVINGS_ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "적금 계좌를 찾을 수 없습니다."),
     SAVINGS_PLAN_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "적금 이체 알림 관리를 찾을 수 없습니다."),
     SAVINGS_PLAN_COMPLETED(HttpStatus.BAD_REQUEST, 400, "이미 완료된 플랜입니다."),
-    BAD_REQUEST_SAVINGS_CYCLE(HttpStatus.BAD_REQUEST, 400, "적금 횟수 계산 실패");
+    BAD_REQUEST_SAVINGS_CYCLE(HttpStatus.BAD_REQUEST, 400, "적금 횟수 계산 실패"),
+
+    //CHAT
+    NOT_FOUND_CHAT_ROOM_ID(HttpStatus.NOT_FOUND, 404, "채팅 id를 찾을 수 없습니다.");
 
     private final int status;
     private final int customCode;

@@ -75,4 +75,9 @@ public class SavingsPlan extends BaseTime {
     }
 
     public enum PlanStatus { ACTIVE, PAUSED, COMPLETED, CANCELED }
+
+    public void pauseUntil(LocalDateTime when) {
+        this.status = PlanStatus.PAUSED;
+        this.nextNotifyAt = when;
+    }
 }

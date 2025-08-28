@@ -3,6 +3,7 @@ package com.shinhan.heybob.chat.domain.chat.controller;
 import com.shinhan.heybob.chat.domain.chat.dto.ChatHistoryResponse;
 import com.shinhan.heybob.chat.domain.chat.dto.ChatMessageResponse;
 import com.shinhan.heybob.chat.domain.chat.service.ChatService;
+import com.shinhan.heybob.chat.domain.cafeteria.service.CafeteriaService;
 import com.shinhan.heybob.chat.global.error.ChatException;
 import com.shinhan.heybob.chat.global.error.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +17,6 @@ import java.util.List;
 @RequestMapping("/api/chat")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class ChatHistoryController {
 
     private final ChatService chatService;
@@ -43,6 +43,16 @@ public class ChatHistoryController {
         log.info("채팅 히스토리 요청: roomId={}, userId={}, before={}, limit={}", roomId, userId, before, limit);
         
         ChatHistoryResponse response = chatService.getChatHistory(roomId, before, limit);
+        
+        if (response == null) {
+            log.warn("채팅 히스토리가 null로 반환됨: roomId={}", roomId);
+            response = ChatHistoryResponse.builder()
+                    .messages(List.of())
+                    .totalCount(0)
+                    .hasMore(false)
+                    .lastMessageId(null)
+                    .build();
+        }
         
         log.info("채팅 히스토리 응답: roomId={}, count={}, lastMessageId={}, hasMore={}", 
                 roomId, response.getTotalCount(), response.getLastMessageId(), response.isHasMore());

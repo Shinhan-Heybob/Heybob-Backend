@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍚 HeyBob 통합 테스트</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.2/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        
+        .header h1 {
+            color: #4a5568;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        .status-item {
+            background: #f7fafc;
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 2px solid #e2e8f0;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        
+        .test-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn-primary { background: #4299e1; color: white; }
+        .btn-success { background: #48bb78; color: white; }
+        .btn-warning { background: #ed8936; color: white; }
+        .btn-info { background: #38b2ac; color: white; }
+        
+        .chat-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .chat-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 12px;
+            background: #f7fafc;
+            border-radius: 10px;
+            border-left: 4px solid #4299e1;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 12px;
+        }
+        
+        .user-details h3 {
+            margin: 0;
+            color: #2d3748;
+        }
+        
+        .user-details p {
+            margin: 2px 0 0 0;
+            color: #718096;
+            font-size: 0.85em;
+        }
+        
+        .connection-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 0.85em;
+            border-radius: 15px;
+        }
+        
+        .messages {
+            height: 350px;
+            overflow-y: auto;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #f8fafc;
+        }
+        
+        .message {
+            margin-bottom: 12px;
+            padding: 10px 12px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        
+        .message.own {
+            background: #4299e1;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+        
+        .message.other {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+        
+        .message.system {
+            background: #f0fff4;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+            margin: 5px 0;
+            font-size: 0.9em;
+            text-align: center;
+        }
+        
+        .message.ai-question {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            position: relative;
+        }
+        
+        .message.ai-question::before {
+            content: "🤖";
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2em;
+        }
+        
+        .message.ai-question .message-content {
+            margin-left: 30px;
+        }
+        
+        .message.ai-response {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            white-space: pre-wrap;
+            font-family: inherit;
+        }
+        
+        .message.ai-response::before {
+            content: "🤖 AI 추천";
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .message.settlement {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 15px rgba(240, 147, 251, 0.3);
+        }
+        
+        .message.savings {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+        }
+        
+        .message.error {
+            background: #fed7d7;
+            color: #c53030;
+            border: 1px solid #feb2b2;
+        }
+        
+        .message-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+            opacity: 0.8;
+            font-size: 0.85em;
+        }
+        
+        .message-time {
+            font-size: 0.75em;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+        
+        .settlement-info {
+            margin-top: 10px;
+            text-align: center;
+        }
+        
+        .settlement-btn {
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #2d3748;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .settlement-btn:hover {
+            background: white;
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .message-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 25px;
+            outline: none;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+        
+        .message-input:focus {
+            border-color: #4299e1;
+        }
+        
+        .send-btn {
+            padding: 12px 20px;
+            background: #4299e1;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .send-btn:hover {
+            background: #3182ce;
+            transform: scale(1.05);
+        }
+        
+        .status-connected { color: #48bb78; }
+        .status-disconnected { color: #f56565; }
+        .status-unknown { color: #a0aec0; }
+        
+        .test-guide {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #4299e1;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .test-guide h4 {
+            color: #2d3748;
+            margin-bottom: 15px;
+        }
+        
+        .test-guide ol {
+            color: #4a5568;
+            line-height: 1.6;
+        }
+        
+        .test-guide li {
+            margin-bottom: 8px;
+        }
+        
+        .meal-form {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            display: none;
+        }
+        
+        .meal-form h3 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #4a5568;
+            font-weight: 600;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+        }
+        
+        .participant-selection {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .participant-option {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .participant-option:hover {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+        }
+        
+        .participant-option input[type="checkbox"] {
+            margin-right: 10px;
+            width: auto;
+        }
+        
+        .participant-info {
+            flex: 1;
+        }
+        
+        .participant-info strong {
+            color: #2d3748;
+        }
+        
+        .participant-info small {
+            color: #718096;
+            display: block;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+        
+        @media (max-width: 768px) {
+            .chat-section {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .test-controls, .connection-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .btn, .btn-sm {
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍚 HeyBob 통합 테스트</h1>
+            <p>Main Server ↔ Chat Server 연동 및 실시간 메시징 테스트</p>
+            
+            <div class="status-bar">
+                <div class="status-item">
+                    <span>Main Server:</span> <span id="mainStatus" class="status-unknown">❓</span>
+                </div>
+                <div class="status-item">
+                    <span>Chat Server:</span> <span id="chatStatus" class="status-unknown">❓</span>
+                </div>
+                <div class="status-item">
+                    <span>현재 채팅방:</span> <span id="currentRoom">room-meal-456</span>
+                </div>
+            </div>
+            
+            <div class="test-controls">
+                <button class="btn btn-info" onclick="loadHistoryForAll()">
+                    📜 채팅 히스토리 새로고침
+                </button>
+                <button class="btn btn-warning" onclick="showTestGuide()">
+                    📋 테스트 가이드
+                </button>
+                <button class="btn btn-info" onclick="clearAllMessages()">
+                    🧹 메시지 초기화
+                </button>
+            </div>
+        </div>
+        
+            
+            <div id="testGuide" class="test-guide" style="display: none;">
+                <h4>📋 테스트 가이드</h4>
+                <ol>
+                    <li><strong>1단계:</strong> 두 사용자 모두 "연결" → "구독" 버튼 클릭</li>
+                    <li><strong>2단계:</strong> 메시지 입력으로 일반 채팅 테스트</li>
+                    <li><strong>3단계:</strong> "💰 정산 요청", "✅ 정산 완료", "🏦 적금 요청", "✅ 적금 완료" 버튼으로 Main Server 연동 테스트</li>
+                    <li><strong>4단계:</strong> "🍚 학식 정보" 버튼으로 Chat Server 내부 기능 테스트</li>
+                    <li><strong>5단계:</strong> "🤖 AI 봇" 버튼으로 AI 메뉴 추천 기능 테스트</li>
+                </ol>
+                <div style="background: #f0f8ff; border: 1px solid #4299e1; border-radius: 8px; padding: 15px; margin-top: 15px;">
+                    <p style="color: #2c5aa0; font-size: 0.9em; margin: 0;">
+                        💡 <strong>중요:</strong> Main Server(8080), Chat Server(8081) 모두 실행 필요<br>
+                        ⚠️ 금융 메시지(정산/적금 요청/완료)는 Main Server를 통해서만 전송됩니다<br>
+                        ✅ 일반 채팅, 학식 정보, AI 봇은 Chat Server에서 직접 처리됩니다<br>
+                        🤖 AI 봇은 OpenAI API 키가 필요합니다 (application.yml 설정)
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-section">
+            <!-- 사용자 1: 최수연 -->
+            <div class="chat-panel">
+                <div class="user-info">
+                    <div class="user-avatar">수연</div>
+                    <div class="user-details">
+                        <h3>최수연</h3>
+                        <p>20210404 · 디자인학과</p>
+                        <p>신한대학교</p>
+                    </div>
+                </div>
+                
+                <div class="connection-controls">
+                    <button class="btn btn-success btn-sm" onclick="connect(1)">연결</button>
+                    <button class="btn btn-info btn-sm" onclick="subscribe(1)">구독</button>
+                    <button class="btn btn-warning btn-sm" onclick="disconnect(1)">해제</button>
+                    <button class="btn btn-primary btn-sm" onclick="sendSettlement(1)">💰 정산 요청</button>
+                    <button class="btn btn-success btn-sm" onclick="sendSettlementComplete(1)">✅ 정산 완료</button>
+                    <button class="btn btn-info btn-sm" onclick="sendSavings(1)">🏦 적금 요청</button>
+                    <button class="btn btn-success btn-sm" onclick="sendSavingsComplete(1)">✅ 적금 완료</button>
+                    <button class="btn btn-warning btn-sm" onclick="sendCafeteriaInfo(1)">🍚 학식 정보</button>
+                    <button class="btn btn-info btn-sm" onclick="sendAiBotMessage(1)">🤖 AI 봇</button>
+                </div>
+                
+                <div id="messages1" class="messages"></div>
+                
+                <div class="input-group">
+                    <input type="text" id="messageInput1" class="message-input" 
+                           placeholder="메시지를 입력하세요..." 
+                           onkeypress="if(event.key==='Enter') sendMessage(1)">
+                    <button class="send-btn" onclick="sendMessage(1)">전송</button>
+                </div>
+            </div>
+            
+            <!-- 사용자 2: 정우진 -->
+            <div class="chat-panel">
+                <div class="user-info">
+                    <div class="user-avatar">우진</div>
+                    <div class="user-details">
+                        <h3>정우진</h3>
+                        <p>20210505 · 경제학과</p>
+                        <p>신한대학교</p>
+                    </div>
+                </div>
+                
+                <div class="connection-controls">
+                    <button class="btn btn-success btn-sm" onclick="connect(2)">연결</button>
+                    <button class="btn btn-info btn-sm" onclick="subscribe(2)">구독</button>
+                    <button class="btn btn-warning btn-sm" onclick="disconnect(2)">해제</button>
+                    <button class="btn btn-primary btn-sm" onclick="sendSettlement(2)">💰 정산 요청</button>
+                    <button class="btn btn-success btn-sm" onclick="sendSettlementComplete(2)">✅ 정산 완료</button>
+                    <button class="btn btn-info btn-sm" onclick="sendSavings(2)">🏦 적금 요청</button>
+                    <button class="btn btn-success btn-sm" onclick="sendSavingsComplete(2)">✅ 적금 완료</button>
+                    <button class="btn btn-warning btn-sm" onclick="sendCafeteriaInfo(2)">🍚 학식 정보</button>
+                    <button class="btn btn-info btn-sm" onclick="sendAiBotMessage(2)">🤖 AI 봇</button>
+                </div>
+                
+                <div id="messages2" class="messages"></div>
+                
+                <div class="input-group">
+                    <input type="text" id="messageInput2" class="message-input" 
+                           placeholder="메시지를 입력하세요..." 
+                           onkeypress="if(event.key==='Enter') sendMessage(2)">
+                    <button class="send-btn" onclick="sendMessage(2)">전송</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        const stompClients = [null, null, null]; // index 0 사용 안함, 1=최수연, 2=정우진
+        let currentRoomId = 'room-meal-456';
+        let currentSettlementId = null;
+        let currentMealAppointment = null;
+        
+        const users = [
+            null, // index 0 사용 안함
+            {
+                userId: '4',
+                studentId: '20210404',
+                userName: '최수연',
+                profileImageUrl: 'https://example.com/suyeon.jpg'
+            },
+            {
+                userId: '5',
+                studentId: '20210505',
+                userName: '정우진',
+                profileImageUrl: 'https://example.com/woojin.jpg'
+            }
+        ];
+        
+        // 메시지 추가 함수
+        function addMessage(userIndex, sender, content, type = 'other', timestamp = null) {
+            const container = document.getElementById(`messages${userIndex}`);
+            if (!container) return;
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const timeStr = timestamp ? new Date(timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+            
+            let messageHtml = '';
+            if (type !== 'system' && type !== 'error') {
+                messageHtml += `<div class="message-header">${sender}</div>`;
+            }
+            messageHtml += `<div>${content}</div>`;
+            if (type !== 'system') {
+                messageHtml += `<div class="message-time">${timeStr}</div>`;
+            }
+            
+            messageDiv.innerHTML = messageHtml;
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        // WebSocket 연결
+        function connect(userIndex) {
+            const user = users[userIndex];
+            
+            if (stompClients[userIndex] && stompClients[userIndex].connected) {
+                addMessage(userIndex, 'System', '이미 연결되어 있습니다', 'system');
+                return;
+            }
+            
+            const socket = new SockJS('http://localhost:8081/ws');
+            stompClients[userIndex] = Stomp.over(socket);
+            
+            stompClients[userIndex].connect({
+                'X-User-Id': user.userId,
+                'X-Student-Id': user.studentId,
+                'X-User-Name': user.userName,
+                'X-Profile-Image': user.profileImageUrl
+            }, function(frame) {
+                console.log(`사용자 ${userIndex} 연결 성공:`, frame);
+                addMessage(userIndex, 'System', `🔗 서버에 연결되었습니다`, 'system');
+                updateServerStatus('chat', '✅');
+            }, function(error) {
+                console.error(`사용자 ${userIndex} 연결 실패:`, error);
+                addMessage(userIndex, 'System', `❌ 연결 실패: ${error}`, 'error');
+                updateServerStatus('chat', '❌');
+            });
+        }
+        
+        // 채팅방 구독
+        function subscribe(userIndex) {
+            const stompClient = stompClients[userIndex];
+            const user = users[userIndex];
+            
+            if (!stompClient || !stompClient.connected) {
+                addMessage(userIndex, 'System', '먼저 서버에 연결해주세요', 'error');
+                return;
+            }
+            
+            const headers = {
+                'X-User-Id': user.userId,
+                'X-Student-Id': user.studentId,
+                'X-User-Name': user.userName,
+                'X-Profile-Image': user.profileImageUrl
+            };
+            
+            // 채팅방 메시지 구독 (헤더를 두 번째 파라미터로 전달)
+            stompClient.subscribe(`/topic/room/${currentRoomId}`, headers, function(message) {
+                try {
+                    const chatMessage = JSON.parse(message.body);
+                    console.log(`사용자 ${userIndex} 메시지 수신:`, chatMessage);
+                    
+                    const isOwnMessage = chatMessage.senderId === users[userIndex].userId;
+                    const messageType = isOwnMessage ? 'own' : 'other';
+                    
+                    // MessageType에 따른 메시지 처리
+                    switch (chatMessage.messageType) {
+                        case 'CHAT':
+                            addMessage(userIndex, chatMessage.senderName, chatMessage.content, messageType, chatMessage.timestamp);
+                            break;
+                            
+                        case 'JOIN':
+                            addMessage(userIndex, 'System', `👋 ${chatMessage.senderName}님이 채팅방에 입장했습니다`, 'system', chatMessage.timestamp);
+                            break;
+                            
+                        case 'LEAVE':
+                            addMessage(userIndex, 'System', `👋 ${chatMessage.senderName}님이 채팅방을 나갔습니다`, 'system', chatMessage.timestamp);
+                            break;
+                            
+                        case 'PAYMENT_REQUEST':
+                            let paymentData = chatMessage.paymentRequestData || {
+                                settlementId: 'temp-' + Date.now(),
+                                requestAmount: 15000,
+                                settlementUrl: '/main/settlement/temp'
+                            };
+                            
+                            const settlementContent = `
+                                ${chatMessage.content}
+                                <div class="settlement-info">
+                                    <button class="settlement-btn" onclick="window.open('${paymentData.settlementUrl}', '_blank')">
+                                        ${paymentData.requestAmount ? paymentData.requestAmount.toLocaleString() : '15,000'}원 송금하기
+                                    </button>
+                                </div>
+                            `;
+                            addMessage(userIndex, chatMessage.senderName, settlementContent, 'settlement', chatMessage.timestamp);
+                            break;
+                            
+                        case 'PAYMENT_COMPLETE':
+                            addMessage(userIndex, chatMessage.senderName, `✅ ${chatMessage.content}`, 'settlement', chatMessage.timestamp);
+                            break;
+                            
+                        case 'SAVINGS_REQUEST':
+                            let savingsData = chatMessage.paymentRequestData || {
+                                settlementId: 'temp-savings-' + Date.now(),
+                                requestAmount: 20000,
+                                settlementUrl: '/main/savings/temp'
+                            };
+                            
+                            const savingsContent = `
+                                ${chatMessage.content}
+                                <div class="settlement-info">
+                                    <button class="settlement-btn" onclick="window.open('${savingsData.settlementUrl}', '_blank')">
+                                        ${savingsData.requestAmount ? savingsData.requestAmount.toLocaleString() : '20,000'}원 적금하기
+                                    </button>
+                                </div>
+                            `;
+                            addMessage(userIndex, chatMessage.senderName, savingsContent, 'savings', chatMessage.timestamp);
+                            break;
+                            
+                        case 'SAVINGS_COMPLETE':
+                            addMessage(userIndex, chatMessage.senderName, `✅ ${chatMessage.content}`, 'savings', chatMessage.timestamp);
+                            break;
+                            
+                        case 'CAFETERIA_INFO':
+                            addMessage(userIndex, '🍚 학식봇', chatMessage.content, 'system', chatMessage.timestamp);
+                            break;
+                            
+                        case 'AI_BOT_REQUEST':
+                            addMessage(userIndex, chatMessage.senderName, chatMessage.content, 'ai-question', chatMessage.timestamp);
+                            break;
+                            
+                        case 'AI_BOT_RESPONSE':
+                            addMessage(userIndex, 'AI 메뉴추천봇', chatMessage.content, 'ai-response', chatMessage.timestamp);
+                            break;
+                            
+                        default:
+                            addMessage(userIndex, chatMessage.senderName, chatMessage.content, messageType, chatMessage.timestamp);
+                            break;
+                    }
+                    
+                } catch (e) {
+                    console.error(`사용자 ${userIndex} 메시지 파싱 오류:`, e);
+                    addMessage(userIndex, 'System', `메시지 파싱 오류: ${e.message}`, 'error');
+                }
+            }, headers);
+            
+            addMessage(userIndex, 'System', `📡 채팅방 '${currentRoomId}'에 구독되었습니다`, 'system');
+            
+            // 채팅 내역 로드
+            loadChatHistory(userIndex);
+        }
+        
+        // 연결 해제
+        function disconnect(userIndex) {
+            if (stompClients[userIndex] && stompClients[userIndex].connected) {
+                stompClients[userIndex].disconnect();
+                stompClients[userIndex] = null;
+                addMessage(userIndex, 'System', '🔌 연결이 해제되었습니다', 'system');
+            }
+        }
+        
+        // 메시지 전송
+        function sendMessage(userIndex) {
+            const stompClient = stompClients[userIndex];
+            const input = document.getElementById(`messageInput${userIndex}`);
+            const user = users[userIndex];
+            
+            if (!stompClient || !stompClient.connected) {
+                addMessage(userIndex, 'System', '서버에 연결되어 있지 않습니다', 'error');
+                return;
+            }
+            
+            const content = input.value.trim();
+            if (!content) return;
+            
+            const chatMessage = {
+                content: content,
+                messageType: 'CHAT'
+            };
+            
+            try {
+                const headers = {
+                    'X-User-Id': user.userId,
+                    'X-Student-Id': user.studentId,
+                    'X-User-Name': user.userName,
+                    'X-Profile-Image': user.profileImageUrl
+                };
+                stompClient.send(`/app/chat/${currentRoomId}`, headers, JSON.stringify(chatMessage));
+                input.value = '';
+            } catch (e) {
+                addMessage(userIndex, 'System', `전송 실패: ${e.message}`, 'error');
+            }
+        }
+        
+        // 정산 요청 전송 (Main Server API 호출)
+        function sendSettlement(userIndex) {
+            const user = users[userIndex];
+            
+            currentSettlementId = `settlement_${Date.now()}_${userIndex}`;
+            
+            const settlementRequest = {
+                settlementId: currentSettlementId,
+                roomId: currentRoomId,
+                requesterId: parseInt(user.userId),
+                requesterName: user.userName,
+                requesterStudentId: user.studentId,
+                requesterProfileImg: user.profileImageUrl,
+                requestAmount: 10150,
+                message: `${user.userName}님이 점심 정산을 요청했습니다.`
+            };
+            
+            addMessage(userIndex, 'System', `💰 Main 서버로 정산 요청 전송 중...`, 'system');
+            
+            fetch('http://localhost:8080/api/test/send-settlement-broadcast', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(settlementRequest)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('정산 요청 응답:', data);
+                if (data.success) {
+                    addMessage(userIndex, 'System', `✅ 정산 요청 전송 성공 (MessageId: ${data.messageId})`, 'system');
+                } else {
+                    addMessage(userIndex, 'System', `❌ 정산 요청 실패: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('정산 요청 실패:', error);
+                addMessage(userIndex, 'System', `❌ Main 서버 정산 요청 실패: ${error.message}`, 'error');
+            });
+        }
+        
+        // 적금 요청 전송 (Main Server API 호출)
+        function sendSavings(userIndex) {
+            const user = users[userIndex];
+            
+            const savingsId = `savings_${Date.now()}_${userIndex}`;
+            
+            const savingsRequest = {
+                settlementId: savingsId,
+                roomId: currentRoomId,
+                requesterId: parseInt(user.userId),
+                requesterName: user.userName,
+                requesterStudentId: user.studentId,
+                requesterProfileImg: user.profileImageUrl,
+                requestAmount: 25000,
+                message: `${user.userName}님이 모임 적금 참여를 요청했습니다.`
+            };
+            
+            addMessage(userIndex, 'System', `🏦 Main 서버로 적금 요청 전송 중...`, 'system');
+
+            fetch('http://localhost:8080/api/test/send-savings-broadcast', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(savingsRequest)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('적금 요청 응답:', data);
+                if (data.success) {
+                    addMessage(userIndex, 'System', `✅ 적금 요청 전송 성공 (MessageId: ${data.messageId})`, 'system');
+                } else {
+                    addMessage(userIndex, 'System', `❌ 적금 요청 실패: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('적금 요청 실패:', error);
+                addMessage(userIndex, 'System', `❌ Main 서버 적금 요청 실패: ${error.message}`, 'error');
+            });
+        }
+        
+        // 정산 완료 알림 전송 (Main Server API 호출)
+        function sendSettlementComplete(userIndex) {
+            const user = users[userIndex];
+            
+            const settlementCompleteRequest = {
+                roomId: currentRoomId,  // currentRoom -> currentRoomId로 수정
+                senderId: user.userId,
+                senderStudentId: user.studentId,
+                senderName: user.userName,
+                senderProfileImg: user.profileImageUrl,
+                completedAmount: 10150,
+                message: `${user.userName}님의 정산이 완료되었습니다.`
+            };
+            
+            addMessage(userIndex, 'System', `✅ Main 서버로 정산 완료 알림 전송 중...`, 'system');
+            
+            fetch('http://localhost:8080/api/test/chat/payment-complete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(settlementCompleteRequest)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text(); // 먼저 텍스트로 받아보기
+            })
+            .then(text => {
+                try {
+                    return text ? JSON.parse(text) : {};
+                } catch (e) {
+                    console.log('응답이 JSON이 아님:', text);
+                    return { success: true, message: text };
+                }
+            })
+            .then(data => {
+                console.log('정산 완료 응답:', data);
+                if (data.success) {
+                    addMessage(userIndex, 'System', `✅ 정산 완료 알림 전송 성공 (MessageId: ${data.messageId})`, 'system');
+                } else {
+                    addMessage(userIndex, 'System', `❌ 정산 완료 알림 실패: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('정산 완료 알림 실패:', error);
+                addMessage(userIndex, 'System', `❌ Main 서버 정산 완료 알림 실패: ${error.message}`, 'error');
+            });
+        }
+        
+        // 적금 완료 알림 전송 (Main Server API 호출)
+        function sendSavingsComplete(userIndex) {
+            const user = users[userIndex];
+            
+            const savingsCompleteRequest = {
+                roomId: currentRoomId,  // currentRoom -> currentRoomId로 수정
+                senderId: user.userId,
+                senderStudentId: user.studentId,
+                senderName: user.userName,
+                senderProfileImg: user.profileImageUrl,
+                completedAmount: 5000,
+                message: `${user.userName}님의 적금이 완료되었습니다.`
+            };
+            
+            addMessage(userIndex, 'System', `✅ Main 서버로 적금 완료 알림 전송 중...`, 'system');
+            
+            fetch('http://localhost:8080/api/test/chat/savings-complete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(savingsCompleteRequest)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text(); // 먼저 텍스트로 받아보기
+            })
+            .then(text => {
+                try {
+                    return text ? JSON.parse(text) : {};
+                } catch (e) {
+                    console.log('응답이 JSON이 아님:', text);
+                    return { success: true, message: text };
+                }
+            })
+            .then(data => {
+                console.log('적금 완료 응답:', data);
+                if (data.success) {
+                    addMessage(userIndex, 'System', `✅ 적금 완료 알림 전송 성공 (MessageId: ${data.messageId})`, 'system');
+                } else {
+                    addMessage(userIndex, 'System', `❌ 적금 완료 알림 실패: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('적금 완료 알림 실패:', error);
+                addMessage(userIndex, 'System', `❌ Main 서버 적금 완료 알림 실패: ${error.message}`, 'error');
+            });
+        }
+        
+        // AI 봇 메시지 전송
+        function sendAiBotMessage(userIndex) {
+            const stompClient = stompClients[userIndex];
+            const user = users[userIndex];
+            
+            if (!stompClient || !stompClient.connected) {
+                addMessage(userIndex, 'System', '❌ 서버에 연결되어 있지 않습니다', 'error');
+                return;
+            }
+            
+            showAiInputModal(userIndex);
+        }
+        
+        // AI 봇 입력 모달 표시
+        function showAiInputModal(userIndex) {
+            // 모달 HTML 생성
+            const modalHtml = `
+                <div id="aiModal" style="
+                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                    background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+                    z-index: 1000;
+                ">
+                    <div style="
+                        background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px;
+                        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+                    ">
+                        <h3 style="margin-top: 0; color: #2563eb; display: flex; align-items: center;">
+                            🤖 AI 메뉴 추천봇
+                        </h3>
+                        <p style="color: #6b7280; margin-bottom: 20px;">
+                            원하는 메뉴나 조건을 입력하면 AI가 추천해드려요!
+                        </p>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #374151;">
+                                질문 내용:
+                            </label>
+                            <textarea id="aiQueryInput" 
+                                placeholder="예) 매운 음식 말고 다른 메뉴 추천해줘&#10;예) 오늘 날씨에 맞는 따뜻한 음식 추천&#10;예) 다이어트할 때 좋은 저칼로리 메뉴는?" 
+                                style="
+                                    width: 100%; height: 100px; padding: 12px; border: 2px solid #d1d5db; 
+                                    border-radius: 8px; resize: vertical; font-size: 14px;
+                                    box-sizing: border-box;
+                                "
+                            ></textarea>
+                        </div>
+                        
+                        <div style="margin-bottom: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px; border-left: 4px solid #2563eb;">
+                            <h4 style="margin: 0 0 8px 0; color: #1e40af; font-size: 14px;">💡 질문 예시:</h4>
+                            <div style="font-size: 13px; color: #1e40af; line-height: 1.5;">
+                                • "매운 음식 추천해줘"<br>
+                                • "다이어트할 때 좋은 메뉴는?"<br>
+                                • "비 오는 날 먹기 좋은 음식"<br>
+                                • "간단하게 먹을 수 있는 메뉴"
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                            <button onclick="closeAiModal()" style="
+                                padding: 10px 20px; border: 2px solid #d1d5db; background: white; 
+                                border-radius: 6px; cursor: pointer; font-weight: bold;
+                            ">
+                                취소
+                            </button>
+                            <button onclick="sendAiQuery(${userIndex})" style="
+                                padding: 10px 20px; border: none; background: #2563eb; color: white; 
+                                border-radius: 6px; cursor: pointer; font-weight: bold;
+                            ">
+                                🚀 질문하기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 기존 모달 제거 후 새 모달 추가
+            const existingModal = document.getElementById('aiModal');
+            if (existingModal) existingModal.remove();
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // 입력창에 포커스
+            setTimeout(() => {
+                document.getElementById('aiQueryInput').focus();
+            }, 100);
+            
+            // Enter 키로 전송 (Ctrl+Enter)
+            document.getElementById('aiQueryInput').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    sendAiQuery(userIndex);
+                }
+            });
+        }
+        
+        // AI 질문 전송
+        function sendAiQuery(userIndex) {
+            const aiQuery = document.getElementById('aiQueryInput').value.trim();
+            
+            if (!aiQuery) {
+                alert('질문을 입력해주세요!');
+                return;
+            }
+            
+            const stompClient = stompClients[userIndex];
+            const user = users[userIndex];
+            
+            const chatMessage = {
+                content: aiQuery,
+                messageType: 'AI_BOT_REQUEST'
+            };
+            
+            try {
+                const headers = {
+                    'X-User-Id': user.userId,
+                    'X-Student-Id': user.studentId,
+                    'X-User-Name': user.userName,
+                    'X-Profile-Image': user.profileImageUrl
+                };
+                
+                stompClient.send(`/app/chat/${currentRoomId}`, headers, JSON.stringify(chatMessage));
+                addMessage(userIndex, user.userName, `🤖 ${aiQuery}`, 'ai-question');
+                addMessage(userIndex, 'System', `✅ AI 봇에게 질문을 전송했습니다`, 'system');
+                
+                closeAiModal();
+            } catch (e) {
+                addMessage(userIndex, 'System', `❌ 전송 실패: ${e.message}`, 'error');
+            }
+        }
+        
+        // AI 모달 닫기
+        function closeAiModal() {
+            const modal = document.getElementById('aiModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+        
+        // 학식 정보 요청 전송 (Main Server API 호출)
+        function sendCafeteriaInfo(userIndex) {
+            const user = users[userIndex];
+            
+            const cafeteriaRequest = {
+                roomId: currentRoomId,
+                requesterName: user.userName,
+                message: `${user.userName}님이 학식 정보를 요청했습니다.`
+            };
+            
+            addMessage(userIndex, 'System', `🍚 Chat 서버로 학식 정보 요청 중...`, 'system');
+            
+            fetch(`http://localhost:8081/api/chat/${currentRoomId}/cafeteria`, {
+                method: 'POST',
+                mode: 'cors',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-User-Id': user.userId,
+                    'X-User-Name': encodeURIComponent(user.userName)
+                },
+                body: JSON.stringify(cafeteriaRequest)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('학식 정보 요청 응답:', data);
+                if (data.success) {
+                    addMessage(userIndex, 'System', `✅ 학식 정보 요청 성공`, 'system');
+                } else {
+                    addMessage(userIndex, 'System', `❌ 학식 정보 요청 실패: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('학식 정보 요청 실패:', error);
+                addMessage(userIndex, 'System', `❌ Chat 서버 학식 정보 요청 실패: ${error.message}`, 'error');
+            });
+        }
+        
+        // 채팅 내역 로드
+        function loadChatHistory(userIndex) {
+            addMessage(userIndex, 'System', `📜 이전 채팅 기록 로딩 중...`, 'system');
+            
+            fetch(`http://localhost:8081/api/chat/rooms/${currentRoomId}/messages?limit=20`, {
+                method: 'GET',
+                mode: 'cors',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-User-Id': `test-user-${userIndex}`
+                }
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log(`채팅 히스토리 응답 (${userIndex}):`, data);
+                    
+                    // 새로운 응답 구조 처리
+                    let messages = [];
+                    if (data.messages && Array.isArray(data.messages)) {
+                        messages = data.messages;
+                    } else if (data.content && Array.isArray(data.content)) {
+                        messages = data.content;
+                    }
+                    
+                    if (messages.length > 0) {
+                        addMessage(userIndex, 'System', `✅ ${messages.length}개의 이전 메시지 로드됨`, 'system');
+                        
+                        // 시간순으로 정렬 (최신이 마지막)
+                        messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                        
+                        messages.forEach(msg => {
+                            const isOwnMessage = msg.senderId === users[userIndex].userId;
+                            const messageType = isOwnMessage ? 'own' : 'other';
+                            
+                            // MessageType에 따른 히스토리 메시지 처리
+                            switch (msg.messageType) {
+                                case 'CHAT':
+                                    addMessage(userIndex, msg.senderName, msg.content, messageType, msg.timestamp);
+                                    break;
+                                    
+                                case 'JOIN':
+                                    addMessage(userIndex, 'System', `👋 ${msg.senderName}님이 채팅방에 입장했습니다`, 'system', msg.timestamp);
+                                    break;
+                                    
+                                case 'LEAVE':
+                                    addMessage(userIndex, 'System', `👋 ${msg.senderName}님이 채팅방을 나갔습니다`, 'system', msg.timestamp);
+                                    break;
+                                    
+                                case 'PAYMENT_REQUEST':
+                                    let historyPaymentData = msg.paymentRequestData || {
+                                        settlementId: 'history-' + Date.now(),
+                                        requestAmount: 15000,
+                                        settlementUrl: '/main/settlement/temp'
+                                    };
+                                    
+                                    const historyCombinedContent = `
+                                        ${msg.content}
+                                        <div class="settlement-info">
+                                            <button class="settlement-btn" onclick="window.open('${historyPaymentData.settlementUrl}', '_blank')">
+                                                ${historyPaymentData.requestAmount ? historyPaymentData.requestAmount.toLocaleString() : '15,000'}원 송금하기
+                                            </button>
+                                        </div>
+                                    `;
+                                    addMessage(userIndex, msg.senderName, historyCombinedContent, 'settlement', msg.timestamp);
+                                    break;
+                                    
+                                case 'PAYMENT_COMPLETE':
+                                    addMessage(userIndex, msg.senderName, `✅ ${msg.content}`, 'settlement', msg.timestamp);
+                                    break;
+                                    
+                                case 'SAVINGS_REQUEST':
+                                    let historySavingsData = msg.paymentRequestData || {
+                                        settlementId: 'history-savings-' + Date.now(),
+                                        requestAmount: 20000,
+                                        settlementUrl: '/main/savings/temp'
+                                    };
+                                    
+                                    const historySavingsContent = `
+                                        ${msg.content}
+                                        <div class="settlement-info">
+                                            <button class="settlement-btn" onclick="window.open('${historySavingsData.settlementUrl}', '_blank')">
+                                                ${historySavingsData.requestAmount ? historySavingsData.requestAmount.toLocaleString() : '20,000'}원 적금하기
+                                            </button>
+                                        </div>
+                                    `;
+                                    addMessage(userIndex, msg.senderName, historySavingsContent, 'savings', msg.timestamp);
+                                    break;
+                                    
+                                case 'SAVINGS_COMPLETE':
+                                    addMessage(userIndex, msg.senderName, `✅ ${msg.content}`, 'savings', msg.timestamp);
+                                    break;
+                                    
+                                case 'CAFETERIA_INFO':
+                                    addMessage(userIndex, '🍚 학식봇', msg.content, 'system', msg.timestamp);
+                                    break;
+                                    
+                                case 'AI_BOT_REQUEST':
+                                    addMessage(userIndex, msg.senderName, msg.content, 'ai-question', msg.timestamp);
+                                    break;
+                                    
+                                case 'AI_BOT_RESPONSE':
+                                    addMessage(userIndex, 'AI 메뉴추천봇', msg.content, 'ai-response', msg.timestamp);
+                                    break;
+                                    
+                                default:
+                                    addMessage(userIndex, msg.senderName, msg.content, messageType, msg.timestamp);
+                                    break;
+                            }
+                        });
+                    } else {
+                        addMessage(userIndex, 'System', `💬 새로운 채팅방입니다. 첫 메시지를 보내보세요!`, 'system');
+                    }
+                })
+                .catch(error => {
+                    console.error(`채팅 내역 로드 실패 (${userIndex}):`, error);
+                    addMessage(userIndex, 'System', `⚠️ 이전 채팅 기록을 불러올 수 없습니다: ${error.message}`, 'error');
+                });
+        }
+        
+        
+        
+        
+        
+        
+        // 서버 상태 업데이트
+        function updateServerStatus(server, status) {
+            const element = document.getElementById(`${server}Status`);
+            if (element) {
+                element.textContent = status;
+                element.className = status === '✅' ? 'status-connected' : 
+                                  status === '❌' ? 'status-disconnected' : 'status-unknown';
+            }
+        }
+        
+        
+        // 모든 사용자의 채팅 히스토리 새로고침
+        function loadHistoryForAll() {
+            addMessage(1, 'History Refresh', '🔄 모든 사용자 채팅 히스토리 새로고침...', 'system');
+            addMessage(2, 'History Refresh', '🔄 채팅 기록 다시 로딩 중...', 'system');
+            
+            for (let i = 1; i <= 2; i++) {
+                if (stompClients[i] && stompClients[i].connected) {
+                    loadChatHistory(i);
+                } else {
+                    addMessage(i, 'History Refresh', 
+                        `⚠️ 연결되지 않았습니다. Connect → Subscribe 버튼을 먼저 클릭하세요`, 'error');
+                }
+            }
+        }
+        
+        // 모든 메시지 초기화
+        function clearAllMessages() {
+            document.getElementById('messages1').innerHTML = '';
+            document.getElementById('messages2').innerHTML = '';
+            
+            addMessage(1, 'System', '🧹 메시지가 초기화되었습니다', 'system');
+            addMessage(2, 'System', '🧹 새로운 테스트를 시작하세요', 'system');
+        }
+        
+        
+        
+        
+        // 테스트 가이드 표시/숨김
+        function showTestGuide() {
+            const guide = document.getElementById('testGuide');
+            guide.style.display = guide.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // 페이지 로드 시 초기화
+        window.addEventListener('DOMContentLoaded', function() {
+            // 환영 메시지
+            addMessage(1, 'System', 
+                `🎉 HeyBob 간단 테스트!
+                <br>👤 최수연 (20210404)
+                <br>💡 'Connect' → 'Subscribe' 후 채팅 테스트`, 'system');
+                
+            addMessage(2, 'System', 
+                `🎉 환영합니다!
+                <br>👤 정우진 (20210505)  
+                <br>💡 연결 후 정산/적금 버튼 테스트 가능`, 'system');
+        });
+    </script>
+</body>
+</html>

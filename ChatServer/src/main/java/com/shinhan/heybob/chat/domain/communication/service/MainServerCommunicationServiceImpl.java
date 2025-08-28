@@ -79,14 +79,14 @@ public class MainServerCommunicationServiceImpl implements MainServerCommunicati
     }
     
     @Override
-    public void createRoom(String bob약Id, String creatorUserId, String roomName, List<String> initialMembers) {
+    public void createRoom(String mealAppointmentId, String creatorUserId, String roomName, List<String> initialMembers) {
         ServerMessage message = ServerMessage.builder()
                 .messageId(UUID.randomUUID().toString())
                 .messageType(ServerMessage.MessageType.CREATE_ROOM)
                 .sourceServer(SERVER_NAME)
                 .targetServer(TARGET_SERVER)
                 .timestamp(LocalDateTime.now())
-                .payload(PayloadBuilder.createRoomPayload(bob약Id, creatorUserId, roomName, initialMembers))
+                .payload(PayloadBuilder.createRoomPayload(mealAppointmentId, creatorUserId, roomName, initialMembers))
                 .retryCount(0)
                 .expiryTime(LocalDateTime.now().plusMinutes(5))
                 .build();
@@ -136,7 +136,7 @@ public class MainServerCommunicationServiceImpl implements MainServerCommunicati
                                                              String note, String requesterId) {
         ServerMessage message = ServerMessage.builder()
                 .messageId(UUID.randomUUID().toString())
-                .messageType(ServerMessage.MessageType.PROCESS_SETTLEMENT)
+                .messageType(ServerMessage.MessageType.PAYMENT_REQUEST)
                 .sourceServer(SERVER_NAME)
                 .targetServer(TARGET_SERVER)
                 .timestamp(LocalDateTime.now())
@@ -212,12 +212,13 @@ public class MainServerCommunicationServiceImpl implements MainServerCommunicati
     
     // 응답 메시지 처리 (MainResponseConsumer에서 호출)
     public void handleResponse(ServerMessage response) {
-        String correlationId = response.getCorrelationId();
-        if (correlationId != null) {
-            CompletableFuture<ServerMessage> future = pendingResponses.remove(correlationId);
+        // correlationId가 없으므로 messageId를 사용
+        String messageId = response.getMessageId();
+        if (messageId != null) {
+            CompletableFuture<ServerMessage> future = pendingResponses.remove(messageId);
             if (future != null) {
                 future.complete(response);
-                log.debug("✅ 응답 처리 완료: correlationId={}", correlationId);
+                log.debug("✅ 응답 처리 완료: messageId={}", messageId);
             }
         }
     }
@@ -225,18 +226,19 @@ public class MainServerCommunicationServiceImpl implements MainServerCommunicati
     private Map<String, Object> convertToStreamData(ServerMessage message) {
         Map<String, Object> streamData = new HashMap<>();
         streamData.put("messageId", message.getMessageId());
-        streamData.put("correlationId", message.getCorrelationId());
         streamData.put("messageType", message.getMessageType().name());
         streamData.put("sourceServer", message.getSourceServer());
         streamData.put("targetServer", message.getTargetServer());
         streamData.put("timestamp", message.getTimestamp().toString());
-        streamData.put("retryCount", message.getRetryCount());
+        streamData.put("retryCount", String.valueOf(message.getRetryCount())); // int를 String으로 변환
         streamData.put("expiryTime", message.getExpiryTime() != null ? message.getExpiryTime().toString() : null);
         
-        // Payload를 JSON 문자열로 변환하여 저장
+        // Payload를 안전하게 문자열로 변환하여 저장
         if (message.getPayload() != null) {
             message.getPayload().forEach((key, value) -> {
-                streamData.put("payload_" + key, value);
+                if (value != null) {
+                    streamData.put("payload_" + key, value.toString()); // 모든 값을 String으로 변환
+                }
             });
         }
         
@@ -246,7 +248,8 @@ public class MainServerCommunicationServiceImpl implements MainServerCommunicati
     private boolean isRetryableMessage(ServerMessage.MessageType messageType) {
         // 재시도 가능한 메시지 타입 정의
         return switch (messageType) {
-            case CREATE_ROOM, GET_ROOM_MEMBERS, PROCESS_SETTLEMENT, VALIDATE_USER_ACCESS -> true;
+            case CREATE_ROOM, GET_ROOM_MEMBERS, VALIDATE_USER_ACCESS -> true;
+            case PAYMENT_REQUEST, SAVINGS_REQUEST -> true;  // 새 Payment 관련 타입들
             case JOIN_ROOM -> false; // 중복 입장 방지
             case HEARTBEAT -> false; // 즉시성이 중요
             default -> true;

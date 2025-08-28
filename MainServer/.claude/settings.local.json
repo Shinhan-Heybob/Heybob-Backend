@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\ChatServer\\src\\main\\java\\com\\shinhan\\heybob\\chat\\domain\\communication\\service/**)",
+      "Read(/C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\ChatServer\\src\\main\\java\\com\\shinhan\\heybob\\chat\\domain\\communication\\service/**)",
+      "Bash(./gradlew test:*)",
+      "Bash(./gradlew:*)",
+      "Read(/C:\\C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\ChatServer\\src\\main\\java\\com\\shinhan\\heybob/**)",
+      "Read(/C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\ChatServer/**)",
+      "Bash(del \"C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\MainServer\\src\\main\\java\\com\\shinhan\\heybob\\domain\\test\\dto\\SettlementBroadcastRequest.java\")",
+      "Bash(del \"C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\MainServer\\src\\main\\java\\com\\shinhan\\heybob\\domain\\meal\\dto\\response\\ScheduleComparisonResponse.java\")"
+    ],
+    "deny": [],
+    "ask": [],
+    "additionalDirectories": [
+      "C:\\Users\\SSAFY\\heybob_main\\Heybob-Backend\\ChatServer"
+    ]
+  }
+}

@@ -41,7 +41,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                                .requestMatchers("/auth/**", "/timetable/**", "/timetable/lecture/**").permitAll()
+                                .requestMatchers("/auth/**").permitAll()
+                                .requestMatchers("/test/**").permitAll()  // context-path 제거
+                                .requestMatchers("/actuator/health").permitAll()
+                                .requestMatchers("/auth/**").permitAll()
                                 .anyRequest().authenticated()
                 )
                 .formLogin(AbstractHttpConfigurer::disable)

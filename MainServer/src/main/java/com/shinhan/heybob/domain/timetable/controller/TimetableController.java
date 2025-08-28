@@ -1,15 +1,17 @@
 package com.shinhan.heybob.domain.timetable.controller;
 
+import com.shinhan.heybob.domain.timetable.dto.TimetableCompareGetRequestDto;
+import com.shinhan.heybob.domain.timetable.dto.TimetableCompareGetResponseDto;
 import com.shinhan.heybob.domain.timetable.dto.TimetableCreateRequestDto;
+import com.shinhan.heybob.domain.timetable.dto.TimetableGetResponseDto;
 import com.shinhan.heybob.domain.timetable.service.TimetableService;
 import java.net.URI;
+
+import com.shinhan.heybob.domain.user.annotation.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RequestMapping("/timetable")
 @RequiredArgsConstructor
@@ -19,8 +21,26 @@ public class TimetableController {
     private final TimetableService timetableService;
 
     @PostMapping
-    public ResponseEntity<Void> createTimetable(@RequestBody TimetableCreateRequestDto timetableCreateRequestDto) {
-        timetableService.createTimetable(timetableCreateRequestDto);
+    public ResponseEntity<Void> createTimetable(@RequestBody TimetableCreateRequestDto timetableCreateRequestDto,
+                                                @UserId Long userId) {
+        System.out.print(userId);
+        timetableService.createTimetable(timetableCreateRequestDto, userId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @GetMapping("/{timeTableId}")
+    public ResponseEntity<TimetableGetResponseDto> getTimetable(@PathVariable Long timeTableId) {
+        return ResponseEntity.ok(timetableService.getTimeTable(timeTableId));
+    }
+
+    @DeleteMapping("/{timeTableId}")
+    public ResponseEntity<Void> deleteTimetable(@PathVariable Long timeTableId) {
+        timetableService.deleteTimeTable(timeTableId);
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @GetMapping("/compare")
+    public ResponseEntity<TimetableCompareGetResponseDto> compareTimetables(@RequestBody TimetableCompareGetRequestDto timetableCompareGetRequestDto){
+        return ResponseEntity.ok(timetableService.compareTimetables(timetableCompareGetRequestDto));
     }
 }

@@ -41,6 +41,11 @@ public class MealAppointment extends BaseTime {
     private User creator;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "meal_type", nullable = false, length = 32)
+    @Builder.Default
+    private MealType type = MealType.MEAL_APPOINTMENT;
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "status")
     @Builder.Default
     private MealAppointmentStatus status = MealAppointmentStatus.ACTIVE;
@@ -59,5 +64,9 @@ public class MealAppointment extends BaseTime {
     public void addParticipant(MealParticipant participant) {
         this.participants.add(participant);
         participant.setMealAppointment(this);
+    }
+    
+    public void setChatRoomId(Long chatRoomId) {
+        this.chatRoomId = chatRoomId;
     }
 }
