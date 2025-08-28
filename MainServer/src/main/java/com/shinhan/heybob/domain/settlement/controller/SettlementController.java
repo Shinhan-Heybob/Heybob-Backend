@@ -70,33 +70,5 @@ public class SettlementController {
     public ResponseEntity<SettlementPageResponseDto> getPage(@PathVariable Long chatRoomId) {
         return ResponseEntity.ok(settlementQueryService.getSettlementPageByChatRoom(chatRoomId));
     }
-
-    @PostMapping("/{chatRoomId}/broadcast/start")
-    public ResponseEntity<Map<String, Object>> sendSettlementStart(
-            @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
-            @PathVariable Long chatRoomId,
-            @RequestBody @Valid SettlementStartBroadcastRequestDto requestDto
-    ) {
-        try {
-            String messageId = chatIntegrationService.sendSettlementBroadcast(
-                    requestDto.settlementId(),
-                    chatRoomId,
-                    userPrincipal.getUserId(),
-                    requestDto.perHead()
-            );
-
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "messageId", messageId,
-                    "chatRoomId", chatRoomId,
-                    "settlementId", requestDto.settlementId(),
-                    "message", "정산 시작 브로드캐스트가 전송되었습니다."
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of(
-                    "success", false,
-                    "error", e.getMessage()
-            ));
-        }
-    }
+    
 }
