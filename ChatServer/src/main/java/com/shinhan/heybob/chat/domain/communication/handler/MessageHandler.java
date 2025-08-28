@@ -179,12 +179,12 @@ public class MessageHandler {
                 .build())
             .build();
         
-        // 완료 메시지에 추가 데이터 포함 (필요 시 클라이언트에서 파싱)
+        // 완료 메시지에 추가 데이터 포함 (실제 사용자 정보 사용)
         Map<String, Object> completeNotification = new HashMap<>();
         completeNotification.put("messageId", messageId);
         completeNotification.put("roomId", roomId);
-        completeNotification.put("senderId", "system");
-        completeNotification.put("senderName", "시스템");
+        completeNotification.put("senderId", requesterId != null ? requesterId.toString() : "system");
+        completeNotification.put("senderName", requesterName != null ? requesterName : "시스템");
         completeNotification.put("content", completionMessage != null ? completionMessage : "정산이 완료되었습니다.");
         completeNotification.put("messageType", "PAYMENT_COMPLETE");
         completeNotification.put("timestamp", LocalDateTime.now().toString());

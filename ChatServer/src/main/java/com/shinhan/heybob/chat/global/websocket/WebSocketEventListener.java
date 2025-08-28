@@ -17,6 +17,7 @@ import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 import org.springframework.web.socket.messaging.SessionConnectEvent;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
@@ -32,6 +33,8 @@ public class WebSocketEventListener {
     private final Map<String, UserSessionInfo> sessionUserMap = new ConcurrentHashMap<>();
     // 방별 사용자 수 관리
     private final Map<String, Integer> roomUserCountMap = new ConcurrentHashMap<>();
+    // 인메모리 기반 입장 사용자 추적 (Redis 대신 사용)
+    private final Map<String, Set<String>> roomJoinedUsersMap = new ConcurrentHashMap<>();
     // Redis를 통한 입장 메시지 추적을 위한 키 접두사
     private static final String ROOM_JOINED_USERS_KEY = "room:joined_users:";
 
@@ -101,9 +104,9 @@ public class WebSocketEventListener {
             // 퇴장 메시지 전송
             sendLeaveMessage(userInfo);
             
-            // Redis에서 입장 기록 제거 (완전 퇴장 시)
-            removeUserFromRoom(userInfo.getRoomId(), userInfo.getUserId());
-            log.info("🚪 완전 퇴장: Redis 입장 기록 제거 - userId={}, roomId={}", userInfo.getUserId(), userInfo.getRoomId());
+            // 인메모리에서 입장 기록 제거 (완전 퇴장 시)
+            removeUserFromRoomInMemory(userInfo.getRoomId(), userInfo.getUserId());
+            log.info("🚪 완전 퇴장: 입장 기록 제거 - userId={}, roomId={}", userInfo.getUserId(), userInfo.getRoomId());
             
             // 세션 정보 정리
             sessionUserMap.remove(sessionId);
@@ -187,11 +190,11 @@ public class WebSocketEventListener {
             // 방 사용자 수 증가
             incrementRoomUserCount(roomId);
             
-            // Redis 기반 중복 입장 메시지 방지
-            if (!hasUserJoinedRoom(roomId, userId)) {
+            // 인메모리 기반 중복 입장 메시지 방지
+            if (!hasUserJoinedRoomInMemory(roomId, userId)) {
                 // 처음 입장하는 경우에만 입장 메시지 전송
                 sendJoinMessage(userInfo);
-                addUserToRoom(roomId, userId);
+                addUserToRoomInMemory(roomId, userId);
                 log.info("✅ 첫 입장: 입장 메시지 전송 - sessionId={}, userId={}, roomId={}", sessionId, userId, roomId);
             } else {
                 log.info("🔄 재구독: 입장 메시지 생략 - sessionId={}, userId={}, roomId={}", sessionId, userId, roomId);
@@ -224,13 +227,13 @@ public class WebSocketEventListener {
             joinRequest.setContent(content);
             joinRequest.setMessageType("JOIN");
             
-            // ChatService를 통해 처리하여 MongoDB에 저장
+            // ChatService를 통해 처리하여 MongoDB에 저장 (실제 사용자 정보 사용)
             com.shinhan.heybob.chat.domain.chat.dto.ChatMessageResponse response = chatService.processMessage(
                 userInfo.getRoomId(),
-                "SYSTEM",
-                "SYSTEM", 
-                "시스템",
-                null,
+                userInfo.getUserId(),
+                userInfo.getStudentId(), 
+                userInfo.getUserName(),
+                userInfo.getProfileImageUrl(),
                 joinRequest
             );
             
@@ -258,13 +261,13 @@ public class WebSocketEventListener {
             leaveRequest.setContent(content);
             leaveRequest.setMessageType("LEAVE");
             
-            // ChatService를 통해 처리하여 MongoDB에 저장
+            // ChatService를 통해 처리하여 MongoDB에 저장 (실제 사용자 정보 사용)
             com.shinhan.heybob.chat.domain.chat.dto.ChatMessageResponse response = chatService.processMessage(
                 userInfo.getRoomId(),
-                "SYSTEM",
-                "SYSTEM", 
-                "시스템",
-                null,
+                userInfo.getUserId(),
+                userInfo.getStudentId(), 
+                userInfo.getUserName(),
+                userInfo.getProfileImageUrl(),
                 leaveRequest
             );
             
@@ -334,6 +337,36 @@ public class WebSocketEventListener {
             log.debug("✅ Redis에서 입장 기록 제거: roomId={}, userId={}", roomId, userId);
         } catch (Exception e) {
             log.error("❌ Redis에서 입장 기록 제거 실패: roomId={}, userId={}", roomId, userId, e);
+        }
+    }
+
+    /**
+     * 인메모리 기반: 사용자가 해당 방에 입장 메시지를 이미 보냈는지 확인
+     */
+    private boolean hasUserJoinedRoomInMemory(String roomId, String userId) {
+        Set<String> joinedUsers = roomJoinedUsersMap.get(roomId);
+        return joinedUsers != null && joinedUsers.contains(userId);
+    }
+
+    /**
+     * 인메모리 기반: 사용자를 방의 입장 목록에 추가
+     */
+    private void addUserToRoomInMemory(String roomId, String userId) {
+        roomJoinedUsersMap.computeIfAbsent(roomId, k -> ConcurrentHashMap.newKeySet()).add(userId);
+        log.debug("✅ 인메모리에 입장 기록 추가: roomId={}, userId={}", roomId, userId);
+    }
+
+    /**
+     * 인메모리 기반: 사용자를 방의 입장 목록에서 제거
+     */
+    private void removeUserFromRoomInMemory(String roomId, String userId) {
+        Set<String> joinedUsers = roomJoinedUsersMap.get(roomId);
+        if (joinedUsers != null) {
+            joinedUsers.remove(userId);
+            if (joinedUsers.isEmpty()) {
+                roomJoinedUsersMap.remove(roomId);
+            }
+            log.debug("✅ 인메모리에서 입장 기록 제거: roomId={}, userId={}", roomId, userId);
         }
     }
 
