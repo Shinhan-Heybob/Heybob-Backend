@@ -204,37 +204,42 @@ public class SettlementServiceImpl implements SettlementService {
     @Transactional
     @Override
     public SettlementResponseDto getSettlementInfo(Long userId, Long chatRoomId) {
-        MealAppointment meal = mealAppointmentRepository.findByChatRoomId(chatRoomId)
-                .orElseThrow(() -> new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND));
+        try {
+            MealAppointment meal = mealAppointmentRepository.findByChatRoomId(chatRoomId)
+                    .orElseThrow(() -> new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND));
 
-        Settlement settlement = settlementRepository.findByMealAppointment(meal)
-                .orElseThrow(() -> new HeybobException(ExceptionStatus.SETTLEMENT_NOT_FOUND));
+            Settlement settlement = settlementRepository.findByMealAppointment(meal)
+                    .orElseThrow(() -> new HeybobException(ExceptionStatus.SETTLEMENT_NOT_FOUND));
 
-        if (settlement.getMealAppointment().getChatRoomId() == null) {
-            throw new HeybobException(ExceptionStatus.NOT_FOUND_CHAT_ROOM_ID);
+            if (settlement.getMealAppointment().getChatRoomId() == null) {
+                throw new HeybobException(ExceptionStatus.NOT_FOUND_CHAT_ROOM_ID);
+            }
+
+            boolean isInitiator = settlement.getInitiator().getId().equals(userId);
+
+            var mySpOpt = participantRepository
+                    .findBySettlement_IdAndParticipantUser_Id(settlement.getId(), userId);
+
+            boolean isParticipant = mySpOpt.isPresent();
+            Boolean myPaid = isParticipant
+                    ? (mySpOpt.get().getTransferStatus() == TransferStatus.SUCCESS)
+                    : null;
+
+            return new SettlementResponseDto(
+                    settlement.getId(),
+                    settlement.getInitiator().getId(),
+                    settlement.getInitiator().getName(),
+                    settlement.getPerHeadAmount(),
+                    settlement.getTotalAmount(),
+                    settlement.getParticipantsCount(),
+                    isInitiator,
+                    isParticipant,
+                    myPaid
+            );
+        } catch (Exception e) {
+            log.error("chatId가 없습니다.");
         }
-
-        boolean isInitiator = settlement.getInitiator().getId().equals(userId);
-
-        var mySpOpt = participantRepository
-                .findBySettlement_IdAndParticipantUser_Id(settlement.getId(), userId);
-
-        boolean isParticipant = mySpOpt.isPresent();
-        Boolean myPaid = isParticipant
-                ? (mySpOpt.get().getTransferStatus() == TransferStatus.SUCCESS)
-                : null;
-
-        return new SettlementResponseDto(
-                settlement.getId(),
-                settlement.getInitiator().getId(),
-                settlement.getInitiator().getName(),
-                settlement.getPerHeadAmount(),
-                settlement.getTotalAmount(),
-                settlement.getParticipantsCount(),
-                isInitiator,
-                isParticipant,
-                myPaid
-        );
+        return null;
     }
 
     @Transactional
@@ -292,6 +297,8 @@ public class SettlementServiceImpl implements SettlementService {
                 = new UpdateDemandDepositAccountTransferRequest(
                         header,
                 depositAccountNo,
+
+
                 depositTransactionSummary,
                 transactionBalance,
                 withdrawalAccountNo,

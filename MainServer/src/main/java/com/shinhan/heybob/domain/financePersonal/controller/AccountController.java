@@ -32,7 +32,8 @@ public class AccountController {
         return ResponseEntity.ok(dto);
     }
 
-    @GetMapping("/personal/history")
+
+    @PostMapping("/personal/history")
     public ResponseEntity<TransactionHistoryListResponseDto> getTransactionHistory(
             @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
             @RequestBody TransactionHistoryDateRequestDto dateRequestDto
