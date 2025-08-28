@@ -41,6 +41,7 @@ public enum ExceptionStatus {
     EMPTY_USER_KEY(HttpStatus.NOT_FOUND, 404, "userKey가 비어있습니다."),
     EMPTY_PARTICIPANTS_USER_IDS(HttpStatus.NOT_FOUND, 404,"정산 참여자 목록이 비어있습니다."),
     INVALID_TOTAL_AMOUNT(HttpStatus.BAD_REQUEST, 400, "정산 금액은 1원 이상이어야 합니다."),
+    EXTERNAL_FINANCE_USER_ID_NOT_FOUND(HttpStatus.NOT_FOUND, 404, "ExternalFinanceUser의 id를 찾지 못했습니다."),
 
     // SETTLEMENT
     SETTLEMENT_STATUS_BAD_REQUEST(HttpStatus.BAD_REQUEST, 400, "생성 상태에서만 수정할 수 있습니다."),

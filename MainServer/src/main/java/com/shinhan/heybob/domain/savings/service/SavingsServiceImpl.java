@@ -89,7 +89,7 @@ public class SavingsServiceImpl implements SavingsService {
                 header,
                 withdrawalAccountNo,
                 accountTypeUniqueNo,
-                "1"
+                String.valueOf(perAmount)
         );
 
         HttpHeaders headers = new HttpHeaders();
