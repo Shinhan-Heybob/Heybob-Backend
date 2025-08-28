@@ -6,6 +6,8 @@ import com.shinhan.heybob.domain.timetable.dto.TimetableCreateRequestDto;
 import com.shinhan.heybob.domain.timetable.dto.TimetableGetResponseDto;
 import com.shinhan.heybob.domain.timetable.service.TimetableService;
 import java.net.URI;
+
+import com.shinhan.heybob.domain.user.annotation.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,8 +21,10 @@ public class TimetableController {
     private final TimetableService timetableService;
 
     @PostMapping
-    public ResponseEntity<Void> createTimetable(@RequestBody TimetableCreateRequestDto timetableCreateRequestDto) {
-        timetableService.createTimetable(timetableCreateRequestDto);
+    public ResponseEntity<Void> createTimetable(@RequestBody TimetableCreateRequestDto timetableCreateRequestDto,
+                                                @UserId Long userId) {
+        System.out.print(userId);
+        timetableService.createTimetable(timetableCreateRequestDto, userId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
