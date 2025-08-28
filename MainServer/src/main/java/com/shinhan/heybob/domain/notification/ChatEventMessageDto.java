@@ -1,6 +1,4 @@
-package com.shinhan.heybob.domain.notification.dto;
-
-import com.shinhan.heybob.domain.notification.model.NotificationEventType;
+package com.shinhan.heybob.domain.notification;
 
 public record ChatEventMessageDto(
         NotificationEventType type,
