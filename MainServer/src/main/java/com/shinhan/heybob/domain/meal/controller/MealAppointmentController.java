@@ -28,7 +28,8 @@ public class MealAppointmentController {
 
     @PostMapping
     public ResponseEntity<MealAppointmentIdResponse> createMealAppointment(
-            @RequestBody @Valid CreateMealAppointmentRequest request) {
+            @RequestBody @Valid CreateMealAppointmentRequest request,
+            @AuthenticationPrincipal UserPrincipalDetails userPrincipal) {
         MealAppointmentDetailResponse response = mealAppointmentService.createMealAppointment(request);
         MealAppointmentIdResponse idResponse = MealAppointmentIdResponse.builder()
                 .id(response.getId())

@@ -46,7 +46,7 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
-    @GetMapping("/get-friends")
+    @PostMapping("/get-friends")
     public ResponseEntity<List<UserResponseDto>> getFriends(
             @RequestBody UsersGetRequestDto requestDto
     ){
