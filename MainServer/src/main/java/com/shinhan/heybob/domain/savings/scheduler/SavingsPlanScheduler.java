@@ -1,7 +1,5 @@
 package com.shinhan.heybob.domain.savings.scheduler;
 
-import com.shinhan.heybob.domain.notification.dto.ChatEventMessageDto;
-import com.shinhan.heybob.domain.notification.model.NotificationEventType;
 import com.shinhan.heybob.domain.savings.entity.SavingsPlan;
 import com.shinhan.heybob.domain.savings.repository.SavingsPlanRepository;
 import lombok.RequiredArgsConstructor;
@@ -11,11 +9,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.Locale;
 
 @Slf4j
 @Component
