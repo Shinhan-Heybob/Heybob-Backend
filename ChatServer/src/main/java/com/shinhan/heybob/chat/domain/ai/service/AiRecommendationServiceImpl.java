@@ -152,7 +152,7 @@ public class AiRecommendationServiceImpl implements AiRecommendationService {
     private String formatAiResponse(String aiRecommendation, String cafeteriaInfo) {
         StringBuilder sb = new StringBuilder();
         sb.append("🤖 AI 메뉴 추천\n");
-        sb.append("━━━━━━━━━━━━━━━━━━━━\n\n");
+        sb.append("━━━━━━━n\n");
         
 //        // 학식 정보가 있는 경우 간단히 요약
 //        if (!cafeteriaInfo.contains("학식이 없습니다")) {
@@ -168,9 +168,9 @@ public class AiRecommendationServiceImpl implements AiRecommendationService {
 //            }
 //            sb.append("\n");
 //        }
-        
-        sb.append("💡 추천 메뉴:\n");
-        sb.append("━━━━━━━━━━━━━━━━━━━━\n");
+//
+//        sb.append("💡 추천 메뉴:\n");
+//        sb.append("━━━━━━━━━━━━━━━━━━━━\n");
         sb.append(aiRecommendation);
         
         return sb.toString();

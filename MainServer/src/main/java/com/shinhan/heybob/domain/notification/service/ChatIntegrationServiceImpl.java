@@ -36,8 +36,8 @@ public class ChatIntegrationServiceImpl implements ChatIntegrationService {
                 metadata
             );
             
-            // 응답 대기 (타임아웃 5초)
-            Long chatRoomId = chatRoomFuture.get(5, java.util.concurrent.TimeUnit.SECONDS);
+            // 응답 대기 (타임아웃 1초)
+            Long chatRoomId = chatRoomFuture.get(1, java.util.concurrent.TimeUnit.SECONDS);
             log.info("✅ 채팅방 생성 완료: 밥약ID={}, 채팅방ID={}", mealAppointment.getId(), chatRoomId);
             return chatRoomId;
             
