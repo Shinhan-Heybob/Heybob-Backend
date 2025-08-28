@@ -65,4 +65,8 @@ public class MealAppointment extends BaseTime {
         this.participants.add(participant);
         participant.setMealAppointment(this);
     }
+    
+    public void setChatRoomId(Long chatRoomId) {
+        this.chatRoomId = chatRoomId;
+    }
 }

@@ -168,7 +168,9 @@ public class MessageHandler {
             .messageId(messageId)
             .roomId(roomId)
             .senderId(requesterId != null ? requesterId.toString() : "system")
+            .studentId(requesterStudentId)  // 학번 추가
             .senderName(requesterName != null ? requesterName : "시스템")
+            .profileImageUrl(requesterProfileImg)  // 프로필 이미지 추가
             .content(completionMessage != null ? completionMessage : "정산이 완료되었습니다.")
             .messageType("PAYMENT_COMPLETE")
             .timestamp(LocalDateTime.now())
@@ -184,7 +186,9 @@ public class MessageHandler {
         completeNotification.put("messageId", messageId);
         completeNotification.put("roomId", roomId);
         completeNotification.put("senderId", requesterId != null ? requesterId.toString() : "system");
+        completeNotification.put("studentId", requesterStudentId);  // 학번 추가
         completeNotification.put("senderName", requesterName != null ? requesterName : "시스템");
+        completeNotification.put("profileImageUrl", requesterProfileImg);  // 프로필 이미지 추가
         completeNotification.put("content", completionMessage != null ? completionMessage : "정산이 완료되었습니다.");
         completeNotification.put("messageType", "PAYMENT_COMPLETE");
         completeNotification.put("timestamp", LocalDateTime.now().toString());
@@ -325,14 +329,19 @@ public class MessageHandler {
             .messageId(messageId)
             .roomId(roomId)
             .senderId(paymentData.getRequesterId() != null ? paymentData.getRequesterId().toString() : "system")
+            .studentId(paymentData.getRequesterStudentId())  // 학번 추가
             .senderName(paymentData.getRequesterName())  // 실제 요청자 이름 사용
+            .profileImageUrl(paymentData.getRequesterProfileImg())  // 프로필 이미지 추가
             .content(chatMessage.getContent())
             .messageType("PAYMENT_REQUEST")
             .timestamp(chatMessage.getTimestamp())
             .paymentRequestData(PaymentRequestData.builder()
                 .settlementId(paymentData.getSettlementId())
                 .roomId(paymentData.getRoomId())
+                .requesterId(paymentData.getRequesterId())
                 .requesterName(paymentData.getRequesterName())
+                .requesterStudentId(paymentData.getRequesterStudentId())
+                .requesterProfileImg(paymentData.getRequesterProfileImg())
                 .requestAmount(paymentData.getRequestAmount())
                 .settlementUrl(paymentData.getSettlementUrl())
                 .build())
@@ -427,7 +436,9 @@ public class MessageHandler {
         completeNotification.put("messageId", messageId);
         completeNotification.put("roomId", roomId);
         completeNotification.put("senderId", requesterId != null ? requesterId.toString() : "system");
+        completeNotification.put("studentId", requesterStudentId);  // 학번 추가
         completeNotification.put("senderName", requesterName != null ? requesterName : "시스템");
+        completeNotification.put("profileImageUrl", requesterProfileImg);  // 프로필 이미지 추가
         completeNotification.put("content", completionMessage != null ? completionMessage : "적금이 완료되었습니다.");
         completeNotification.put("messageType", "SAVINGS_COMPLETE");
         completeNotification.put("timestamp", LocalDateTime.now().toString());
@@ -543,7 +554,9 @@ public class MessageHandler {
                     .messageId(messageId)
                     .roomId(roomId)
                     .senderId(savingsData.getRequesterId() != null ? savingsData.getRequesterId().toString() : "system")
+                    .studentId(savingsData.getRequesterStudentId())  // 학번 추가
                     .senderName(savingsData.getRequesterName())
+                    .profileImageUrl(savingsData.getRequesterProfileImg())  // 프로필 이미지 추가
                     .content(chatMessage.getContent())
                     .messageType("SAVINGS_REQUEST")
                     .timestamp(chatMessage.getTimestamp())

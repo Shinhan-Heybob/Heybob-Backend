@@ -269,7 +269,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
             Map<String, Object> payload = new HashMap<>();
             payload.put("creatorUserId", creatorUserId);
             payload.put("roomName", roomName);
-            payload.put("initialMembers", initialMembers);
+            payload.put("initialMembers", String.join(",", initialMembers)); // List를 쉼표 구분 문자열로 변환
             if (metadata != null) {
                 payload.putAll(metadata);
             }
