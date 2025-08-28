@@ -1,7 +1,7 @@
 package com.shinhan.heybob.domain.test.service;
 
-import com.shinhan.heybob.common.chat.dto.ChatBroadcastRequest;
-import com.shinhan.heybob.common.chat.dto.ServerMessage;
+import com.shinhan.heybob.domain.notification.dto.ChatBroadcastRequest;
+import com.shinhan.heybob.domain.notification.dto.ServerMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;

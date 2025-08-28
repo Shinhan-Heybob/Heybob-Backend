@@ -1,7 +1,6 @@
-package com.shinhan.heybob.common.chat.service;
+package com.shinhan.heybob.domain.notification.service;
 
-import com.shinhan.heybob.common.chat.dto.ChatBroadcastRequest;
-import com.shinhan.heybob.common.chat.dto.ServerMessage;
+import com.shinhan.heybob.domain.notification.dto.ServerMessage;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -22,21 +21,7 @@ public interface ChatMessageService {
      * @return 응답 메시지
      */
     CompletableFuture<ServerMessage> sendMessageWithResponse(ServerMessage message, long timeoutMs);
-    
-    /**
-     * 정산 브로드캐스트 전송
-     * @param request 브로드캐스트 요청
-     * @return 메시지 ID
-     */
-    String sendSettlementBroadcast(ChatBroadcastRequest request);
-    
-    /**
-     * 적금 브로드캐스트 전송
-     * @param request 브로드캐스트 요청
-     * @return 메시지 ID
-     */
-    String sendSavingsBroadcast(ChatBroadcastRequest request);
-    
+
     /**
      * 정산 완료 브로드캐스트 전송
      * @param request 브로드캐스트 요청
@@ -62,4 +47,5 @@ public interface ChatMessageService {
     CompletableFuture<Long> createChatRoom(String roomName, String creatorUserId, 
                                           java.util.List<String> initialMembers, 
                                           Map<String, Object> metadata);
+
 }

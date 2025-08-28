@@ -1,4 +1,4 @@
-package com.shinhan.heybob.config;
+package com.shinhan.heybob.domain.notification.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -42,5 +42,18 @@ public class RedisConfig {
         
         template.afterPropertiesSet();
         return template;
+    }
+
+    @Bean
+    public RedisTemplate<String, String> streamRedisTemplate(RedisConnectionFactory cf) {
+        RedisTemplate<String, String> t = new RedisTemplate<>();
+        t.setConnectionFactory(cf);
+        StringRedisSerializer s = new StringRedisSerializer();
+        t.setKeySerializer(s);
+        t.setValueSerializer(s);
+        t.setHashKeySerializer(s);
+        t.setHashValueSerializer(s);
+        t.afterPropertiesSet();
+        return t;
     }
 }

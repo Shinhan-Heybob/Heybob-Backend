@@ -8,6 +8,7 @@ import com.shinhan.heybob.domain.financePersonal.entity.PersonalAccount;
 import com.shinhan.heybob.domain.financePersonal.repository.ExternalFinanceUserRepository;
 import com.shinhan.heybob.domain.financePersonal.repository.PersonalAccountRepository;
 import com.shinhan.heybob.domain.financePersonal.util.UserAccountUtil;
+import com.shinhan.heybob.domain.user.entity.User;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -190,7 +191,10 @@ public class FinanceAccountServiceImpl implements FinanceAccountService{
         Map<String, Object> body = response.getBody();
         Map<String, Object> rec = (Map<String, Object>) body.get("REC");
         int totalCount = Integer.parseInt((String) rec.get("totalCount"));
+        String transactionAccountNo = (String) rec.get("transactionAccountNo");
+        String transactorName = userAccountUtil.getUserNameByPersonalAccountNo(transactionAccountNo);
         List<Map<String, Object>> list = (List<Map<String, Object>>) rec.get("list");
+
 
         List<TransactionHistoryDto> dtoList = list.stream()
                 .map(item -> TransactionHistoryDto.builder()
@@ -200,6 +204,8 @@ public class FinanceAccountServiceImpl implements FinanceAccountService{
                         .transactionTypeName((String) item.get("transactionTypeName"))
                         .transactionBalance((String) item.get("transactionBalance"))
                         .transactionAfterBalance((String) item.get("transactionAfterBalance"))
+                        .transactorName(transactorName)
+                        .eventTitle((String) item.get("transactionMemo"))
                         .build()
                 )
                 .toList();

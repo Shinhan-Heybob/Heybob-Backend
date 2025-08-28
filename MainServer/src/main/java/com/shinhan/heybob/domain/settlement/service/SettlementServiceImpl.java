@@ -4,15 +4,12 @@ import com.shinhan.heybob.common.exception.ExceptionStatus;
 import com.shinhan.heybob.common.exception.HeybobException;
 import com.shinhan.heybob.common.util.KSTUtil;
 import com.shinhan.heybob.domain.financePersonal.dto.FinanceHeader;
-import com.shinhan.heybob.domain.financePersonal.dto.InquireDemandDepositAccountBalanceRequest;
-import com.shinhan.heybob.domain.financePersonal.dto.PersonalAccountBalanceResponseDto;
 import com.shinhan.heybob.domain.financePersonal.repository.ExternalFinanceUserRepository;
 import com.shinhan.heybob.domain.financePersonal.util.UserAccountUtil;
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
 import com.shinhan.heybob.domain.meal.repository.MealAppointmentRepository;
-import com.shinhan.heybob.domain.notification.dto.ChatEventMessageDto;
-import com.shinhan.heybob.domain.notification.model.NotificationEventType;
-import com.shinhan.heybob.domain.notification.publisher.RedisStreamPublisher;
+import com.shinhan.heybob.domain.notification.service.ChatBroadcastSenderImpl;
+import com.shinhan.heybob.domain.settlement.dto.SettlementCreateResponseDto;
 import com.shinhan.heybob.domain.settlement.dto.SettlementResponseDto;
 import com.shinhan.heybob.domain.settlement.dto.UpdateDemandDepositAccountTransferRequest;
 import com.shinhan.heybob.domain.settlement.entity.Settlement;
@@ -35,9 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.text.NumberFormat;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -50,11 +45,11 @@ public class SettlementServiceImpl implements SettlementService {
     private final SettlementRepository settlementRepository;
     private final SettlementParticipantRepository participantRepository;
     private final UserRepository userRepository;
-    private final RedisStreamPublisher redisStreamPublisher;
     private final MealAppointmentRepository mealAppointmentRepository;
     private final UserAccountUtil userAccountUtil;
     private final ExternalFinanceUserRepository externalFinanceUserRepository;
     private final RestTemplate restTemplate;
+    private final ChatBroadcastSenderImpl chatBroadcastSenderImpl;
 
     @Value("${ssafy.finance.base-url}")
     private String baseurl;
@@ -67,7 +62,7 @@ public class SettlementServiceImpl implements SettlementService {
 
     @Transactional
     @Override
-    public void createSettlement(
+    public ResponseEntity<Map<String, Object>> createSettlement(
             Long userId, List<Long> participantsUserIds, int totalAmount, Long chatRoomId
     ) {
         User initiator = userRepository.findById(userId)
@@ -117,7 +112,39 @@ public class SettlementServiceImpl implements SettlementService {
 
         participantRepository.saveAll(rows);
 
+        SettlementCreateResponseDto responseDto =
+                new SettlementCreateResponseDto(
+                        settlement.getId(),
+                        perHead
+                );
+
+        String msg = String.format("정산 요청입니다. 1/N 금액: %,d원", perHead);
+
+        // Notification: 채팅방
+        String messageId = chatBroadcastSenderImpl.sendPaymentRequest(
+                String.valueOf(chatRoomId),
+                String.valueOf(initiator.getId()),
+                initiator.getStudentId(),
+                initiator.getName(),
+                initiator.getProfileUrl(),
+                msg,
+                String.valueOf(settlement.getId()),
+                String.valueOf(initiator.getId()),
+                initiator.getName(),
+                initiator.getStudentId(),
+                initiator.getProfileUrl(),
+                perHead,
+                "https://localhost:8080/settle/" + chatRoomId + "/pay" // 필요 없으면 "" 전달
+        );
+
         log.info("Settlement created successfully");
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "messageId", messageId,
+                "chatRoomId", chatRoomId,
+                "settlementId", settlement.getId(),
+                "message", "정산 요청 브로드캐스트 전송"
+        ));
     }
 
     @Transactional
@@ -173,50 +200,6 @@ public class SettlementServiceImpl implements SettlementService {
         participantRepository.saveAll(newRows);
     }
 
-    @Transactional
-    @Override
-    public void notifySettlement(Long chatRoomId, Long requesterId) {
-        MealAppointment meal = mealAppointmentRepository.findByChatRoomId(chatRoomId)
-                .orElseThrow(() -> new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND));
-
-        Settlement settlement = settlementRepository.findByMealAppointment(meal)
-                .orElseThrow(() -> new HeybobException(ExceptionStatus.SETTLEMENT_NOT_FOUND));
-
-        if (settlement.getStatus() != SettlementStatus.CREATED) {
-            throw new HeybobException(ExceptionStatus.SETTLEMENT_STATUS_BAD_REQUEST);
-        }
-        if (!settlement.getInitiator().getId().equals(requesterId)) {
-            throw new HeybobException(ExceptionStatus.SETTLEMENT_INITIATOR_FORBIDDEN);
-        }
-        if (settlement.getMealAppointment().getChatRoomId() == null) {
-            throw new HeybobException(ExceptionStatus.NOT_FOUND_CHAT_ROOM_ID);
-        }
-
-        // 상태 전환
-        settlement.markInProgress();
-
-        // 문구/라벨 생성
-        String initiatorName = settlement.getInitiator().getName();
-        String title = initiatorName + "님이 정산하기를 요청했습니다!";
-        String perHeadLabel = NumberFormat.getInstance(Locale.KOREA).format(settlement.getPerHeadAmount()) + "원";
-        String ctaLabel = perHeadLabel + " 송금하기";
-
-        // 이벤트 구성 및 발행
-        ChatEventMessageDto event = new ChatEventMessageDto(
-                NotificationEventType.REQUESTED,
-                settlement.getMealAppointment().getChatRoomId(),
-                settlement.getId(),
-                settlement.getInitiator().getId(),
-                initiatorName,
-                title,
-                ctaLabel
-        );
-
-        redisStreamPublisher.publish(event);
-
-        log.info("Settlement started and event published: settlementId={}, chatRoomId={}",
-                settlement.getId(), settlement.getMealAppointment().getChatRoomId());
-    }
 
     @Transactional
     @Override
@@ -262,6 +245,12 @@ public class SettlementServiceImpl implements SettlementService {
 
         Settlement settlement = settlementRepository.findByMealAppointment(meal)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.SETTLEMENT_NOT_FOUND));
+
+        SettlementParticipant sp = participantRepository
+                .findBySettlement_IdAndParticipantUser_Id(settlement.getId(), userId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.SETTLEMENT_PARTICIPANT_BAD_REQUEST));
+
+        if (sp.isSuccess()) return;;
 
         if (settlement.getMealAppointment().getChatRoomId() == null) {
             throw new HeybobException(ExceptionStatus.NOT_FOUND_CHAT_ROOM_ID);
@@ -329,6 +318,23 @@ public class SettlementServiceImpl implements SettlementService {
 
         settlementParticipant.markSuccess();
         participantRepository.save(settlementParticipant);
+
+        /* ✅ 정산 완료 메시지 브로드캐스트 */
+        String content = String.format("%s님이 %,d원을 송금했습니다.",
+                withdrawalUser.getName(), settlement.getPerHeadAmount());
+
+        chatBroadcastSenderImpl.sendPaymentComplete(
+                String.valueOf(chatRoomId),                    // roomId
+                String.valueOf(withdrawalUser.getId()),        // senderId
+                withdrawalUser.getStudentId(),                 // studentId
+                withdrawalUser.getName(),                      // senderName
+                withdrawalUser.getProfileUrl(),                // profileImageUrl
+                content,                                       // content/message
+                String.valueOf(settlement.getId()),            // settlementId
+                String.valueOf(initiator.getId()),             // recipientId (정산 개시자)
+                initiator.getName(),                           // recipientName
+                settlement.getPerHeadAmount()                  // completedAmount
+        );
 
         boolean allPaid = settlement.getParticipants().stream()
                 .allMatch(SettlementParticipant::isSuccess);

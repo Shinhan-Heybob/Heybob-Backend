@@ -1,7 +1,5 @@
-package com.shinhan.heybob.domain.meal.service;
+package com.shinhan.heybob.domain.notification.service;
 
-import com.shinhan.heybob.common.chat.dto.ChatBroadcastRequest;
-import com.shinhan.heybob.common.chat.service.ChatMessageService;
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,37 +49,5 @@ public class ChatIntegrationServiceImpl implements ChatIntegrationService {
             return fallbackRoomId;
         }
     }
-    
-    
-    @Override
-    public String sendSettlementBroadcast(String settlementId, String roomId, String requesterName, 
-                                        Integer requestAmount, String message) {
-        try {
-            // TODO: 실제로는 requesterName으로 사용자를 찾아서 정보를 가져와야 함
-            // 지금은 더미 데이터로 처리
-            ChatBroadcastRequest request = ChatBroadcastRequest.builder()
-                .settlementId(settlementId)
-                .roomId(roomId)
-                .requesterId(999L)  // 더미 ID
-                .requesterName(requesterName)
-                .requesterStudentId("2024999")  // 더미 학번
-                .requesterProfileImg("/profile/default.jpg")  // 더미 프로필
-                .requestAmount(requestAmount)
-                .message(message)
-                .type(ChatBroadcastRequest.BroadcastType.PAYMENT)
-                .build();
-            
-            // 공통 서비스를 통해 정산 브로드캐스트 전송
-            String messageId = chatMessageService.sendSettlementBroadcast(request);
-            
-            log.info("✅ 정산 브로드캐스트 전송 완료: messageId={}, settlementId={}, roomId={}", 
-                messageId, settlementId, roomId);
-            
-            return messageId;
-            
-        } catch (Exception e) {
-            log.error("❌ 정산 브로드캐스트 전송 실패: settlementId={}, roomId={}", settlementId, roomId, e);
-            throw new RuntimeException("정산 브로드캐스트 전송 실패: " + e.getMessage());
-        }
-    }
+
 }
