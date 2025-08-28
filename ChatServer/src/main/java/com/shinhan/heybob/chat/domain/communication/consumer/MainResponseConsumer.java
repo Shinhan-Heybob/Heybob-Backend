@@ -396,7 +396,8 @@ public class MainResponseConsumer {
             String mealAppointmentId = (String) payload.get("mealAppointmentId");
             String creatorUserId = (String) payload.get("creatorUserId");
             String roomName = (String) payload.get("roomName");
-            List<String> initialMembers = (List<String>) payload.get("initialMembers");
+            String initialMembersStr = (String) payload.get("initialMembers");
+            List<String> initialMembers = List.of(initialMembersStr.split(","));
             
             log.info("📢 채팅방 생성 요청 수신: mealAppointmentId={}, creator={}, roomName={}", 
                 mealAppointmentId, creatorUserId, roomName);

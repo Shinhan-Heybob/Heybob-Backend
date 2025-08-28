@@ -1,5 +1,7 @@
 package com.shinhan.heybob.domain.meal.controller;
 
+import com.shinhan.heybob.common.exception.HeybobException;
+import com.shinhan.heybob.common.exception.ExceptionStatus;
 import com.shinhan.heybob.common.user.UserPrincipalDetails;
 import com.shinhan.heybob.domain.meal.dto.request.CreateMealAppointmentRequest;
 import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentDetailResponse;
@@ -12,6 +14,7 @@ import com.shinhan.heybob.domain.meal.service.MealAppointmentService;
 import com.sun.security.auth.UserPrincipal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,6 +25,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/meal-appointments")  // context-path가 /api이므로 /meal-appointments만 사용
 @RequiredArgsConstructor
+@Slf4j
 public class MealAppointmentController {
 
     private final MealAppointmentService mealAppointmentService;
@@ -30,11 +34,30 @@ public class MealAppointmentController {
     public ResponseEntity<MealAppointmentIdResponse> createMealAppointment(
             @RequestBody @Valid CreateMealAppointmentRequest request,
             @AuthenticationPrincipal UserPrincipalDetails userPrincipal) {
-        MealAppointmentDetailResponse response = mealAppointmentService.createMealAppointment(request);
-        MealAppointmentIdResponse idResponse = MealAppointmentIdResponse.builder()
-                .id(response.getId())
-                .build();
-        return ResponseEntity.status(HttpStatus.CREATED).body(idResponse);
+        try {
+            log.info("🍚 밥약 생성 요청: name={}, participantIds={}, userPrincipal={}", 
+                request.getName(), request.getParticipantIds(), userPrincipal != null ? userPrincipal.getUserId() : "null");
+            
+            // 인증된 사용자 ID를 creatorId로 설정
+            if (userPrincipal != null) {
+                request.setCreatorId(userPrincipal.getUserId());
+            }
+            
+            MealAppointmentDetailResponse response = mealAppointmentService.createMealAppointment(request);
+            MealAppointmentIdResponse idResponse = MealAppointmentIdResponse.builder()
+                    .id(response.getId())
+                    .build();
+            
+            log.info("✅ 밥약 생성 성공: id={}, chatRoomId={}", response.getId(), response.getChatRoomId());
+            return ResponseEntity.status(HttpStatus.CREATED).body(idResponse);
+            
+        } catch (HeybobException e) {
+            log.error("❌ 밥약 생성 실패 (HeybobException): {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("❌ 밥약 생성 실패 (예상치 못한 오류): {}", e.getMessage(), e);
+            throw new HeybobException(ExceptionStatus.CHAT_INTEGRATION_FAILED);
+        }
     }
 
     @GetMapping("/{appointmentId}")
