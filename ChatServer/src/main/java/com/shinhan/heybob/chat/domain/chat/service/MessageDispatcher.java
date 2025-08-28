@@ -26,14 +26,17 @@ public class MessageDispatcher {
     
     @PostConstruct
     public void init() {
+        log.info("MessageDispatcher 초기화 시작. 등록된 핸들러 수: {}", handlers.size());
         for (MessageTypeHandler handler : handlers) {
+            log.info("핸들러 확인: {}", handler.getClass().getName());
             for (ChatMessage.MessageType type : ChatMessage.MessageType.values()) {
                 if (handler.supports(type)) {
                     handlerMap.put(type, handler);
-                    log.info("핸들러 등록: {} -> {}", type, handler.getClass().getSimpleName());
+                    log.info("핸들러 등록 완료: {} -> {}", type, handler.getClass().getSimpleName());
                 }
             }
         }
+        log.info("MessageDispatcher 초기화 완료. 등록된 타입별 핸들러: {}", handlerMap.keySet());
     }
     
     public ChatMessageResponse dispatch(String roomId, String userId, String studentId,

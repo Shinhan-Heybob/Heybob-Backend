@@ -1,5 +1,6 @@
 package com.shinhan.heybob.domain.notification.service;
 
+import com.shinhan.heybob.domain.notification.dto.ChatBroadcastRequest;
 import com.shinhan.heybob.domain.notification.dto.ServerMessage;
 
 import java.util.Map;
@@ -22,6 +23,20 @@ public interface ChatMessageService {
      */
     CompletableFuture<ServerMessage> sendMessageWithResponse(ServerMessage message, long timeoutMs);
 
+    /**
+     * 정산 완료 브로드캐스트 전송
+     * @param request 브로드캐스트 요청
+     * @return 메시지 ID
+     */
+    String sendPaymentCompleteBroadcast(ChatBroadcastRequest request);
+    
+    /**
+     * 적금 완료 브로드캐스트 전송
+     * @param request 브로드캐스트 요청
+     * @return 메시지 ID
+     */
+    String sendSavingsCompleteBroadcast(ChatBroadcastRequest request);
+    
     /**
      * 채팅방 생성 요청
      * @param roomName 채팅방 이름

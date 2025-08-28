@@ -26,17 +26,12 @@ public class CafeteriaService {
             String today = LocalDate.now().format(DATE_FORMATTER);
             String cacheKey = CAFETERIA_KEY_PREFIX + today;
             
-            // 오늘 학식 정보가 없으면 더미 데이터 생성
-            Boolean exists = redisTemplate.hasKey(cacheKey);
-            if (Boolean.FALSE.equals(exists)) {
-                String dummyData = createDummyCafeteriaData();
-                
-                // Redis에 캐싱 (24시간 TTL)
-                redisTemplate.opsForValue().set(cacheKey, dummyData, 24, TimeUnit.HOURS);
-                log.info("✅ 더미 학식 정보 캐싱 완료: {}", cacheKey);
-            } else {
-                log.info("📚 기존 학식 정보 캐시 존재: {}", cacheKey);
-            }
+            // 테스트를 위해 오늘 학식 정보 설정
+            String dummyData = createDummyCafeteriaData();
+            
+            // Redis에 캐싱 (24시간 TTL)
+            redisTemplate.opsForValue().set(cacheKey, dummyData, 24, TimeUnit.HOURS);
+            log.info("✅ 오늘 학식 정보 설정 완료: key={}", cacheKey);
             
         } catch (Exception e) {
             log.error("❌ 학식 정보 초기화 실패", e);
@@ -57,12 +52,9 @@ public class CafeteriaService {
                 return cachedData.toString();
             }
             
-            // 캐시에 없으면 더미 데이터 생성 후 캐싱
-            String dummyData = createDummyCafeteriaData();
-            redisTemplate.opsForValue().set(cacheKey, dummyData, 24, TimeUnit.HOURS);
-            log.info("📚 새로운 더미 학식 정보 생성 및 캐싱: {}", today);
-            
-            return dummyData;
+            // Redis에 데이터가 없으면 오늘은 학식이 없는 것
+            log.info("📚 오늘 학식 정보 없음: {}", today);
+            return "오늘은 학식이 없습니다!";
             
         } catch (Exception e) {
             log.error("❌ 학식 정보 조회 실패", e);

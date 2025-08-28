@@ -25,5 +25,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns("*")  // CORS 설정
                 .withSockJS();  // SockJS fallback 지원
+                
+        // 순수 WebSocket 엔드포인트 추가 (React Native용)
+        registry.addEndpoint("/ws-native")
+                .setAllowedOriginPatterns("*");  // CORS 설정, SockJS 없음
     }
 }
