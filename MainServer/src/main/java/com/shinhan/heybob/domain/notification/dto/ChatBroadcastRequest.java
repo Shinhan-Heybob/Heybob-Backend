@@ -25,6 +25,8 @@ public class ChatBroadcastRequest {
     
     public enum BroadcastType {
         PAYMENT,
-        SAVINGS
+        SAVINGS,
+        PAYMENT_COMPLETE,
+        SAVINGS_COMPLETE
     }
 }

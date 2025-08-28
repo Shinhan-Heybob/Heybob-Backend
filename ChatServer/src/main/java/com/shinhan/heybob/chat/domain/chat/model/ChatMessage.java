@@ -39,6 +39,8 @@ public class ChatMessage {
         PAYMENT_COMPLETE,   // 정산 완료 "정산이 완료되었습니다"
         SAVINGS_REQUEST,    // 적금 요청 "이지민님이 적금을 요청했습니다. (12000원 적금하기)"
         SAVINGS_COMPLETE,   // 적금 완료 "적금이 완료되었습니다"
-        CAFETERIA_INFO      // 학식 정보 "오늘의 학식 정보입니다"
+        CAFETERIA_INFO,     // 학식 정보 "오늘의 학식 정보입니다"
+        AI_BOT_REQUEST,     // AI 봇에게 요청 "맵지 않은 메뉴 추천해줘"
+        AI_BOT_RESPONSE     // AI 봇 응답 "오늘 학식을 고려하여 추천드립니다..."
     }
 }

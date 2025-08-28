@@ -445,7 +445,7 @@
                     <span>Chat Server:</span> <span id="chatStatus" class="status-unknown">❓</span>
                 </div>
                 <div class="status-item">
-                    <span>현재 채팅방:</span> <span id="currentRoom">TEST_ROOM_001</span>
+                    <span>현재 채팅방:</span> <span id="currentRoom">room-meal-456</span>
                 </div>
             </div>
             
@@ -468,13 +468,13 @@
                 <ol>
                     <li><strong>1단계:</strong> 두 사용자 모두 "연결" → "구독" 버튼 클릭</li>
                     <li><strong>2단계:</strong> 메시지 입력으로 일반 채팅 테스트</li>
-                    <li><strong>3단계:</strong> "💰 정산 요청", "🏦 적금 요청" 버튼으로 Main Server 연동 테스트</li>
+                    <li><strong>3단계:</strong> "💰 정산 요청", "✅ 정산 완료", "🏦 적금 요청", "✅ 적금 완료" 버튼으로 Main Server 연동 테스트</li>
                     <li><strong>4단계:</strong> "🍚 학식 정보" 버튼으로 Chat Server 내부 기능 테스트</li>
                 </ol>
                 <div style="background: #f0f8ff; border: 1px solid #4299e1; border-radius: 8px; padding: 15px; margin-top: 15px;">
                     <p style="color: #2c5aa0; font-size: 0.9em; margin: 0;">
                         💡 <strong>중요:</strong> Main Server(8080), Chat Server(8081) 모두 실행 필요<br>
-                        ⚠️ 금융 메시지(정산/적금)는 Main Server를 통해서만 전송됩니다<br>
+                        ⚠️ 금융 메시지(정산/적금 요청/완료)는 Main Server를 통해서만 전송됩니다<br>
                         ✅ 일반 채팅과 학식 정보는 Chat Server에서 직접 처리됩니다
                     </p>
                 </div>
@@ -498,8 +498,11 @@
                     <button class="btn btn-info btn-sm" onclick="subscribe(1)">구독</button>
                     <button class="btn btn-warning btn-sm" onclick="disconnect(1)">해제</button>
                     <button class="btn btn-primary btn-sm" onclick="sendSettlement(1)">💰 정산 요청</button>
+                    <button class="btn btn-success btn-sm" onclick="sendSettlementComplete(1)">✅ 정산 완료</button>
                     <button class="btn btn-info btn-sm" onclick="sendSavings(1)">🏦 적금 요청</button>
+                    <button class="btn btn-success btn-sm" onclick="sendSavingsComplete(1)">✅ 적금 완료</button>
                     <button class="btn btn-warning btn-sm" onclick="sendCafeteriaInfo(1)">🍚 학식 정보</button>
+                    <button class="btn btn-info btn-sm" onclick="sendAiBotMessage(1)">🤖 AI 봇</button>
                 </div>
                 
                 <div id="messages1" class="messages"></div>
@@ -528,8 +531,11 @@
                     <button class="btn btn-info btn-sm" onclick="subscribe(2)">구독</button>
                     <button class="btn btn-warning btn-sm" onclick="disconnect(2)">해제</button>
                     <button class="btn btn-primary btn-sm" onclick="sendSettlement(2)">💰 정산 요청</button>
+                    <button class="btn btn-success btn-sm" onclick="sendSettlementComplete(2)">✅ 정산 완료</button>
                     <button class="btn btn-info btn-sm" onclick="sendSavings(2)">🏦 적금 요청</button>
+                    <button class="btn btn-success btn-sm" onclick="sendSavingsComplete(2)">✅ 적금 완료</button>
                     <button class="btn btn-warning btn-sm" onclick="sendCafeteriaInfo(2)">🍚 학식 정보</button>
+                    <button class="btn btn-info btn-sm" onclick="sendAiBotMessage(2)">🤖 AI 봇</button>
                 </div>
                 
                 <div id="messages2" class="messages"></div>
@@ -547,7 +553,7 @@
     <script>
         // 전역 변수
         const stompClients = [null, null, null]; // index 0 사용 안함, 1=최수연, 2=정우진
-        let currentRoomId = 'TEST_ROOM_001';
+        let currentRoomId = 'room-meal-456';
         let currentSettlementId = null;
         let currentMealAppointment = null;
         
@@ -707,6 +713,14 @@
                             addMessage(userIndex, '🍚 학식봇', chatMessage.content, 'system', chatMessage.timestamp);
                             break;
                             
+                        case 'AI_BOT_REQUEST':
+                            addMessage(userIndex, chatMessage.senderName, `🤖 ${chatMessage.content}`, messageType, chatMessage.timestamp);
+                            break;
+                            
+                        case 'AI_BOT_RESPONSE':
+                            addMessage(userIndex, '🤖 AI 메뉴추천봇', chatMessage.content, 'system', chatMessage.timestamp);
+                            break;
+                            
                         default:
                             addMessage(userIndex, chatMessage.senderName, chatMessage.content, messageType, chatMessage.timestamp);
                             break;
@@ -770,14 +784,17 @@
         function sendSettlement(userIndex) {
             const user = users[userIndex];
             
-            currentSettlementId = `SETTLEMENT_${Date.now()}_${userIndex}`;
+            currentSettlementId = `settlement_${Date.now()}_${userIndex}`;
             
             const settlementRequest = {
                 settlementId: currentSettlementId,
                 roomId: currentRoomId,
+                requesterId: parseInt(user.userId),
                 requesterName: user.userName,
-                requestAmount: 15000,
-                message: `${user.userName}님이 정산을 요청했습니다.`
+                requesterStudentId: user.studentId,
+                requesterProfileImg: user.profileImageUrl,
+                requestAmount: 10150,
+                message: `${user.userName}님이 점심 정산을 요청했습니다.`
             };
             
             addMessage(userIndex, 'System', `💰 Main 서버로 정산 요청 전송 중...`, 'system');
@@ -813,14 +830,17 @@
         function sendSavings(userIndex) {
             const user = users[userIndex];
             
-            const savingsId = `SAVINGS_${Date.now()}_${userIndex}`;
+            const savingsId = `savings_${Date.now()}_${userIndex}`;
             
             const savingsRequest = {
                 settlementId: savingsId,
                 roomId: currentRoomId,
+                requesterId: parseInt(user.userId),
                 requesterName: user.userName,
-                requestAmount: 20000,
-                message: `${user.userName}님이 적금을 요청했습니다.`
+                requesterStudentId: user.studentId,
+                requesterProfileImg: user.profileImageUrl,
+                requestAmount: 25000,
+                message: `${user.userName}님이 모임 적금 참여를 요청했습니다.`
             };
             
             addMessage(userIndex, 'System', `🏦 Main 서버로 적금 요청 전송 중...`, 'system');
@@ -850,6 +870,140 @@
                 console.error('적금 요청 실패:', error);
                 addMessage(userIndex, 'System', `❌ Main 서버 적금 요청 실패: ${error.message}`, 'error');
             });
+        }
+        
+        // 정산 완료 알림 전송 (Main Server API 호출)
+        function sendSettlementComplete(userIndex) {
+            const user = users[userIndex];
+            
+            const settlementCompleteRequest = {
+                roomId: currentRoomId,  // currentRoom -> currentRoomId로 수정
+                senderId: user.userId,
+                senderStudentId: user.studentId,
+                senderName: user.userName,
+                senderProfileImg: user.profileImageUrl,
+                completedAmount: 10150,
+                message: `${user.userName}님의 정산이 완료되었습니다.`
+            };
+            
+            addMessage(userIndex, 'System', `✅ Main 서버로 정산 완료 알림 전송 중...`, 'system');
+            
+            fetch('http://localhost:8080/api/test/chat/payment-complete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(settlementCompleteRequest)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text(); // 먼저 텍스트로 받아보기
+            })
+            .then(text => {
+                try {
+                    return text ? JSON.parse(text) : {};
+                } catch (e) {
+                    console.log('응답이 JSON이 아님:', text);
+                    return { success: true, message: text };
+                }
+            })
+            .then(data => {
+                console.log('정산 완료 응답:', data);
+                if (data.success) {
+                    addMessage(userIndex, 'System', `✅ 정산 완료 알림 전송 성공 (MessageId: ${data.messageId})`, 'system');
+                } else {
+                    addMessage(userIndex, 'System', `❌ 정산 완료 알림 실패: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('정산 완료 알림 실패:', error);
+                addMessage(userIndex, 'System', `❌ Main 서버 정산 완료 알림 실패: ${error.message}`, 'error');
+            });
+        }
+        
+        // 적금 완료 알림 전송 (Main Server API 호출)
+        function sendSavingsComplete(userIndex) {
+            const user = users[userIndex];
+            
+            const savingsCompleteRequest = {
+                roomId: currentRoomId,  // currentRoom -> currentRoomId로 수정
+                senderId: user.userId,
+                senderStudentId: user.studentId,
+                senderName: user.userName,
+                senderProfileImg: user.profileImageUrl,
+                completedAmount: 5000,
+                message: `${user.userName}님의 적금이 완료되었습니다.`
+            };
+            
+            addMessage(userIndex, 'System', `✅ Main 서버로 적금 완료 알림 전송 중...`, 'system');
+            
+            fetch('http://localhost:8080/api/test/chat/savings-complete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(savingsCompleteRequest)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text(); // 먼저 텍스트로 받아보기
+            })
+            .then(text => {
+                try {
+                    return text ? JSON.parse(text) : {};
+                } catch (e) {
+                    console.log('응답이 JSON이 아님:', text);
+                    return { success: true, message: text };
+                }
+            })
+            .then(data => {
+                console.log('적금 완료 응답:', data);
+                if (data.success) {
+                    addMessage(userIndex, 'System', `✅ 적금 완료 알림 전송 성공 (MessageId: ${data.messageId})`, 'system');
+                } else {
+                    addMessage(userIndex, 'System', `❌ 적금 완료 알림 실패: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('적금 완료 알림 실패:', error);
+                addMessage(userIndex, 'System', `❌ Main 서버 적금 완료 알림 실패: ${error.message}`, 'error');
+            });
+        }
+        
+        // AI 봇 메시지 전송
+        function sendAiBotMessage(userIndex) {
+            const stompClient = stompClients[userIndex];
+            const user = users[userIndex];
+            
+            if (!stompClient || !stompClient.connected) {
+                addMessage(userIndex, 'System', '서버에 연결되어 있지 않습니다', 'error');
+                return;
+            }
+            
+            const aiQuery = prompt('AI 봇에게 질문하기:\n예) "매운 음식 말고 다른 메뉴 추천해줘"');
+            if (!aiQuery) return;
+            
+            const chatMessage = {
+                content: aiQuery,
+                messageType: 'AI_BOT_REQUEST'
+            };
+            
+            try {
+                const headers = {
+                    'X-User-Id': user.userId,
+                    'X-Student-Id': user.studentId,
+                    'X-User-Name': user.userName,
+                    'X-Profile-Image': user.profileImageUrl
+                };
+                stompClient.send(`/app/chat/${currentRoomId}`, headers, JSON.stringify(chatMessage));
+                addMessage(userIndex, 'System', `🤖 AI 봇에게 질문 전송: "${aiQuery}"`, 'system');
+            } catch (e) {
+                addMessage(userIndex, 'System', `전송 실패: ${e.message}`, 'error');
+            }
         }
         
         // 학식 정보 요청 전송 (Main Server API 호출)
@@ -991,6 +1145,14 @@
                                     
                                 case 'CAFETERIA_INFO':
                                     addMessage(userIndex, '🍚 학식봇', msg.content, 'system', msg.timestamp);
+                                    break;
+                                    
+                                case 'AI_BOT_REQUEST':
+                                    addMessage(userIndex, msg.senderName, `🤖 ${msg.content}`, messageType, msg.timestamp);
+                                    break;
+                                    
+                                case 'AI_BOT_RESPONSE':
+                                    addMessage(userIndex, '🤖 AI 메뉴추천봇', msg.content, 'system', msg.timestamp);
                                     break;
                                     
                                 default:
