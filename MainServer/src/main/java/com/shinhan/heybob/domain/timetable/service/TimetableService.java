@@ -20,8 +20,10 @@ import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TimetableService {
@@ -31,9 +33,14 @@ public class TimetableService {
     private final UserRepository userRepository;
 
     @Transactional
-    public void createTimetable(TimetableCreateRequestDto timetableCreateRequestDto) {
+    public void createTimetable(TimetableCreateRequestDto timetableCreateRequestDto, Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.USER_NOT_FOUND));
+
         Timetable timetable = Timetable.builder()
                 .timeTableName(timetableCreateRequestDto.timeTableName())
+                .user(user)
                 .build();
         timetableRepository.save(timetable);
     }
