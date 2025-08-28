@@ -39,19 +39,11 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
             throws ServletException, IOException {
 
-        final String uri = req.getRequestURI();
-        final String token = jwtUtil.resolveToken(req);
-        log.debug("[JWT] uri={} tokenPresent={}", uri, token != null);
+        String uri = req.getRequestURI();
+        String token = jwtUtil.resolveToken(req);
 
         try {
-            // 토큰이 없으면 익명으로 통과
-            if (token == null || token.isBlank()) {
-                chain.doFilter(req, res);
-                return;
-            }
-
-            // 토큰이 있으면만 검증하고, 유효하면 컨텍스트에 인증 주입
-            if (jwtUtil.validateAccessToken(token)) {
+            if (token != null && !token.isBlank() && jwtUtil.validateAccessToken(token)) {
                 Long userId = jwtUtil.getUserIdFromAccessToken(token);
                 UserDetails user = userDetailsService.loadUserById(userId);
                 if (user != null) {
@@ -59,18 +51,17 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                     auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 } else {
-                    // 유저 없으면 인증 세팅 없이 그대로 통과
                     SecurityContextHolder.clearContext();
                 }
             } else {
-                // 무효 토큰이어도 여기서 401 쓰지 말고 통과 → 보호자원에서만 401
-                SecurityContextHolder.clearContext();
+                SecurityContextHolder.clearContext(); // 토큰 없음/무효 시 익명 통과
             }
         } catch (Exception e) {
-            log.error("[JWT] filter error on {}: {}", uri, e.getMessage(), e);
+            log.error("[JWT] token process error on {}: {}", uri, e.getMessage(), e);
             SecurityContextHolder.clearContext();
-            // 여기서 응답 종료/401 금지
         }
+
+        // ✅ 항상 체인은 바깥에서 호출
         chain.doFilter(req, res);
     }
 }
