@@ -7,9 +7,9 @@ import com.shinhan.heybob.domain.financePersonal.dto.FinanceHeader;
 import com.shinhan.heybob.domain.financePersonal.repository.ExternalFinanceUserRepository;
 import com.shinhan.heybob.domain.financePersonal.repository.PersonalAccountRepository;
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
-import com.shinhan.heybob.domain.meal.entity.MealParticipant;
 import com.shinhan.heybob.domain.meal.repository.MealAppointmentRepository;
 import com.shinhan.heybob.domain.meal.repository.MealParticipantRepository;
+import com.shinhan.heybob.domain.notification.service.ChatBroadcastSenderImpl;
 import com.shinhan.heybob.domain.savings.dto.CreateAccountRequest;
 import com.shinhan.heybob.domain.savings.entity.SavingsAccount;
 import com.shinhan.heybob.domain.savings.entity.SavingsDeposit;
@@ -20,7 +20,6 @@ import com.shinhan.heybob.domain.savings.repository.SavingsPlanRepository;
 import com.shinhan.heybob.domain.settlement.dto.UpdateDemandDepositAccountTransferRequest;
 import com.shinhan.heybob.domain.user.entity.User;
 import com.shinhan.heybob.domain.user.repository.UserRepository;
-import io.jsonwebtoken.Header;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +29,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
@@ -48,6 +49,7 @@ public class SavingsServiceImpl implements SavingsService {
     private final SavingsPlanRepository savingsPlanRepository;
     private final MealParticipantRepository mealParticipantRepository;
     private final SavingsDepositRepository savingsDepositRepository;
+    private final ChatBroadcastSenderImpl chatBroadcastSenderImpl;
 
     @Value("${ssafy.finance.base-url}")
     private String baseUrl;
@@ -87,7 +89,7 @@ public class SavingsServiceImpl implements SavingsService {
                 header,
                 withdrawalAccountNo,
                 accountTypeUniqueNo,
-                "1"
+                String.valueOf(perAmount)
         );
 
         HttpHeaders headers = new HttpHeaders();
@@ -155,6 +157,37 @@ public class SavingsServiceImpl implements SavingsService {
                 .build();
 
         savingsPlanRepository.save(plan);
+
+        // ✅ 적금 요청 브로드캐스트 (방이 있는 경우에만)
+        Long chatRoomId = mealAppointment.getChatRoomId();
+        if (chatRoomId != null) {
+            String content = String.format("%s님이 적금을 요청했습니다. 1/N 금액: %,d원",
+                    creator.getName(), perAmount);
+
+            // afterCommit으로 안전하게 전송
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            chatBroadcastSenderImpl.sendSavingsRequest(
+                                    String.valueOf(chatRoomId),                 // roomId
+                                    String.valueOf(creator.getId()),            // senderId
+                                    creator.getStudentId(),                     // studentId
+                                    creator.getName(),                          // senderName
+                                    creator.getProfileUrl(),                    // profileImageUrl
+                                    content,                                    // 상단 content (채팅에 보일 문장)
+                                    String.valueOf(saved.getId()),               // settlementId(=saving 식별자)
+                                    String.valueOf(creator.getId()),            // requesterId
+                                    creator.getName(),                          // requesterName
+                                    creator.getStudentId(),                     // requesterStudentId
+                                    creator.getProfileUrl(),                    // requesterProfileImg
+                                    perAmount,                                   // requestAmount (이번 회차 1/N 금액)
+                                    "http://localhost:8080/savings/" + chatRoomId + "/pay"
+                            );
+                        }
+                    }
+            );
+        }
     }
 
     @Transactional
@@ -268,8 +301,33 @@ public class SavingsServiceImpl implements SavingsService {
         deposit.markSuccess(externalTxId);
         savingsDepositRepository.save(deposit);
 
-        // (선택) 채팅 알림 “OO님 적금 입금 완료” 발송은 여기서 afterCommit으로
-        // TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {...});
+        // ✅ 적금 납입 완료 브로드캐스트
+        User payer = userRepository.findById(userId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.USER_NOT_FOUND));
+
+        if (chatRoomId != null) {
+            String content = String.format("%s님이 %,d원을 적금했습니다.", payer.getName(), amount);
+
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override public void afterCommit() {
+                            chatBroadcastSenderImpl.sendSavingsComplete(
+                                    String.valueOf(chatRoomId),         // roomId
+                                    String.valueOf(payer.getId()),      // senderId
+                                    payer.getStudentId(),               // studentId
+                                    payer.getName(),                    // senderName
+                                    payer.getProfileUrl(),              // profileImageUrl
+                                    content,                            // 상단 content
+                                    String.valueOf(plan.getId()),       // settlementId(=saving 식별자)
+                                    String.valueOf(account.getId()),    // recipientId (예: 적금계좌 id)
+                                    "모임적금 1/N 모으기",                          // recipientName (컨슈머 예시와 동일)
+                                    amount                              // completedAmount
+                            );
+                        }
+                    }
+            );
+        }
+
     }
 
     private HttpHeaders jsonHeaders() {

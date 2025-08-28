@@ -11,6 +11,7 @@ import com.shinhan.heybob.domain.meal.entity.MealParticipant;
 import com.shinhan.heybob.domain.meal.entity.MealType;
 import com.shinhan.heybob.domain.meal.repository.MealAppointmentRepository;
 import com.shinhan.heybob.domain.meal.repository.MealParticipantRepository;
+import com.shinhan.heybob.domain.notification.service.ChatIntegrationService;
 import com.shinhan.heybob.domain.user.dto.UserResponseDto;
 import com.shinhan.heybob.domain.user.entity.User;
 import com.shinhan.heybob.domain.user.repository.UserRepository;

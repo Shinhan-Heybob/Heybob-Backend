@@ -1,7 +1,7 @@
-package com.shinhan.heybob.common.chat.service;
+package com.shinhan.heybob.domain.notification.service;
 
-import com.shinhan.heybob.common.chat.dto.ChatBroadcastRequest;
-import com.shinhan.heybob.common.chat.dto.ServerMessage;
+import com.shinhan.heybob.domain.notification.dto.ChatBroadcastRequest;
+import com.shinhan.heybob.domain.notification.dto.ServerMessage;
 import com.shinhan.heybob.common.exception.ExceptionStatus;
 import com.shinhan.heybob.common.exception.HeybobException;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class ChatMessageServiceImpl implements ChatMessageService {
     
+    private final RedisTemplate<String, String> streamRedisTemplate;
     private final RedisTemplate<String, Object> redisTemplate;
     
     private static final String MAIN_TO_CHAT_STREAM = "main-to-chat-stream";
@@ -126,85 +127,55 @@ public class ChatMessageServiceImpl implements ChatMessageService {
             return failedFuture;
         }
     }
-    
-    @Override
-    public String sendSettlementBroadcast(ChatBroadcastRequest request) {
-        try {
-            String messageId = UUID.randomUUID().toString();
-            
-            // 정산 브로드캐스트 메시지 생성
-            Map<String, Object> payload = new HashMap<>();
-            payload.put("settlementId", request.getSettlementId());
-            payload.put("roomId", request.getRoomId());
-            payload.put("requesterId", request.getRequesterId());
-            payload.put("requesterName", request.getRequesterName());
-            payload.put("requesterStudentId", request.getRequesterStudentId());
-            payload.put("requesterProfileImg", request.getRequesterProfileImg());
-            payload.put("requestAmount", request.getRequestAmount());
-            payload.put("message", request.getMessage());
-            
-            ServerMessage message = ServerMessage.builder()
-                .messageId(messageId)
-                .messageType(ServerMessage.MessageType.PAYMENT_REQUEST)
-                .sourceServer(SERVER_NAME)
-                .targetServer(TARGET_SERVER)
-                .timestamp(LocalDateTime.now())
-                .payload(payload)
-                .retryCount(0)
-                .expiryTime(LocalDateTime.now().plusMinutes(5))
-                .build();
-            
-            sendMessage(message);
-            
-            log.info("✅ 정산 브로드캐스트 전송 완료: messageId={}, settlementId={}", 
-                messageId, request.getSettlementId());
-            
-            return messageId;
-            
-        } catch (Exception e) {
-            log.error("❌ 정산 브로드캐스트 전송 실패: settlementId={}", request.getSettlementId(), e);
-            throw new RuntimeException("정산 브로드캐스트 전송 실패: " + e.getMessage());
-        }
+
+    // ✅ 정산 시작(요청) 브로드캐스트: PAYMENT_REQUEST
+    public String sendSettlementStart(
+            Long settlementId,
+            Long roomId,
+            Long requesterId,
+            String requesterName,
+            String requesterStudentId,
+            String requesterProfileImg,
+            int perHeadAmount,
+            String message
+    ) {
+        Map<String, String> m = baseHeaders(ServerMessage.MessageType.PAYMENT_REQUEST);
+        m.put("payload_settlementId", str(settlementId));
+        m.put("payload_roomId", str(roomId));
+        m.put("payload_requesterId", str(requesterId));
+        m.put("payload_requesterName", str(requesterName));
+        m.put("payload_requesterStudentId", str(requesterStudentId));
+        m.put("payload_requesterProfileImg", str(requesterProfileImg));
+        m.put("payload_requestAmount", str(perHeadAmount));
+        m.put("payload_message", str(message));
+
+        streamRedisTemplate.opsForStream().add(MAIN_TO_CHAT_STREAM, m);
+        log.info("PAYMENT_REQUEST published: {}", m);
+        return m.get("messageId");
     }
-    
-    @Override
-    public String sendSavingsBroadcast(ChatBroadcastRequest request) {
-        try {
-            String messageId = UUID.randomUUID().toString();
-            
-            // 적금 브로드캐스트 메시지 생성
-            Map<String, Object> payload = new HashMap<>();
-            payload.put("settlementId", request.getSettlementId());
-            payload.put("roomId", request.getRoomId());
-            payload.put("requesterId", request.getRequesterId());
-            payload.put("requesterName", request.getRequesterName());
-            payload.put("requesterStudentId", request.getRequesterStudentId());
-            payload.put("requesterProfileImg", request.getRequesterProfileImg());
-            payload.put("requestAmount", request.getRequestAmount());
-            payload.put("message", request.getMessage());
-            
-            ServerMessage message = ServerMessage.builder()
-                .messageId(messageId)
-                .messageType(ServerMessage.MessageType.SAVINGS_REQUEST)
-                .sourceServer(SERVER_NAME)
-                .targetServer(TARGET_SERVER)
-                .timestamp(LocalDateTime.now())
-                .payload(payload)
-                .retryCount(0)
-                .expiryTime(LocalDateTime.now().plusMinutes(5))
-                .build();
-            
-            sendMessage(message);
-            
-            log.info("✅ 적금 브로드캐스트 전송 완료: messageId={}, settlementId={}", 
-                messageId, request.getSettlementId());
-            
-            return messageId;
-            
-        } catch (Exception e) {
-            log.error("❌ 적금 브로드캐스트 전송 실패: settlementId={}", request.getSettlementId(), e);
-            throw new RuntimeException("적금 브로드캐스트 전송 실패: " + e.getMessage());
-        }
+
+    // ✅ 개별 결제 완료 브로드캐스트: PAYMENT_COMPLETE
+    public String sendPaymentComplete(
+            Long settlementId,
+            Long roomId,
+            Long recipientId,     // 받는 사람(정산 개시자)
+            String recipientName,
+            int completedAmount,
+            Long payerId,         // (선택) 보낸 사람
+            String payerName
+    ) {
+        Map<String, String> m = baseHeaders(ServerMessage.MessageType.PAYMENT_COMPLETE);
+        m.put("payload_settlementId", str(settlementId));
+        m.put("payload_roomId", str(roomId));
+        m.put("payload_recipientId", str(recipientId));
+        m.put("payload_recipientName", str(recipientName));
+        m.put("payload_completedAmount", str(completedAmount));
+        if (payerId != null)   m.put("payload_payerId", str(payerId));
+        if (payerName != null) m.put("payload_payerName", str(payerName));
+
+        streamRedisTemplate.opsForStream().add(MAIN_TO_CHAT_STREAM, m);
+        log.info("PAYMENT_COMPLETE published: {}", m);
+        return m.get("messageId");
     }
     
     @Override
@@ -325,4 +296,19 @@ public class ChatMessageServiceImpl implements ChatMessageService {
             .expiryTime(LocalDateTime.parse((String) data.get("expiryTime")))
             .build();
     }
+
+    private static String str(Object o) { return o == null ? "" : String.valueOf(o); }
+
+    private Map<String, String> baseHeaders(ServerMessage.MessageType type) {
+        Map<String, String> m = new LinkedHashMap<>();
+        m.put("messageId", java.util.UUID.randomUUID().toString());
+        m.put("messageType", type.name());
+        m.put("sourceServer", SERVER_NAME);
+        m.put("targetServer", TARGET_SERVER);
+        m.put("timestamp", java.time.LocalDateTime.now(java.time.ZoneId.of("Asia/Seoul")).toString());
+        m.put("retryCount", "0");
+        // expiryTime은 컨슈머에서 필수 아님 → 필요시 m.put("expiryTime", ...)
+        return m;
+    }
+
 }

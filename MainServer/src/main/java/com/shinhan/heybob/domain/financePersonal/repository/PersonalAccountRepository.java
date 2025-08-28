@@ -12,4 +12,8 @@ import java.util.Optional;
 public interface PersonalAccountRepository extends JpaRepository<PersonalAccount, Long> {
 
     @Query("select p.accountNo from PersonalAccount p where p.externalFinanceUserId = :externalFinanceUserId")
-    Optional<String> findAccountNoByExternalFinanceUserId(@Param("externalFinanceUserId") Long externalFinanceUserId);}
+    Optional<String> findAccountNoByExternalFinanceUserId(@Param("externalFinanceUserId") Long externalFinanceUserId);
+
+    @Query("select p.externalFinanceUserId from PersonalAccount p where p.accountNo =:accountNo")
+    Optional<Long> findExternalFinanceUserIdByAccountNo(@Param("accountNo")String accountNo);
+}
