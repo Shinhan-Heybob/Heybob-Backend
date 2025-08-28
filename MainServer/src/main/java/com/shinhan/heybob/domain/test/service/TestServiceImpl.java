@@ -109,6 +109,74 @@ public class TestServiceImpl implements TestService {
         }
     }
     
+    @Override
+    public String sendPaymentCompleteBroadcast(ChatBroadcastRequest request) {
+        try {
+            String messageId = UUID.randomUUID().toString();
+            
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("roomId", request.getRoomId());
+            payload.put("requesterName", request.getRequesterName());
+            payload.put("requestAmount", request.getRequestAmount());
+            payload.put("message", request.getMessage());
+            
+            ServerMessage message = ServerMessage.builder()
+                .messageId(messageId)
+                .messageType(ServerMessage.MessageType.PAYMENT_COMPLETE)
+                .sourceServer("MAIN")
+                .targetServer("CHAT")
+                .timestamp(LocalDateTime.now())
+                .payload(payload)
+                .retryCount(0)
+                .expiryTime(LocalDateTime.now().plusMinutes(5))
+                .build();
+            
+            Map<String, Object> streamData = convertToStreamData(message);
+            redisTemplate.opsForStream().add(MAIN_TO_CHAT_STREAM, streamData);
+            
+            log.info("✅ 정산 완료 브로드캐스트 전송 완료: messageId={}", messageId);
+            return messageId;
+            
+        } catch (Exception e) {
+            log.error("❌ 정산 완료 브로드캐스트 전송 실패", e);
+            throw new RuntimeException("정산 완료 브로드캐스트 전송 실패: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    public String sendSavingsCompleteBroadcast(ChatBroadcastRequest request) {
+        try {
+            String messageId = UUID.randomUUID().toString();
+            
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("roomId", request.getRoomId());
+            payload.put("requesterName", request.getRequesterName());
+            payload.put("requestAmount", request.getRequestAmount());
+            payload.put("message", request.getMessage());
+            
+            ServerMessage message = ServerMessage.builder()
+                .messageId(messageId)
+                .messageType(ServerMessage.MessageType.SAVINGS_COMPLETE)
+                .sourceServer("MAIN")
+                .targetServer("CHAT")
+                .timestamp(LocalDateTime.now())
+                .payload(payload)
+                .retryCount(0)
+                .expiryTime(LocalDateTime.now().plusMinutes(5))
+                .build();
+            
+            Map<String, Object> streamData = convertToStreamData(message);
+            redisTemplate.opsForStream().add(MAIN_TO_CHAT_STREAM, streamData);
+            
+            log.info("✅ 적금 완료 브로드캐스트 전송 완료: messageId={}", messageId);
+            return messageId;
+            
+        } catch (Exception e) {
+            log.error("❌ 적금 완료 브로드캐스트 전송 실패", e);
+            throw new RuntimeException("적금 완료 브로드캐스트 전송 실패: " + e.getMessage());
+        }
+    }
+
     private Map<String, Object> convertToStreamData(ServerMessage message) {
         Map<String, Object> data = new HashMap<>();
         data.put("messageId", message.getMessageId());

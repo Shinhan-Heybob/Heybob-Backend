@@ -38,5 +38,6 @@ public class Timetable extends BaseTime {
     private String timeTableName;
 
     @OneToMany(mappedBy = "timetable", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<Lecture> lectureList = new ArrayList<>();
 }

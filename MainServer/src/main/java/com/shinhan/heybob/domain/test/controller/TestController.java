@@ -1,7 +1,7 @@
 package com.shinhan.heybob.domain.test.controller;
 
-import com.shinhan.heybob.common.chat.dto.ChatBroadcastRequest;
-import com.shinhan.heybob.common.chat.service.ChatMessageService;
+import com.shinhan.heybob.domain.notification.dto.ChatBroadcastRequest;
+import com.shinhan.heybob.domain.test.service.TestService;
 import com.shinhan.heybob.domain.meal.dto.request.CreateMealAppointmentRequest;
 import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentDetailResponse;
 import com.shinhan.heybob.domain.meal.service.MealAppointmentService;
@@ -19,7 +19,7 @@ import java.util.Map;
 @Slf4j
 public class TestController {
 
-    private final ChatMessageService chatMessageService;
+    private final TestService testService;
     private final MealAppointmentService mealAppointmentService;
 
     @PostMapping("/send-settlement-broadcast")
@@ -28,7 +28,7 @@ public class TestController {
             log.info("🧪 테스트 정산 브로드캐스트 요청: {}", request);
             
             request.setType(ChatBroadcastRequest.BroadcastType.PAYMENT);
-            String messageId = chatMessageService.sendSettlementBroadcast(request);
+            String messageId = testService.sendSettlementBroadcast(request);
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -51,7 +51,7 @@ public class TestController {
             log.info("🧪 테스트 적금 브로드캐스트 요청: {}", request);
             
             request.setType(ChatBroadcastRequest.BroadcastType.SAVINGS);
-            String messageId = chatMessageService.sendSavingsBroadcast(request);
+            String messageId = testService.sendSavingsBroadcast(request);
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -110,7 +110,7 @@ public class TestController {
                 .type(ChatBroadcastRequest.BroadcastType.PAYMENT)
                 .build();
             
-            String messageId = chatMessageService.sendSettlementBroadcast(broadcastRequest);
+            String messageId = testService.sendSettlementBroadcast(broadcastRequest);
             
             log.info("✅ 밥약 채팅방 정산 메시지 전송: messageId={}, chatRoomId={}, settlementId={}", 
                 messageId, chatRoomId, settlementId);
@@ -153,7 +153,7 @@ public class TestController {
                 .type(ChatBroadcastRequest.BroadcastType.PAYMENT_COMPLETE)
                 .build();
             
-            String messageId = chatMessageService.sendPaymentCompleteBroadcast(broadcastRequest);
+            String messageId = testService.sendPaymentCompleteBroadcast(broadcastRequest);
             
             log.info("✅ 테스트 정산 완료 알림 전송 성공: messageId={}, roomId={}", messageId, roomId);
             
@@ -193,7 +193,7 @@ public class TestController {
                 .type(ChatBroadcastRequest.BroadcastType.SAVINGS_COMPLETE)
                 .build();
             
-            String messageId = chatMessageService.sendSavingsCompleteBroadcast(broadcastRequest);
+            String messageId = testService.sendSavingsCompleteBroadcast(broadcastRequest);
             
             log.info("✅ 테스트 적금 완료 알림 전송 성공: messageId={}, roomId={}", messageId, roomId);
             
