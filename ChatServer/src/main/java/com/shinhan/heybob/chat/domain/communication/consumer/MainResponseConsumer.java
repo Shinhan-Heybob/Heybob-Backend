@@ -427,8 +427,8 @@ public class MainResponseConsumer {
                 .build();
             
             // CHAT_TO_MAIN_STREAM으로 응답 전송 (correlationId 설정)
-            Map<String, Object> streamData = convertToStreamData(response);
-            streamData.put("correlationId", message.getMessageId()); // 원본 요청의 messageId를 correlationId로 설정
+            Map<String, String> streamData = convertToStreamData(response);
+            streamData.put("correlationId", String.valueOf(message.getMessageId())); // 원본 요청의 messageId를 correlationId로 설정
             redisTemplate.opsForStream().add("chat-to-main-stream", streamData);
             
             log.info("✅ 채팅방 생성 응답 전송: chatRoomId={}, correlationId={}", 
@@ -442,37 +442,46 @@ public class MainResponseConsumer {
         }
     }
     
-    private Map<String, Object> convertToStreamData(ServerMessage message) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("messageId", message.getMessageId());
+    private Map<String, String> convertToStreamData(ServerMessage message) {
+        Map<String, String> data = new HashMap<>();
+        data.put("messageId", String.valueOf(message.getMessageId()));
         data.put("messageType", message.getMessageType().name());
-        data.put("sourceServer", message.getSourceServer());
-        data.put("targetServer", message.getTargetServer());
+        data.put("sourceServer", String.valueOf(message.getSourceServer()));
+        data.put("targetServer", String.valueOf(message.getTargetServer()));
         data.put("timestamp", message.getTimestamp().toString());
-        data.put("payload", message.getPayload());
-        data.put("retryCount", message.getRetryCount());
+        data.put("retryCount", String.valueOf(message.getRetryCount()));
         if (message.getExpiryTime() != null) {
             data.put("expiryTime", message.getExpiryTime().toString());
         }
+        
+        // payload 데이터를 payload_ 접두사와 함께 개별 필드로 추가
+        if (message.getPayload() != null) {
+            for (Map.Entry<String, Object> entry : message.getPayload().entrySet()) {
+                data.put("payload_" + entry.getKey(), String.valueOf(entry.getValue()));
+            }
+        }
+        
         return data;
     }
     
     private void sendErrorResponse(String correlationId, String errorMessage) {
+        Map<String, Object> errorPayload = new HashMap<>();
+        errorPayload.put("success", false);
+        errorPayload.put("errorMessage", errorMessage);
+        
         ServerMessage errorResponse = ServerMessage.builder()
             .messageId(java.util.UUID.randomUUID().toString())
             .messageType(ServerMessage.MessageType.ERROR_RESPONSE)
             .sourceServer("CHAT")
             .targetServer("MAIN")
             .timestamp(LocalDateTime.now())
-            .payload(Map.of(
-                "success", false,
-                "errorMessage", errorMessage
-            ))
+            .payload(errorPayload)
             .retryCount(0)
             .expiryTime(LocalDateTime.now().plusMinutes(5))
             .build();
         
-        Map<String, Object> streamData = convertToStreamData(errorResponse);
+        Map<String, String> streamData = convertToStreamData(errorResponse);
+        streamData.put("correlationId", String.valueOf(correlationId));
         redisTemplate.opsForStream().add("chat-to-main-stream", streamData);
     }
 }
