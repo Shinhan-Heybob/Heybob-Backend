@@ -6,6 +6,8 @@ import com.shinhan.heybob.domain.user.dto.UserUpdateProfileUrlRequestDto;
 import com.shinhan.heybob.domain.user.dto.UsersGetRequestDto;
 import com.shinhan.heybob.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -36,10 +38,11 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
-    @GetMapping("/{userId}")
+    @GetMapping("/my")
     public ResponseEntity<UserResponseDto> getUserById(
-            @PathVariable Long userId) {
-        UserResponseDto user = userService.getUserById(userId);
+            @AuthenticationPrincipal UserPrincipalDetails userPrincipal
+    ) {
+        UserResponseDto user = userService.getUserById(userPrincipal.getUserId());
         return ResponseEntity.ok(user);
     }
 

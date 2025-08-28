@@ -1,5 +1,6 @@
 package com.shinhan.heybob.domain.meal.controller;
 
+import com.shinhan.heybob.common.user.UserPrincipalDetails;
 import com.shinhan.heybob.domain.meal.dto.request.CreateMealAppointmentRequest;
 import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentDetailResponse;
 import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentIdResponse;
@@ -8,10 +9,12 @@ import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentStatisticsResp
 import com.shinhan.heybob.domain.meal.entity.MealType;
 import com.shinhan.heybob.domain.notification.service.ChatIntegrationService;
 import com.shinhan.heybob.domain.meal.service.MealAppointmentService;
+import com.sun.security.auth.UserPrincipal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,8 +25,6 @@ import java.util.List;
 public class MealAppointmentController {
 
     private final MealAppointmentService mealAppointmentService;
-    private final ChatIntegrationService chatIntegrationService;
-
 
     @PostMapping
     public ResponseEntity<MealAppointmentIdResponse> createMealAppointment(
@@ -44,27 +45,31 @@ public class MealAppointmentController {
 
     @GetMapping
     public ResponseEntity<List<MealAppointmentDetailResponse>> getUserMealAppointments(
-            @RequestParam Long userId,
+            @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
             @RequestParam(defaultValue = "all") String type) {
         MealType mealType = "all".equalsIgnoreCase(type) ? null : MealType.valueOf(type.toUpperCase());
-        List<MealAppointmentDetailResponse> response = mealAppointmentService.getUserMealAppointments(userId, mealType);
+        List<MealAppointmentDetailResponse> response = mealAppointmentService.getUserMealAppointments(
+                userPrincipal.getUserId(), mealType);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/list")
     public ResponseEntity<List<MealAppointmentListResponse>> getUserMealAppointmentList(
-            @RequestParam Long userId,
+            @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
             @RequestParam(defaultValue = "all") String status,
             @RequestParam(defaultValue = "all") String type) {
         MealType mealType = "all".equalsIgnoreCase(type) ? null : MealType.valueOf(type.toUpperCase());
-        List<MealAppointmentListResponse> response = mealAppointmentService.getUserMealAppointmentList(userId, status, mealType);
+        List<MealAppointmentListResponse> response = mealAppointmentService.getUserMealAppointmentList(
+                userPrincipal.getUserId(), status, mealType);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/statistics")
     public ResponseEntity<MealAppointmentStatisticsResponse> getUserMealAppointmentStatistics(
-            @RequestParam Long userId) {
-        MealAppointmentStatisticsResponse response = mealAppointmentService.getUserMealAppointmentStatistics(userId);
+            @AuthenticationPrincipal UserPrincipalDetails userPrincipalDetails
+    ) {
+        MealAppointmentStatisticsResponse response = mealAppointmentService.getUserMealAppointmentStatistics(
+                userPrincipalDetails.getUserId());
         return ResponseEntity.ok(response);
     }
 
