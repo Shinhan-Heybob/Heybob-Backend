@@ -482,7 +482,7 @@
                     <span>Chat Server:</span> <span id="chatStatus" class="status-unknown">❓</span>
                 </div>
                 <div class="status-item">
-                    <span>현재 채팅방:</span> <span id="currentRoom">room-meal-456</span>
+                    <span>채팅방:</span> <span id="currentRoom">사용자별 전용방</span>
                 </div>
             </div>
             
@@ -528,7 +528,7 @@
                     <div class="user-details">
                         <h3>최수연</h3>
                         <p>20210404 · 디자인학과</p>
-                        <p>신한대학교</p>
+                        <p>방: room-suyeon-01</p>
                     </div>
                 </div>
                 
@@ -561,7 +561,7 @@
                     <div class="user-details">
                         <h3>정우진</h3>
                         <p>20210505 · 경제학과</p>
-                        <p>신한대학교</p>
+                        <p>방: room-woojin-02</p>
                     </div>
                 </div>
                 
@@ -592,7 +592,6 @@
     <script>
         // 전역 변수
         const stompClients = [null, null, null]; // index 0 사용 안함, 1=최수연, 2=정우진
-        let currentRoomId = 'room-meal-456';
         let currentSettlementId = null;
         let currentMealAppointment = null;
         
@@ -602,15 +601,22 @@
                 userId: '4',
                 studentId: '20210404',
                 userName: '최수연',
-                profileImageUrl: 'https://example.com/suyeon.jpg'
+                profileImageUrl: 'https://example.com/suyeon.jpg',
+                roomId: 'room-suyeon-01'  // 사용자별 전용 방
             },
             {
                 userId: '5',
                 studentId: '20210505',
                 userName: '정우진',
-                profileImageUrl: 'https://example.com/woojin.jpg'
+                profileImageUrl: 'https://example.com/woojin.jpg',
+                roomId: 'room-woojin-02'  // 사용자별 전용 방
             }
         ];
+        
+        // 방 ID 가져오기 함수
+        function getRoomId(userIndex) {
+            return users[userIndex].roomId;
+        }
         
         // 메시지 추가 함수
         function addMessage(userIndex, sender, content, type = 'other', timestamp = null) {
@@ -681,11 +687,14 @@
                 'X-Profile-Image': user.profileImageUrl
             };
             
-            // 채팅방 메시지 구독 (헤더를 두 번째 파라미터로 전달)
-            stompClient.subscribe(`/topic/room/${currentRoomId}`, headers, function(message) {
+            // 채팅방 메시지 구독 
+            const roomId = getRoomId(userIndex);
+            console.log(`사용자 ${userIndex} 구독 시도: roomId=${roomId}`);
+            stompClient.subscribe(`/topic/room/${roomId}`, function(message) {
                 try {
                     const chatMessage = JSON.parse(message.body);
-                    console.log(`사용자 ${userIndex} 메시지 수신:`, chatMessage);
+                    console.log(`🔥 사용자 ${userIndex} 실시간 메시지 수신:`, chatMessage);
+                    console.log(`🔥 메시지 타입: ${chatMessage.messageType}, 방: ${chatMessage.roomId}`);
                     
                     const isOwnMessage = chatMessage.senderId === users[userIndex].userId;
                     const messageType = isOwnMessage ? 'own' : 'other';
@@ -769,9 +778,10 @@
                     console.error(`사용자 ${userIndex} 메시지 파싱 오류:`, e);
                     addMessage(userIndex, 'System', `메시지 파싱 오류: ${e.message}`, 'error');
                 }
-            }, headers);
+            });
             
-            addMessage(userIndex, 'System', `📡 채팅방 '${currentRoomId}'에 구독되었습니다`, 'system');
+            console.log(`✅ 사용자 ${userIndex} 구독 완료: roomId=${roomId}`);
+            addMessage(userIndex, 'System', `📡 채팅방 '${roomId}'에 구독되었습니다`, 'system');
             
             // 채팅 내역 로드
             loadChatHistory(userIndex);
@@ -812,7 +822,9 @@
                     'X-User-Name': user.userName,
                     'X-Profile-Image': user.profileImageUrl
                 };
-                stompClient.send(`/app/chat/${currentRoomId}`, headers, JSON.stringify(chatMessage));
+                const roomId = getRoomId(userIndex);
+                console.log(`🚀 사용자 ${userIndex} 메시지 전송: roomId=${roomId}, content=${content}`);
+                stompClient.send(`/app/chat/${roomId}`, headers, JSON.stringify(chatMessage));
                 input.value = '';
             } catch (e) {
                 addMessage(userIndex, 'System', `전송 실패: ${e.message}`, 'error');
@@ -825,9 +837,10 @@
             
             currentSettlementId = `settlement_${Date.now()}_${userIndex}`;
             
+            const roomId = getRoomId(userIndex);
             const settlementRequest = {
                 settlementId: currentSettlementId,
-                roomId: currentRoomId,
+                roomId: roomId,
                 requesterId: parseInt(user.userId),
                 requesterName: user.userName,
                 requesterStudentId: user.studentId,
@@ -871,9 +884,10 @@
             
             const savingsId = `savings_${Date.now()}_${userIndex}`;
             
+            const roomId = getRoomId(userIndex);
             const savingsRequest = {
                 settlementId: savingsId,
-                roomId: currentRoomId,
+                roomId: roomId,
                 requesterId: parseInt(user.userId),
                 requesterName: user.userName,
                 requesterStudentId: user.studentId,
@@ -915,8 +929,9 @@
         function sendSettlementComplete(userIndex) {
             const user = users[userIndex];
             
+            const roomId = getRoomId(userIndex);
             const settlementCompleteRequest = {
-                roomId: currentRoomId,  // currentRoom -> currentRoomId로 수정
+                roomId: roomId,
                 senderId: user.userId,
                 senderStudentId: user.studentId,
                 senderName: user.userName,
@@ -966,8 +981,9 @@
         function sendSavingsComplete(userIndex) {
             const user = users[userIndex];
             
+            const roomId = getRoomId(userIndex);
             const savingsCompleteRequest = {
-                roomId: currentRoomId,  // currentRoom -> currentRoomId로 수정
+                roomId: roomId,
                 senderId: user.userId,
                 senderStudentId: user.studentId,
                 senderName: user.userName,
@@ -1132,7 +1148,8 @@
                     'X-Profile-Image': user.profileImageUrl
                 };
                 
-                stompClient.send(`/app/chat/${currentRoomId}`, headers, JSON.stringify(chatMessage));
+                const roomId = getRoomId(userIndex);
+                stompClient.send(`/app/chat/${roomId}`, headers, JSON.stringify(chatMessage));
                 addMessage(userIndex, user.userName, `🤖 ${aiQuery}`, 'ai-question');
                 addMessage(userIndex, 'System', `✅ AI 봇에게 질문을 전송했습니다`, 'system');
                 
@@ -1154,15 +1171,16 @@
         function sendCafeteriaInfo(userIndex) {
             const user = users[userIndex];
             
+            const roomId = getRoomId(userIndex);
             const cafeteriaRequest = {
-                roomId: currentRoomId,
+                roomId: roomId,
                 requesterName: user.userName,
                 message: `${user.userName}님이 학식 정보를 요청했습니다.`
             };
             
             addMessage(userIndex, 'System', `🍚 Chat 서버로 학식 정보 요청 중...`, 'system');
             
-            fetch(`http://localhost:8081/api/chat/${currentRoomId}/cafeteria`, {
+            fetch(`http://localhost:8081/api/chat/${roomId}/cafeteria`, {
                 method: 'POST',
                 mode: 'cors',
                 headers: {
@@ -1196,7 +1214,8 @@
         function loadChatHistory(userIndex) {
             addMessage(userIndex, 'System', `📜 이전 채팅 기록 로딩 중...`, 'system');
             
-            fetch(`http://localhost:8081/api/chat/rooms/${currentRoomId}/messages?limit=20`, {
+            const roomId = getRoomId(userIndex);
+            fetch(`http://localhost:8081/api/chat/rooms/${roomId}/messages?limit=20`, {
                 method: 'GET',
                 mode: 'cors',
                 headers: {
@@ -1367,13 +1386,15 @@
         window.addEventListener('DOMContentLoaded', function() {
             // 환영 메시지
             addMessage(1, 'System', 
-                `🎉 HeyBob 간단 테스트!
+                `🎉 HeyBob 방 분리 테스트!
                 <br>👤 최수연 (20210404)
+                <br>🏠 전용방: room-suyeon-01
                 <br>💡 'Connect' → 'Subscribe' 후 채팅 테스트`, 'system');
                 
             addMessage(2, 'System', 
                 `🎉 환영합니다!
-                <br>👤 정우진 (20210505)  
+                <br>👤 정우진 (20210505)
+                <br>🏠 전용방: room-woojin-02  
                 <br>💡 연결 후 정산/적금 버튼 테스트 가능`, 'system');
         });
     </script>

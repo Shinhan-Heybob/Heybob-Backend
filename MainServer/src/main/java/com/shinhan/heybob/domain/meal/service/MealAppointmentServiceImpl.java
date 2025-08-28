@@ -304,4 +304,24 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
                 .totalCount(totalCount)
                 .build();
     }
+    
+    @Override
+    @Transactional
+    public void deleteMealAppointment(Long appointmentId, Long userId) {
+        if (appointmentId == null || userId == null) {
+            throw new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND);
+        }
+        
+        MealAppointment appointment = mealAppointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND));
+        
+        // 생성자만 삭제할 수 있도록 권한 체크
+        if (!appointment.getCreator().getId().equals(userId)) {
+            throw new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND);
+        }
+        
+        log.info("🗑️ 밥약 삭제: appointmentId={}, creatorId={}", appointmentId, userId);
+        mealAppointmentRepository.delete(appointment);
+        log.info("✅ 밥약 삭제 완료: appointmentId={}", appointmentId);
+    }
 }

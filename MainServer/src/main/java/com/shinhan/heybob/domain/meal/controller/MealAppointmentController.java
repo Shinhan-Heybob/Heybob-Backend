@@ -97,4 +97,27 @@ public class MealAppointmentController {
         return ResponseEntity.ok(response);
     }
 
+    @DeleteMapping("/{appointmentId}")
+    public ResponseEntity<Void> deleteMealAppointment(
+            @PathVariable Long appointmentId,
+            @AuthenticationPrincipal UserPrincipalDetails userPrincipal) {
+        try {
+            log.info("🗑️ 밥약 삭제 요청: appointmentId={}, userId={}", 
+                appointmentId, userPrincipal.getUserId());
+            
+            mealAppointmentService.deleteMealAppointment(appointmentId, userPrincipal.getUserId());
+            
+            log.info("✅ 밥약 삭제 성공: appointmentId={}", appointmentId);
+            return ResponseEntity.noContent().build();
+            
+        } catch (HeybobException e) {
+            log.error("❌ 밥약 삭제 실패 (HeybobException): appointmentId={}, error={}", 
+                appointmentId, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("❌ 밥약 삭제 실패 (예상치 못한 오류): appointmentId={}", appointmentId, e);
+            throw new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND);
+        }
+    }
+
 }
