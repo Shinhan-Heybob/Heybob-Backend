@@ -171,13 +171,19 @@ public class WebSocketEventListener {
                 log.debug("구독 헤더에서 사용자 정보 추출 시도: userId={}, userName={}", userId, userName);
             }
             
-            // 마지막: 개발용 기본값 처리
+            // 마지막: 개발용 기본값 처리 (절대 "시스템"으로 설정하지 않음)
             if (userId == null || userName == null) {
-                log.warn("모든 방법으로 사용자 정보를 찾을 수 없음, 개발용 기본값 사용: sessionId={}", sessionId);
-                userId = "20000622";
-                studentId = "20000622";
-                userName = "개발테스트사용자";
-                profileImageUrl = "https://example.com/default-profile.jpg";
+                log.error("❌❌❌ 치명적: 모든 방법으로 사용자 정보를 찾을 수 없음! sessionId={}, roomId={}", sessionId, roomId);
+                log.error("세션 속성: {}", headerAccessor.getSessionAttributes());
+                log.error("네이티브 헤더: {}", headerAccessor.toNativeHeaderMap());
+                
+                // 절대 사용하지 말아야 할 fallback - 문제 추적을 위해 명확한 식별자 사용
+                userId = "UNKNOWN_USER_" + sessionId;
+                studentId = "UNKNOWN_STUDENT_" + sessionId;
+                userName = "알 수 없는 사용자";
+                profileImageUrl = "https://example.com/unknown.jpg";
+                
+                log.error("❌ 강제 fallback 적용: userId={}, userName={}", userId, userName);
             }
             
             // 임시 정보 정리 (사용 여부와 관계없이)
@@ -190,14 +196,28 @@ public class WebSocketEventListener {
             // 방 사용자 수 증가
             incrementRoomUserCount(roomId);
             
-            // 인메모리 기반 중복 입장 메시지 방지
-            if (!hasUserJoinedRoomInMemory(roomId, userId)) {
-                // 처음 입장하는 경우에만 입장 메시지 전송
-                sendJoinMessage(userInfo);
-                addUserToRoomInMemory(roomId, userId);
-                log.info("✅ 첫 입장: 입장 메시지 전송 - sessionId={}, userId={}, roomId={}", sessionId, userId, roomId);
-            } else {
-                log.info("🔄 재구독: 입장 메시지 생략 - sessionId={}, userId={}, roomId={}", sessionId, userId, roomId);
+            // 인메모리 기반 중복 입장 메시지 방지 (동기화 블록으로 원자적 처리)
+            // UNKNOWN_USER로 시작하는 경우 무조건 중복으로 처리 (잘못된 사용자 정보)
+            if (userId.startsWith("UNKNOWN_USER_")) {
+                log.error("❌ 잘못된 사용자 정보로 입장 시도 차단: userId={}", userId);
+                return; // 입장 메시지 전송하지 않음
+            }
+            
+            // 동기화 블록으로 check-and-add를 원자적으로 처리
+            synchronized (this) {
+                boolean hasJoined = hasUserJoinedRoomInMemory(roomId, userId);
+                log.info("🔍 입장 체크: roomId={}, userId={}, userName={}, hasJoined={}", roomId, userId, userName, hasJoined);
+                
+                if (!hasJoined) {
+                    // 먼저 메모리에 추가하여 다른 동시 요청 차단
+                    addUserToRoomInMemory(roomId, userId);
+                    log.info("✅ 첫 입장: 입장 메시지 전송 예정 - sessionId={}, userId={}, userName={}, roomId={}", sessionId, userId, userName, roomId);
+                    
+                    // 동기화 블록 밖에서 메시지 전송 (I/O 작업이므로)
+                    sendJoinMessage(userInfo);
+                } else {
+                    log.info("🔄 재구독: 입장 메시지 생략 - sessionId={}, userId={}, userName={}, roomId={}", sessionId, userId, userName, roomId);
+                }
             }
             
             log.info("방 구독 완료: sessionId={}, roomId={}, userName={}", sessionId, roomId, userName);
@@ -341,32 +361,47 @@ public class WebSocketEventListener {
     }
 
     /**
-     * 인메모리 기반: 사용자가 해당 방에 입장 메시지를 이미 보냈는지 확인
+     * 인메모리 기반: 사용자가 해당 방에 입장 메시지를 이미 보냈는지 확인 (동기화 처리)
      */
-    private boolean hasUserJoinedRoomInMemory(String roomId, String userId) {
+    private synchronized boolean hasUserJoinedRoomInMemory(String roomId, String userId) {
         Set<String> joinedUsers = roomJoinedUsersMap.get(roomId);
-        return joinedUsers != null && joinedUsers.contains(userId);
+        boolean hasJoined = joinedUsers != null && joinedUsers.contains(userId);
+        log.info("🔍 인메모리 입장 체크: roomId={}, userId={}, hasJoined={}, existingUsers={}", 
+            roomId, userId, hasJoined, joinedUsers != null ? joinedUsers.size() : 0);
+        if (joinedUsers != null) {
+            log.debug("현재 방 입장 사용자 목록: {}", joinedUsers);
+        }
+        return hasJoined;
     }
 
     /**
-     * 인메모리 기반: 사용자를 방의 입장 목록에 추가
+     * 인메모리 기반: 사용자를 방의 입장 목록에 추가 (동기화 처리)
      */
-    private void addUserToRoomInMemory(String roomId, String userId) {
-        roomJoinedUsersMap.computeIfAbsent(roomId, k -> ConcurrentHashMap.newKeySet()).add(userId);
-        log.debug("✅ 인메모리에 입장 기록 추가: roomId={}, userId={}", roomId, userId);
+    private synchronized void addUserToRoomInMemory(String roomId, String userId) {
+        Set<String> joinedUsers = roomJoinedUsersMap.computeIfAbsent(roomId, k -> ConcurrentHashMap.newKeySet());
+        boolean added = joinedUsers.add(userId);
+        log.info("✅ 인메모리에 입장 기록 추가: roomId={}, userId={}, added={}, totalUsers={}", 
+            roomId, userId, added, joinedUsers.size());
+        
+        // 디버깅용 - 현재 방에 입장한 모든 사용자 표시
+        log.debug("현재 방 입장 사용자 목록 (roomId={}): {}", roomId, joinedUsers);
     }
 
     /**
-     * 인메모리 기반: 사용자를 방의 입장 목록에서 제거
+     * 인메모리 기반: 사용자를 방의 입장 목록에서 제거 (동기화 처리)
      */
-    private void removeUserFromRoomInMemory(String roomId, String userId) {
+    private synchronized void removeUserFromRoomInMemory(String roomId, String userId) {
         Set<String> joinedUsers = roomJoinedUsersMap.get(roomId);
         if (joinedUsers != null) {
-            joinedUsers.remove(userId);
+            boolean removed = joinedUsers.remove(userId);
             if (joinedUsers.isEmpty()) {
                 roomJoinedUsersMap.remove(roomId);
+                log.info("🗑️ 빈 방 제거: roomId={}", roomId);
             }
-            log.debug("✅ 인메모리에서 입장 기록 제거: roomId={}, userId={}", roomId, userId);
+            log.info("✅ 인메모리에서 입장 기록 제거: roomId={}, userId={}, removed={}, remainingUsers={}", 
+                roomId, userId, removed, joinedUsers.size());
+        } else {
+            log.warn("⚠️ 제거하려는 방이 인메모리에 없음: roomId={}, userId={}", roomId, userId);
         }
     }
 
