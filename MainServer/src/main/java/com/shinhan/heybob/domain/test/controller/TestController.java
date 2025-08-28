@@ -131,4 +131,84 @@ public class TestController {
             ));
         }
     }
+    
+    /**
+     * 테스트용 정산 완료 알림 전송 (HTML 테스트에서 사용)
+     */
+    @PostMapping("/chat/payment-complete")
+    public ResponseEntity<Map<String, Object>> sendPaymentComplete(@RequestBody Map<String, Object> request) {
+        try {
+            String roomId = (String) request.get("roomId");
+            String senderName = (String) request.get("senderName");
+            Integer completedAmount = (Integer) request.get("completedAmount");
+            String message = (String) request.get("message");
+            
+            log.info("🧪 테스트 정산 완료 요청: roomId={}, senderName={}, amount={}", roomId, senderName, completedAmount);
+            
+            ChatBroadcastRequest broadcastRequest = ChatBroadcastRequest.builder()
+                .roomId(roomId)
+                .requesterName(senderName)
+                .requestAmount(completedAmount)
+                .message(message != null ? message : senderName + "님의 정산이 완료되었습니다")
+                .type(ChatBroadcastRequest.BroadcastType.PAYMENT_COMPLETE)
+                .build();
+            
+            String messageId = chatMessageService.sendPaymentCompleteBroadcast(broadcastRequest);
+            
+            log.info("✅ 테스트 정산 완료 알림 전송 성공: messageId={}, roomId={}", messageId, roomId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "messageId", messageId,
+                "message", "정산 완료 알림이 전송되었습니다"
+            ));
+            
+        } catch (Exception e) {
+            log.error("❌ 테스트 정산 완료 알림 전송 실패", e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
+        }
+    }
+    
+    /**
+     * 테스트용 적금 완료 알림 전송 (HTML 테스트에서 사용)
+     */
+    @PostMapping("/chat/savings-complete")
+    public ResponseEntity<Map<String, Object>> sendSavingsComplete(@RequestBody Map<String, Object> request) {
+        try {
+            String roomId = (String) request.get("roomId");
+            String senderName = (String) request.get("senderName");
+            Integer completedAmount = (Integer) request.get("completedAmount");
+            String message = (String) request.get("message");
+            
+            log.info("🧪 테스트 적금 완료 요청: roomId={}, senderName={}, amount={}", roomId, senderName, completedAmount);
+            
+            ChatBroadcastRequest broadcastRequest = ChatBroadcastRequest.builder()
+                .roomId(roomId)
+                .requesterName(senderName)
+                .requestAmount(completedAmount)
+                .message(message != null ? message : senderName + "님의 적금이 완료되었습니다")
+                .type(ChatBroadcastRequest.BroadcastType.SAVINGS_COMPLETE)
+                .build();
+            
+            String messageId = chatMessageService.sendSavingsCompleteBroadcast(broadcastRequest);
+            
+            log.info("✅ 테스트 적금 완료 알림 전송 성공: messageId={}, roomId={}", messageId, roomId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "messageId", messageId,
+                "message", "적금 완료 알림이 전송되었습니다"
+            ));
+            
+        } catch (Exception e) {
+            log.error("❌ 테스트 적금 완료 알림 전송 실패", e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
+        }
+    }
 }

@@ -5,8 +5,8 @@ import com.shinhan.heybob.chat.domain.cafeteria.service.CafeteriaService;
 import com.shinhan.heybob.chat.domain.chat.dto.ChatMessageResponse;
 import com.shinhan.heybob.chat.domain.chat.model.ChatMessage;
 import com.shinhan.heybob.chat.domain.chat.service.ChatService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -16,13 +16,22 @@ import java.util.UUID;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AiRecommendationServiceImpl implements AiRecommendationService {
     
     private final OpenAiClient openAiClient;
     private final CafeteriaService cafeteriaService;
     private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
+    
+    public AiRecommendationServiceImpl(OpenAiClient openAiClient, 
+                                      CafeteriaService cafeteriaService,
+                                      @Lazy ChatService chatService,
+                                      SimpMessagingTemplate messagingTemplate) {
+        this.openAiClient = openAiClient;
+        this.cafeteriaService = cafeteriaService;
+        this.chatService = chatService;
+        this.messagingTemplate = messagingTemplate;
+    }
     
     private static final String AI_BOT_ID = "ai_bot";
     private static final String AI_BOT_NAME = "AI 메뉴 추천봇";
@@ -145,20 +154,20 @@ public class AiRecommendationServiceImpl implements AiRecommendationService {
         sb.append("🤖 AI 메뉴 추천\n");
         sb.append("━━━━━━━━━━━━━━━━━━━━\n\n");
         
-        // 학식 정보가 있는 경우 간단히 요약
-        if (!cafeteriaInfo.contains("학식이 없습니다")) {
-            sb.append("📍 오늘 학식 참고:\n");
-            String[] lines = cafeteriaInfo.split("\n");
-            int count = 0;
-            for (String line : lines) {
-                if (line.contains("중식") || line.contains("석식")) {
-                    sb.append(line).append("\n");
-                    count++;
-                    if (count >= 2) break; // 중식, 석식 정보만 간단히 표시
-                }
-            }
-            sb.append("\n");
-        }
+//        // 학식 정보가 있는 경우 간단히 요약
+//        if (!cafeteriaInfo.contains("학식이 없습니다")) {
+//            sb.append("📍 오늘 학식 참고:\n");
+//            String[] lines = cafeteriaInfo.split("\n");
+//            int count = 0;
+//            for (String line : lines) {
+//                if (line.contains("중식") || line.contains("석식")) {
+//                    sb.append(line).append("\n");
+//                    count++;
+//                    if (count >= 2) break; // 중식, 석식 정보만 간단히 표시
+//                }
+//            }
+//            sb.append("\n");
+//        }
         
         sb.append("💡 추천 메뉴:\n");
         sb.append("━━━━━━━━━━━━━━━━━━━━\n");

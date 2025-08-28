@@ -1,5 +1,6 @@
 package com.shinhan.heybob.chat.domain.communication.handler;
 
+import com.shinhan.heybob.chat.domain.chat.dto.PaymentCompleteData;
 import com.shinhan.heybob.chat.domain.communication.dto.ServerMessage;
 import com.shinhan.heybob.chat.domain.chat.dto.ChatMessageResponse;
 import com.shinhan.heybob.chat.domain.chat.dto.PaymentRequestData;
@@ -150,18 +151,24 @@ public class MessageHandler {
         String totalAmount = (String) payload.get("totalAmount");
         String completionMessage = (String) payload.get("message");
         
-        log.info("✅ PAYMENT_COMPLETE 수신: roomId={}, settlementId={}, status={}", 
-            roomId, settlementId, status);
+        // 실제 사용자 정보 추출
+        Long requesterId = getLongFromPayload(payload, "requesterId", null);
+        String requesterName = (String) payload.get("requesterName");
+        String requesterStudentId = (String) payload.get("requesterStudentId");
+        String requesterProfileImg = (String) payload.get("requesterProfileImg");
+        
+        log.info("✅ PAYMENT_COMPLETE 수신: roomId={}, settlementId={}, requester={}, status={}", 
+            roomId, settlementId, requesterName, status);
         
         // 정산 완료 메시지를 ChatMessageResponse 형태로 변환하여 일반 채팅 토픽으로 전송
         String messageId = UUID.randomUUID().toString();
         
-        // ChatMessageResponse 형태로 생성
+        // ChatMessageResponse 형태로 생성 (실제 사용자 정보 사용)
         ChatMessageResponse completeMessage = ChatMessageResponse.builder()
             .messageId(messageId)
             .roomId(roomId)
-            .senderId("system")
-            .senderName("시스템")
+            .senderId(requesterId != null ? requesterId.toString() : "system")
+            .senderName(requesterName != null ? requesterName : "시스템")
             .content(completionMessage != null ? completionMessage : "정산이 완료되었습니다.")
             .messageType("PAYMENT_COMPLETE")
             .timestamp(LocalDateTime.now())
@@ -403,18 +410,24 @@ public class MessageHandler {
         String totalAmount = (String) payload.get("totalAmount");
         String completionMessage = (String) payload.get("message");
         
-        log.info("✅ SAVINGS_COMPLETE 수신: roomId={}, savingsId={}, status={}", 
-            roomId, savingsId, status);
+        // 실제 사용자 정보 추출
+        Long requesterId = getLongFromPayload(payload, "requesterId", null);
+        String requesterName = (String) payload.get("requesterName");
+        String requesterStudentId = (String) payload.get("requesterStudentId");
+        String requesterProfileImg = (String) payload.get("requesterProfileImg");
+        
+        log.info("✅ SAVINGS_COMPLETE 수신: roomId={}, savingsId={}, requester={}, status={}", 
+            roomId, savingsId, requesterName, status);
         
         // 적금 완료 메시지를 ChatMessageResponse 형태로 변환하여 일반 채팅 토픽으로 전송
         String messageId = UUID.randomUUID().toString();
         
-        // 완료 메시지에 추가 데이터 포함 (필요 시 클라이언트에서 파싱)
+        // 완료 메시지에 실제 사용자 정보 사용
         Map<String, Object> completeNotification = new HashMap<>();
         completeNotification.put("messageId", messageId);
         completeNotification.put("roomId", roomId);
-        completeNotification.put("senderId", "system");
-        completeNotification.put("senderName", "시스템");
+        completeNotification.put("senderId", requesterId != null ? requesterId.toString() : "system");
+        completeNotification.put("senderName", requesterName != null ? requesterName : "시스템");
         completeNotification.put("content", completionMessage != null ? completionMessage : "적금이 완료되었습니다.");
         completeNotification.put("messageType", "SAVINGS_COMPLETE");
         completeNotification.put("timestamp", LocalDateTime.now().toString());
@@ -426,7 +439,7 @@ public class MessageHandler {
         // 일반 채팅 토픽으로 전송
         messagingTemplate.convertAndSend("/topic/room/" + roomId, completeNotification);
         
-        log.info("✅ 적금 완료 메시지를 일반 채팅 토픽으로 전송: roomId={}, messageId={}", roomId, messageId);
+        log.info("✅ 적금 완료 메시지를 일반 채팅 토픽으로 전송: roomId={}, messageId={}, sender={}", roomId, messageId, requesterName);
         
         // 개별 사용자에게도 결과 전송
         for (Map<String, Object> result : savingsResults) {

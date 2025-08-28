@@ -38,6 +38,20 @@ public interface ChatMessageService {
     String sendSavingsBroadcast(ChatBroadcastRequest request);
     
     /**
+     * 정산 완료 브로드캐스트 전송
+     * @param request 브로드캐스트 요청
+     * @return 메시지 ID
+     */
+    String sendPaymentCompleteBroadcast(ChatBroadcastRequest request);
+    
+    /**
+     * 적금 완료 브로드캐스트 전송
+     * @param request 브로드캐스트 요청
+     * @return 메시지 ID
+     */
+    String sendSavingsCompleteBroadcast(ChatBroadcastRequest request);
+    
+    /**
      * 채팅방 생성 요청
      * @param roomName 채팅방 이름
      * @param creatorUserId 생성자 사용자 ID

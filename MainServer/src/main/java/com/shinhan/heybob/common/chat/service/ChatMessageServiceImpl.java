@@ -208,6 +208,86 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     }
     
     @Override
+    public String sendPaymentCompleteBroadcast(ChatBroadcastRequest request) {
+        try {
+            String messageId = UUID.randomUUID().toString();
+            
+            // 정산 완료 브로드캐스트 메시지 생성
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("settlementId", request.getSettlementId());
+            payload.put("roomId", request.getRoomId());
+            payload.put("requesterId", request.getRequesterId());
+            payload.put("requesterName", request.getRequesterName());
+            payload.put("requesterStudentId", request.getRequesterStudentId());
+            payload.put("requesterProfileImg", request.getRequesterProfileImg());
+            payload.put("requestAmount", request.getRequestAmount());
+            payload.put("message", request.getMessage());
+            
+            ServerMessage message = ServerMessage.builder()
+                .messageId(messageId)
+                .messageType(ServerMessage.MessageType.PAYMENT_COMPLETE)
+                .sourceServer(SERVER_NAME)
+                .targetServer(TARGET_SERVER)
+                .timestamp(LocalDateTime.now())
+                .payload(payload)
+                .retryCount(0)
+                .expiryTime(LocalDateTime.now().plusMinutes(5))
+                .build();
+            
+            sendMessage(message);
+            
+            log.info("✅ 정산 완료 브로드캐스트 전송 완료: messageId={}, settlementId={}", 
+                messageId, request.getSettlementId());
+            
+            return messageId;
+            
+        } catch (Exception e) {
+            log.error("❌ 정산 완료 브로드캐스트 전송 실패: settlementId={}", request.getSettlementId(), e);
+            throw new RuntimeException("정산 완료 브로드캐스트 전송 실패: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    public String sendSavingsCompleteBroadcast(ChatBroadcastRequest request) {
+        try {
+            String messageId = UUID.randomUUID().toString();
+            
+            // 적금 완료 브로드캐스트 메시지 생성
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("settlementId", request.getSettlementId());
+            payload.put("roomId", request.getRoomId());
+            payload.put("requesterId", request.getRequesterId());
+            payload.put("requesterName", request.getRequesterName());
+            payload.put("requesterStudentId", request.getRequesterStudentId());
+            payload.put("requesterProfileImg", request.getRequesterProfileImg());
+            payload.put("requestAmount", request.getRequestAmount());
+            payload.put("message", request.getMessage());
+            
+            ServerMessage message = ServerMessage.builder()
+                .messageId(messageId)
+                .messageType(ServerMessage.MessageType.SAVINGS_COMPLETE)
+                .sourceServer(SERVER_NAME)
+                .targetServer(TARGET_SERVER)
+                .timestamp(LocalDateTime.now())
+                .payload(payload)
+                .retryCount(0)
+                .expiryTime(LocalDateTime.now().plusMinutes(5))
+                .build();
+            
+            sendMessage(message);
+            
+            log.info("✅ 적금 완료 브로드캐스트 전송 완료: messageId={}, settlementId={}", 
+                messageId, request.getSettlementId());
+            
+            return messageId;
+            
+        } catch (Exception e) {
+            log.error("❌ 적금 완료 브로드캐스트 전송 실패: settlementId={}", request.getSettlementId(), e);
+            throw new RuntimeException("적금 완료 브로드캐스트 전송 실패: " + e.getMessage());
+        }
+    }
+    
+    @Override
     public CompletableFuture<Long> createChatRoom(String roomName, String creatorUserId, 
                                                   List<String> initialMembers, 
                                                   Map<String, Object> metadata) {

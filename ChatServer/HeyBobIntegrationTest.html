@@ -888,14 +888,27 @@
             
             addMessage(userIndex, 'System', `✅ Main 서버로 정산 완료 알림 전송 중...`, 'system');
             
-            fetch('http://localhost:8080/api/chat/payment-complete', {
+            fetch('http://localhost:8080/api/test/chat/payment-complete', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(settlementCompleteRequest)
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text(); // 먼저 텍스트로 받아보기
+            })
+            .then(text => {
+                try {
+                    return text ? JSON.parse(text) : {};
+                } catch (e) {
+                    console.log('응답이 JSON이 아님:', text);
+                    return { success: true, message: text };
+                }
+            })
             .then(data => {
                 console.log('정산 완료 응답:', data);
                 if (data.success) {
@@ -926,14 +939,27 @@
             
             addMessage(userIndex, 'System', `✅ Main 서버로 적금 완료 알림 전송 중...`, 'system');
             
-            fetch('http://localhost:8080/api/chat/savings-complete', {
+            fetch('http://localhost:8080/api/test/chat/savings-complete', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(savingsCompleteRequest)
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text(); // 먼저 텍스트로 받아보기
+            })
+            .then(text => {
+                try {
+                    return text ? JSON.parse(text) : {};
+                } catch (e) {
+                    console.log('응답이 JSON이 아님:', text);
+                    return { success: true, message: text };
+                }
+            })
             .then(data => {
                 console.log('적금 완료 응답:', data);
                 if (data.success) {

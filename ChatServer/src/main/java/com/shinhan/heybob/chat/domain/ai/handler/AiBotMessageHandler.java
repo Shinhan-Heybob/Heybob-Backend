@@ -17,6 +17,12 @@ public class AiBotMessageHandler extends AbstractMessageHandler {
     
     private final AiRecommendationService aiRecommendationService;
     
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        log.info("AiBotMessageHandler 초기화 완료. AI 서비스 연결: {}", 
+                aiRecommendationService != null ? "성공" : "실패");
+    }
+    
     @Override
     public boolean supports(ChatMessage.MessageType messageType) {
         return messageType == ChatMessage.MessageType.AI_BOT_REQUEST;
