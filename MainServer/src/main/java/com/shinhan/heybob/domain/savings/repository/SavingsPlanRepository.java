@@ -2,6 +2,7 @@ package com.shinhan.heybob.domain.savings.repository;
 
 import com.shinhan.heybob.domain.savings.entity.SavingsPlan;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -16,19 +17,17 @@ import java.util.Optional;
 public interface SavingsPlanRepository extends JpaRepository<SavingsPlan, Integer> {
 
     @Query("""
-        select sp
-          from SavingsPlan sp
-         where sp.status = :status
-           and sp.nextNotifyAt <= :now
-        """)
-    List<SavingsPlan> findDue(@Param("status") SavingsPlan.PlanStatus status,
-                              @Param("now") LocalDateTime now);
+      select sp.id from SavingsPlan sp
+      where sp.status = :status and sp.nextNotifyAt <= :now
+      order by sp.nextNotifyAt asc
+    """)
+    List<Long> findDueIds(@Param("status") SavingsPlan.PlanStatus status,
+                          @Param("now") LocalDateTime now,
+                          Pageable pageable);
 
-    @Lock(LockModeType.OPTIMISTIC)
+    @Lock(LockModeType.PESSIMISTIC_WRITE) // 동시 중복발행 방지에 더 안전
     @Query("select sp from SavingsPlan sp where sp.id = :id")
-    default SavingsPlan findOneForUpdate(@Param("id") Long id) {
-        return null;
-    }
+    Optional<SavingsPlan> findOneForUpdate(@Param("id") Long id);
 
     Optional<SavingsPlan> findBySavingsAccount_Id(Long savingsAccountId);
 }

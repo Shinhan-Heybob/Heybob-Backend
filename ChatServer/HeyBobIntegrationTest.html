@@ -844,7 +844,7 @@
             };
             
             addMessage(userIndex, 'System', `🏦 Main 서버로 적금 요청 전송 중...`, 'system');
-            
+
             fetch('http://localhost:8080/api/test/send-savings-broadcast', {
                 method: 'POST',
                 headers: {
