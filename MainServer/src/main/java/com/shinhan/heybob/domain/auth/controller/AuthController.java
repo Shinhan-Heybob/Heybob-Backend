@@ -20,8 +20,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
-    private static final String HEADER_AUTH = "Authorization";
-    private static final String TOKEN_TYPE = "Bearer ";
 
     @PostMapping("/signup")
     public ResponseEntity<String> signup(@Valid @RequestBody UserCreateRequestDto userCreateRequestDto) {
@@ -31,14 +29,15 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthLoginResponseDto> login(@Valid @RequestBody UserLoginRequestDto userLoginRequestDto) {
-        AuthResponseDto authResponseDto = authService.login(userLoginRequestDto);
+        AuthResponseDto auth = authService.login(userLoginRequestDto);
 
-        return ResponseEntity.ok()
-                .header(HEADER_AUTH, TOKEN_TYPE + authResponseDto.getAccessToken())
-                .body(AuthLoginResponseDto.builder()
-                        .userId(authResponseDto.getUserId())
-                        .refreshToken(authResponseDto.getRefreshToken())
-                        .build());
+        return ResponseEntity.ok(
+                AuthLoginResponseDto.builder()
+                        .userId(auth.getUserId())
+                        .accessToken(auth.getAccessToken())   // ✅ 바디에 accessToken
+                        .refreshToken(auth.getRefreshToken())
+                        .build()
+        );
     }
 
 }
