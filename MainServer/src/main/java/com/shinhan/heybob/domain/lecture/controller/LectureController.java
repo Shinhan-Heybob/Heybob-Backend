@@ -32,7 +32,7 @@ public class LectureController {
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
-    @DeleteMapping("/{lectureId}")
+    @DeleteMapping("/lecture/{lectureId}")
     public ResponseEntity<?> deleteLecture(@PathVariable Long lectureId) {
         lectureService.deleteLecture(lectureId);
         return ResponseEntity.status(HttpStatus.OK).build();
