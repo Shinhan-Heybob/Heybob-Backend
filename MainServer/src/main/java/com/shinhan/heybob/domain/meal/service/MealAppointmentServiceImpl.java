@@ -169,7 +169,7 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
         }
 
         List<MealAppointment> appointments = mealAppointmentRepository.findByUserIdWithParticipants(userId);
-        LocalDateTime now = LocalDateTime.now();
+        LocalDate today = LocalDate.now();
         
         return appointments.stream()
                 .sorted((a, b) -> {
@@ -179,11 +179,8 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
                     return aDateTime.compareTo(bDateTime);
                 })
                 .map(appointment -> {
-                    LocalDateTime appointmentDateTime = LocalDateTime.of(
-                            appointment.getAppointmentDate(), 
-                            appointment.getAppointmentTime()
-                    );
-                    boolean isActive = appointmentDateTime.isAfter(now);
+                    // 날짜 기준으로만 active/inactive 판단 (오늘 날짜 포함해서 이후면 active)
+                    boolean isActive = !appointment.getAppointmentDate().isBefore(today);
                     
                     User creator = appointment.getCreator();
                     return MealAppointmentListResponse.builder()
