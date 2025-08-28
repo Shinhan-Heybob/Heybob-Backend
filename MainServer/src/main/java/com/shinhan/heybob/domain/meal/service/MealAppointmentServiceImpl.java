@@ -82,8 +82,12 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
 
         Long chatRoomId = chatIntegrationService.createChatRoom(mealAppointment);
         log.info("채팅방 생성 완료: {}", chatRoomId);
+        
+        // chatRoomId를 데이터베이스에 저장
+        mealAppointment.setChatRoomId(chatRoomId);
+        mealAppointment = mealAppointmentRepository.save(mealAppointment);
 
-        return convertToDetailResponse(mealAppointment, chatRoomId);
+        return convertToDetailResponse(mealAppointment);
     }
 
     @Override
