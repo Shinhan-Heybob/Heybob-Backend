@@ -482,7 +482,7 @@
                     <span>Chat Server:</span> <span id="chatStatus" class="status-unknown">❓</span>
                 </div>
                 <div class="status-item">
-                    <span>채팅방:</span> <span id="currentRoom">사용자별 전용방</span>
+                    <span>채팅방:</span> <span id="currentRoom">방 ID를 입력하세요</span>
                 </div>
             </div>
             
@@ -521,14 +521,22 @@
         </div>
         
         <div class="chat-section">
-            <!-- 사용자 1: 최수연 -->
+            <!-- 사용자 1 -->
             <div class="chat-panel">
                 <div class="user-info">
-                    <div class="user-avatar">수연</div>
+                    <div class="user-avatar" id="avatar1">미림</div>
                     <div class="user-details">
-                        <h3>최수연</h3>
-                        <p>20210404 · 디자인학과</p>
-                        <p>방: room-suyeon-01</p>
+                        <h3 id="userName1">김미림</h3>
+                        <p id="userInfo1">1234567 · 희망대학교</p>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <select id="userSelect1" onchange="changeUser(1)" style="flex: 1; padding: 5px; border-radius: 5px;">
+                                <option value="1">김미림 (1234567)</option>
+                                <option value="2">이예린 (1234568)</option>
+                                <option value="3">이지민 (1234569)</option>
+                                <option value="4">박재은 (1234560)</option>
+                            </select>
+                            <input type="text" id="roomInput1" placeholder="방 ID 입력" style="flex: 1; padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
+                        </div>
                     </div>
                 </div>
                 
@@ -554,14 +562,22 @@
                 </div>
             </div>
             
-            <!-- 사용자 2: 정우진 -->
+            <!-- 사용자 2 -->
             <div class="chat-panel">
                 <div class="user-info">
-                    <div class="user-avatar">우진</div>
+                    <div class="user-avatar" id="avatar2">예린</div>
                     <div class="user-details">
-                        <h3>정우진</h3>
-                        <p>20210505 · 경제학과</p>
-                        <p>방: room-woojin-02</p>
+                        <h3 id="userName2">이예린</h3>
+                        <p id="userInfo2">1234568 · 희망대학교</p>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <select id="userSelect2" onchange="changeUser(2)" style="flex: 1; padding: 5px; border-radius: 5px;">
+                                <option value="1">김미림 (1234567)</option>
+                                <option value="2" selected>이예린 (1234568)</option>
+                                <option value="3">이지민 (1234569)</option>
+                                <option value="4">박재은 (1234560)</option>
+                            </select>
+                            <input type="text" id="roomInput2" placeholder="방 ID 입력" style="flex: 1; padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
+                        </div>
                     </div>
                 </div>
                 
@@ -598,24 +614,67 @@
         const users = [
             null, // index 0 사용 안함
             {
-                userId: '4',
-                studentId: '20210404',
-                userName: '최수연',
-                profileImageUrl: 'https://example.com/suyeon.jpg',
-                roomId: 'room-suyeon-01'  // 사용자별 전용 방
+                userId: '1234567',
+                studentId: '1234567',
+                userName: '김미림',
+                university: '희망대학교',
+                profileImageUrl: 'http://profileImage/kim-mirim.jpg',
+                roomId: ''  // 사용자가 입력할 방 ID
             },
             {
-                userId: '5',
-                studentId: '20210505',
-                userName: '정우진',
-                profileImageUrl: 'https://example.com/woojin.jpg',
-                roomId: 'room-woojin-02'  // 사용자별 전용 방
+                userId: '1234568',
+                studentId: '1234568',
+                userName: '이예린',
+                university: '희망대학교',
+                profileImageUrl: 'http://profileImage/lee-yerin.jpg',
+                roomId: ''  // 사용자가 입력할 방 ID
+            },
+            {
+                userId: '1234569',
+                studentId: '1234569',
+                userName: '이지민',
+                university: '희망대학교',
+                profileImageUrl: 'http://profileImage/lee-jimin.jpg',
+                roomId: ''  // 사용자가 입력할 방 ID
+            },
+            {
+                userId: '1234560',
+                studentId: '1234560',
+                userName: '박재은',
+                university: '희망대학교',
+                profileImageUrl: 'http://profileImage/park-jaeeun.jpg',
+                roomId: ''  // 사용자가 입력할 방 ID
             }
         ];
         
         // 방 ID 가져오기 함수
         function getRoomId(userIndex) {
-            return users[userIndex].roomId;
+            const roomInput = document.getElementById(`roomInput${userIndex}`);
+            return roomInput ? roomInput.value.trim() : '';
+        }
+        
+        // 사용자 변경 함수
+        function changeUser(panelIndex) {
+            const selectElement = document.getElementById(`userSelect${panelIndex}`);
+            const selectedUserIndex = parseInt(selectElement.value);
+            const selectedUser = users[selectedUserIndex];
+            
+            if (selectedUser) {
+                // 아바타 업데이트
+                const avatar = document.getElementById(`avatar${panelIndex}`);
+                const shortName = selectedUser.userName.slice(-2);
+                avatar.textContent = shortName;
+                
+                // 사용자 정보 업데이트
+                document.getElementById(`userName${panelIndex}`).textContent = selectedUser.userName;
+                document.getElementById(`userInfo${panelIndex}`).textContent = `${selectedUser.studentId} · ${selectedUser.university}`;
+                
+                // 현재 연결이 되어있다면 연결 해제 후 재연결
+                if (stompClients[panelIndex] && stompClients[panelIndex].connected) {
+                    addMessage(panelIndex, 'System', `사용자를 ${selectedUser.userName}으로 변경합니다. 재연결이 필요합니다.`, 'system');
+                    disconnect(panelIndex);
+                }
+            }
         }
         
         // 메시지 추가 함수
@@ -644,14 +703,18 @@
         
         // WebSocket 연결
         function connect(userIndex) {
-            const user = users[userIndex];
+            const selectElement = document.getElementById(`userSelect${userIndex}`);
+            const selectedUserIndex = parseInt(selectElement.value);
+            const user = users[selectedUserIndex];
             
             if (stompClients[userIndex] && stompClients[userIndex].connected) {
                 addMessage(userIndex, 'System', '이미 연결되어 있습니다', 'system');
                 return;
             }
             
-            const socket = new SockJS('http://localhost:8081/ws');
+            // 왼쪽 패널은 배포 서버, 오른쪽 패널은 로컬 서버
+            const wsUrl = userIndex === 1 ? 'http://43.203.55.49:8081/ws' : 'http://localhost:8081/ws';
+            const socket = new SockJS(wsUrl);
             stompClients[userIndex] = Stomp.over(socket);
             
             stompClients[userIndex].connect({
@@ -673,10 +736,18 @@
         // 채팅방 구독
         function subscribe(userIndex) {
             const stompClient = stompClients[userIndex];
-            const user = users[userIndex];
+            const selectElement = document.getElementById(`userSelect${userIndex}`);
+            const selectedUserIndex = parseInt(selectElement.value);
+            const user = users[selectedUserIndex];
             
             if (!stompClient || !stompClient.connected) {
                 addMessage(userIndex, 'System', '먼저 서버에 연결해주세요', 'error');
+                return;
+            }
+            
+            const roomId = getRoomId(userIndex);
+            if (!roomId) {
+                addMessage(userIndex, 'System', '방 ID를 입력해주세요', 'error');
                 return;
             }
             
@@ -688,7 +759,6 @@
             };
             
             // 채팅방 메시지 구독 
-            const roomId = getRoomId(userIndex);
             console.log(`사용자 ${userIndex} 구독 시도: roomId=${roomId}`);
             stompClient.subscribe(`/topic/room/${roomId}`, function(message) {
                 try {
@@ -696,7 +766,7 @@
                     console.log(`🔥 사용자 ${userIndex} 실시간 메시지 수신:`, chatMessage);
                     console.log(`🔥 메시지 타입: ${chatMessage.messageType}, 방: ${chatMessage.roomId}`);
                     
-                    const isOwnMessage = chatMessage.senderId === users[userIndex].userId;
+                    const isOwnMessage = chatMessage.senderId === user.userId;
                     const messageType = isOwnMessage ? 'own' : 'other';
                     
                     // MessageType에 따른 메시지 처리
@@ -800,7 +870,9 @@
         function sendMessage(userIndex) {
             const stompClient = stompClients[userIndex];
             const input = document.getElementById(`messageInput${userIndex}`);
-            const user = users[userIndex];
+            const selectElement = document.getElementById(`userSelect${userIndex}`);
+            const selectedUserIndex = parseInt(selectElement.value);
+            const user = users[selectedUserIndex];
             
             if (!stompClient || !stompClient.connected) {
                 addMessage(userIndex, 'System', '서버에 연결되어 있지 않습니다', 'error');
@@ -833,7 +905,9 @@
         
         // 정산 요청 전송 (Main Server API 호출)
         function sendSettlement(userIndex) {
-            const user = users[userIndex];
+            const selectElement = document.getElementById(`userSelect${userIndex}`);
+            const selectedUserIndex = parseInt(selectElement.value);
+            const user = users[selectedUserIndex];
             
             currentSettlementId = `settlement_${Date.now()}_${userIndex}`;
             
@@ -851,7 +925,9 @@
             
             addMessage(userIndex, 'System', `💰 Main 서버로 정산 요청 전송 중...`, 'system');
             
-            fetch('http://localhost:8080/api/test/send-settlement-broadcast', {
+            // 왼쪽은 배포 서버, 오른쪽은 로컬 서버
+            const mainServerUrl = userIndex === 1 ? 'http://43.203.55.49:8080' : 'http://localhost:8080';
+            fetch(`${mainServerUrl}/api/test/send-settlement-broadcast`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -880,7 +956,9 @@
         
         // 적금 요청 전송 (Main Server API 호출)
         function sendSavings(userIndex) {
-            const user = users[userIndex];
+            const selectElement = document.getElementById(`userSelect${userIndex}`);
+            const selectedUserIndex = parseInt(selectElement.value);
+            const user = users[selectedUserIndex];
             
             const savingsId = `savings_${Date.now()}_${userIndex}`;
             
@@ -898,7 +976,9 @@
             
             addMessage(userIndex, 'System', `🏦 Main 서버로 적금 요청 전송 중...`, 'system');
 
-            fetch('http://localhost:8080/api/test/send-savings-broadcast', {
+            // 왼쪽은 배포 서버, 오른쪽은 로컬 서버
+            const mainServerUrl = userIndex === 1 ? 'http://43.203.55.49:8080' : 'http://localhost:8080';
+            fetch(`${mainServerUrl}/api/test/send-savings-broadcast`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -927,7 +1007,9 @@
         
         // 정산 완료 알림 전송 (Main Server API 호출)
         function sendSettlementComplete(userIndex) {
-            const user = users[userIndex];
+            const selectElement = document.getElementById(`userSelect${userIndex}`);
+            const selectedUserIndex = parseInt(selectElement.value);
+            const user = users[selectedUserIndex];
             
             const roomId = getRoomId(userIndex);
             const settlementCompleteRequest = {
@@ -942,7 +1024,9 @@
             
             addMessage(userIndex, 'System', `✅ Main 서버로 정산 완료 알림 전송 중...`, 'system');
             
-            fetch('http://localhost:8080/api/test/chat/payment-complete', {
+            // 왼쪽은 배포 서버, 오른쪽은 로컬 서버  
+            const mainServerUrl = userIndex === 1 ? 'http://43.203.55.49:8080' : 'http://localhost:8080';
+            fetch(`${mainServerUrl}/api/test/chat/payment-complete`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -979,7 +1063,9 @@
         
         // 적금 완료 알림 전송 (Main Server API 호출)
         function sendSavingsComplete(userIndex) {
-            const user = users[userIndex];
+            const selectElement = document.getElementById(`userSelect${userIndex}`);
+            const selectedUserIndex = parseInt(selectElement.value);
+            const user = users[selectedUserIndex];
             
             const roomId = getRoomId(userIndex);
             const savingsCompleteRequest = {
@@ -994,7 +1080,9 @@
             
             addMessage(userIndex, 'System', `✅ Main 서버로 적금 완료 알림 전송 중...`, 'system');
             
-            fetch('http://localhost:8080/api/test/chat/savings-complete', {
+            // 왼쪽은 배포 서버, 오른쪽은 로컬 서버
+            const mainServerUrl = userIndex === 1 ? 'http://43.203.55.49:8080' : 'http://localhost:8080';
+            fetch(`${mainServerUrl}/api/test/chat/savings-complete`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1032,7 +1120,9 @@
         // AI 봇 메시지 전송
         function sendAiBotMessage(userIndex) {
             const stompClient = stompClients[userIndex];
-            const user = users[userIndex];
+            const selectElement = document.getElementById(`userSelect${userIndex}`);
+            const selectedUserIndex = parseInt(selectElement.value);
+            const user = users[selectedUserIndex];
             
             if (!stompClient || !stompClient.connected) {
                 addMessage(userIndex, 'System', '❌ 서버에 연결되어 있지 않습니다', 'error');
@@ -1133,7 +1223,9 @@
             }
             
             const stompClient = stompClients[userIndex];
-            const user = users[userIndex];
+            const selectElement = document.getElementById(`userSelect${userIndex}`);
+            const selectedUserIndex = parseInt(selectElement.value);
+            const user = users[selectedUserIndex];
             
             const chatMessage = {
                 content: aiQuery,
@@ -1169,7 +1261,9 @@
         
         // 학식 정보 요청 전송 (Main Server API 호출)
         function sendCafeteriaInfo(userIndex) {
-            const user = users[userIndex];
+            const selectElement = document.getElementById(`userSelect${userIndex}`);
+            const selectedUserIndex = parseInt(selectElement.value);
+            const user = users[selectedUserIndex];
             
             const roomId = getRoomId(userIndex);
             const cafeteriaRequest = {
@@ -1180,7 +1274,9 @@
             
             addMessage(userIndex, 'System', `🍚 Chat 서버로 학식 정보 요청 중...`, 'system');
             
-            fetch(`http://localhost:8081/api/chat/${roomId}/cafeteria`, {
+            // 왼쪽은 배포 서버, 오른쪽은 로컬 서버
+            const chatServerUrl = userIndex === 1 ? 'http://43.203.55.49:8081' : 'http://localhost:8081';
+            fetch(`${chatServerUrl}/api/chat/${roomId}/cafeteria`, {
                 method: 'POST',
                 mode: 'cors',
                 headers: {
@@ -1215,7 +1311,9 @@
             addMessage(userIndex, 'System', `📜 이전 채팅 기록 로딩 중...`, 'system');
             
             const roomId = getRoomId(userIndex);
-            fetch(`http://localhost:8081/api/chat/rooms/${roomId}/messages?limit=20`, {
+            // 왼쪽은 배포 서버, 오른쪽은 로컬 서버
+            const chatServerUrl = userIndex === 1 ? 'http://43.203.55.49:8081' : 'http://localhost:8081';
+            fetch(`${chatServerUrl}/api/chat/rooms/${roomId}/messages?limit=20`, {
                 method: 'GET',
                 mode: 'cors',
                 headers: {
@@ -1245,7 +1343,12 @@
                         messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
                         
                         messages.forEach(msg => {
-                            const isOwnMessage = msg.senderId === users[userIndex].userId;
+                            // 현재 선택된 사용자 정보 가져오기
+                            const currentSelectElement = document.getElementById(`userSelect${userIndex}`);
+                            const currentSelectedUserIndex = parseInt(currentSelectElement.value);
+                            const currentUser = users[currentSelectedUserIndex];
+                            
+                            const isOwnMessage = msg.senderId === currentUser.userId;
                             const messageType = isOwnMessage ? 'own' : 'other';
                             
                             // MessageType에 따른 히스토리 메시지 처리
@@ -1386,15 +1489,15 @@
         window.addEventListener('DOMContentLoaded', function() {
             // 환영 메시지
             addMessage(1, 'System', 
-                `🎉 HeyBob 방 분리 테스트!
-                <br>👤 최수연 (20210404)
-                <br>🏠 전용방: room-suyeon-01
-                <br>💡 'Connect' → 'Subscribe' 후 채팅 테스트`, 'system');
+                `🎉 HeyBob 채팅방 테스트!
+                <br>👤 사용자 선택: 김미림, 이예린, 이지민, 박재은
+                <br>🏠 방 ID를 입력하고 'Connect' → 'Subscribe'
+                <br>💡 같은 방 ID로 설정하면 채팅 가능!`, 'system');
                 
             addMessage(2, 'System', 
                 `🎉 환영합니다!
-                <br>👤 정우진 (20210505)
-                <br>🏠 전용방: room-woojin-02  
+                <br>👤 사용자를 선택하고 방 ID를 입력하세요
+                <br>🏠 방 ID가 같으면 실시간 채팅 가능
                 <br>💡 연결 후 정산/적금 버튼 테스트 가능`, 'system');
         });
     </script>

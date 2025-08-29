@@ -1,7 +1,9 @@
 package com.shinhan.heybob.domain.savings.controller;
 
 import com.shinhan.heybob.common.user.UserPrincipalDetails;
+import com.shinhan.heybob.domain.savings.dto.RegularMeetingPageResponseDto;
 import com.shinhan.heybob.domain.savings.dto.SavingsAccountCreateRequestDto;
+import com.shinhan.heybob.domain.savings.service.SavingsQueryService;
 import com.shinhan.heybob.domain.savings.service.SavingsService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 public class SavingsController {
 
     private final SavingsService savingsService;
+    private final SavingsQueryService savingsQueryService;
 
     @PostMapping("/{chatId}/create")
     public ResponseEntity<Void> createSavingsAccount(
@@ -37,5 +40,11 @@ public class SavingsController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
+    @GetMapping("/{chatRoomId}/page")
+    public ResponseEntity<RegularMeetingPageResponseDto> getRegularMeetingPage(
+            @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
+            @PathVariable Long chatRoomId) {
+        return ResponseEntity.ok(savingsQueryService.getRegularMeetingPageByChatRoom(chatRoomId));
+    }
 
 }
