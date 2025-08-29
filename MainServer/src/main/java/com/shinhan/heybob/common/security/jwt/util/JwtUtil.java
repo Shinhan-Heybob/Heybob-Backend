@@ -17,16 +17,16 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    @Value("${jwt.secret}")
+    @Value("${jwt.secret:2ystDvShpsIMZnh5xIx2gLyG31Mi5ME8w+bM5Zb1y+Cj6Xa7nxhfufINtr296RUli6R3pZV7/xr2jSEV73E1fw==}")
     private String secret;
 
-    @Value("${jwt.access-ttl}")
+    @Value("${jwt.access-ttl:36000000}")
     private long accessTokenValiditySeconds;
 
-    @Value("${jwt.refresh-ttl}")
+    @Value("${jwt.refresh-ttl:36000000}")
     private long refreshTokenValiditySeconds;
 
-    @Value("${jwt.token-prefix}")
+    @Value("${jwt.token-prefix:Authorization}")
     private String tokenPrefix;
 
     @Value("${jwt.header}")
