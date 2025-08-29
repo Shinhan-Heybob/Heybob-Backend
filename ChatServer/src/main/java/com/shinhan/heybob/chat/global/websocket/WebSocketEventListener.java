@@ -101,8 +101,8 @@ public class WebSocketEventListener {
         // 세션 정보 조회
         UserSessionInfo userInfo = sessionUserMap.get(sessionId);
         if (userInfo != null) {
-            // 퇴장 메시지 전송
-            sendLeaveMessage(userInfo);
+            // 퇴장 메시지 전송 - 주석 처리
+            // sendLeaveMessage(userInfo);
             
             // 인메모리에서 입장 기록 제거 (완전 퇴장 시)
             removeUserFromRoomInMemory(userInfo.getRoomId(), userInfo.getUserId());
@@ -213,8 +213,8 @@ public class WebSocketEventListener {
                     addUserToRoomInMemory(roomId, userId);
                     log.info("✅ 첫 입장: 입장 메시지 전송 예정 - sessionId={}, userId={}, userName={}, roomId={}", sessionId, userId, userName, roomId);
                     
-                    // 동기화 블록 밖에서 메시지 전송 (I/O 작업이므로)
-                    sendJoinMessage(userInfo);
+                    // 동기화 블록 밖에서 메시지 전송 (I/O 작업이므로) - 주석 처리
+                    // sendJoinMessage(userInfo);
                 } else {
                     log.info("🔄 재구독: 입장 메시지 생략 - sessionId={}, userId={}, userName={}, roomId={}", sessionId, userId, userName, roomId);
                 }
@@ -273,6 +273,8 @@ public class WebSocketEventListener {
     }
 
     private void sendLeaveMessage(UserSessionInfo userInfo) {
+        // 퇴장 메시지 로직 전체 주석 처리
+        /*
         try {
             String messageId = java.util.UUID.randomUUID().toString();
             String content = userInfo.getUserName() + "님이 퇴장했습니다.";
@@ -304,6 +306,8 @@ public class WebSocketEventListener {
         } catch (Exception e) {
             log.error("❌ 퇴장 메시지 처리 실패: roomId={}, userName={}", userInfo.getRoomId(), userInfo.getUserName(), e);
         }
+        */
+        log.info("퇴장 메시지 전송 건너뜀 (비활성화됨): roomId={}, userName={}", userInfo.getRoomId(), userInfo.getUserName());
     }
 
     private void incrementRoomUserCount(String roomId) {

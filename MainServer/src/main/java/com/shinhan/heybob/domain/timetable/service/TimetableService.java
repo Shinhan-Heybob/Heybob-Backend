@@ -166,8 +166,9 @@ public class TimetableService {
 
             // 해당 시간에 강의가 있는 사용자들 찾기
             LocalTime finalCurrent = current;
+            LocalTime finalSlotEnd = slotEnd;
             Set<Long> busyUserIds = allLectures.stream()
-                    .filter(lecture -> isTimeOverlapping(lecture, finalCurrent, end))
+                    .filter(lecture -> isTimeOverlapping(lecture, finalCurrent, finalSlotEnd))
                     .map(lecture -> timetableUserMap.get(lecture.getTimetable().getId())) // timetableId -> userId 변환
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet());

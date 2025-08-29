@@ -262,23 +262,41 @@ public class FinanceAccountServiceImpl implements FinanceAccountService{
                 .map(item -> {
                     // 각 거래별로 상대방 계좌 정보 확인
                     String transactorAccountNo = (String) item.get("transactionAccountNo");
+                    String transactionTypeName = (String) item.get("transactionTypeName");
                     String transactorName = null;
                     
                     if (transactorAccountNo != null && !transactorAccountNo.isEmpty()) {
                         try {
+                            // 우선 우리 시스템의 사용자인지 확인
                             transactorName = userAccountUtil.getUserNameByPersonalAccountNo(transactorAccountNo);
+                            log.debug("거래 상대방을 시스템에서 찾음: {} -> {}", transactorAccountNo, transactorName);
                         } catch (Exception e) {
-                            // 상대방이 우리 시스템 사용자가 아닐 수 있음
-                            log.debug("거래 상대방을 찾을 수 없음: {}", transactorAccountNo);
-                            transactorName = (String) item.get("transactionSummary"); // 거래 요약 정보 사용
-                            if (transactorName == null || transactorName.isEmpty()) {
-                                transactorName = "외부 계좌";
+                            // 상대방이 우리 시스템 사용자가 아닌 경우
+                            log.debug("거래 상대방을 시스템에서 찾을 수 없음: {}", transactorAccountNo);
+                            
+                            // 거래 메모에서 실제 이름을 찾아보기
+                            String transactionMemo = (String) item.get("transactionMemo");
+                            if (transactionMemo != null && !transactionMemo.isEmpty() 
+                                && !transactionMemo.equals("입금") && !transactionMemo.equals("출금")) {
+                                transactorName = transactionMemo; // 메모에 실제 이름이 있을 가능성
+                            } else {
+                                // 마지막으로 거래 유형명 확인
+                                if (transactionTypeName != null && !transactionTypeName.equals("입금") && !transactionTypeName.equals("출금")) {
+                                    transactorName = transactionTypeName;
+                                } else {
+                                    transactorName = "외부 계좌";
+                                }
                             }
                         }
                     } else {
-                        // transactionAccountNo가 없는 경우
-                        transactorName = (String) item.get("transactionSummary");
-                        if (transactorName == null || transactorName.isEmpty()) {
+                        // transactionAccountNo가 없는 경우 (ATM 입금, 이체 등)
+                        String transactionMemo = (String) item.get("transactionMemo");
+                        if (transactionMemo != null && !transactionMemo.isEmpty() 
+                            && !transactionMemo.equals("입금") && !transactionMemo.equals("출금")) {
+                            transactorName = transactionMemo;
+                        } else if (transactionTypeName != null && !transactionTypeName.equals("입금") && !transactionTypeName.equals("출금")) {
+                            transactorName = transactionTypeName;
+                        } else {
                             transactorName = "알 수 없음";
                         }
                     }
@@ -325,7 +343,7 @@ public class FinanceAccountServiceImpl implements FinanceAccountService{
                 header,
                 accountNo,
                 String.valueOf(amount),
-                "입금"
+                "시스템 입금" // "입금"에서 "시스템 입금"으로 변경하여 구분
         );
 
         HttpHeaders headers = new HttpHeaders();

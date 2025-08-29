@@ -2,6 +2,8 @@ package com.shinhan.heybob.domain.settlement.service;
 
 import com.shinhan.heybob.common.exception.ExceptionStatus;
 import com.shinhan.heybob.common.exception.HeybobException;
+import com.shinhan.heybob.domain.meal.entity.MealAppointment;
+import com.shinhan.heybob.domain.meal.repository.MealAppointmentRepository;
 import com.shinhan.heybob.domain.settlement.dto.SettlementPageResponseDto;
 import com.shinhan.heybob.domain.settlement.dto.SettlementParticipantItemDto;
 import com.shinhan.heybob.domain.settlement.entity.Settlement;
@@ -11,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -19,14 +22,22 @@ import java.util.List;
 public class SettlementQueryService {
 
     private final SettlementRepository settlementRepository;
+    private final MealAppointmentRepository mealAppointmentRepository;
 
     // 채팅방 기준으로 조회하는 버전도 필요하면 제공
     @Transactional(readOnly = true)
     public SettlementPageResponseDto getSettlementPageByChatRoom(Long chatRoomId) {
-        Settlement s = settlementRepository.findDetailByChatRoomId(chatRoomId)
-                .orElseThrow(() -> new HeybobException(ExceptionStatus.SETTLEMENT_NOT_FOUND));
-        // 위와 동일 매핑
-        // ... 재사용 위해 별도 private mapper로 빼도 좋음
+        // 모임 정보는 항상 가져옴
+        MealAppointment mealAppointment = mealAppointmentRepository.findByChatRoomId(chatRoomId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND));
+        
+        // 정산 정보는 있으면 가져오고 없으면 null
+        return settlementRepository.findDetailByChatRoomId(chatRoomId)
+                .map(this::mapToSettlementPageResponseDto)
+                .orElse(createEmptySettlementPageResponse(mealAppointment));
+    }
+
+    private SettlementPageResponseDto mapToSettlementPageResponseDto(Settlement s) {
         List<SettlementParticipantItemDto> items = s.getParticipants().stream()
                 .map(sp -> new SettlementParticipantItemDto(
                         sp.getParticipantUser().getId(),
@@ -54,6 +65,24 @@ public class SettlementQueryService {
                 s.getParticipantsCount(),
                 paidCount,
                 items
+        );
+    }
+
+    private SettlementPageResponseDto createEmptySettlementPageResponse(MealAppointment mealAppointment) {
+        return new SettlementPageResponseDto(
+                null, // settlementId
+                null, // status
+                null, // initiatorId
+                null, // initiatorName
+                mealAppointment.getId(), // mealAppointmentId
+                mealAppointment.getName(), // mealName
+                mealAppointment.getAppointmentDate(), // appointmentDate
+                mealAppointment.getAppointmentTime(), // appointmentTime
+                0, // totalAmount
+                0, // perHeadAmount
+                0, // participantsCount
+                0, // paidCount
+                Collections.emptyList() // participants
         );
     }
 }
