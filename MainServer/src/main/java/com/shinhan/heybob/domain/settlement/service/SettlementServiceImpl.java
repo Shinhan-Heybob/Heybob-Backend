@@ -204,14 +204,22 @@ public class SettlementServiceImpl implements SettlementService {
     @Transactional
     @Override
     public SettlementResponseDto getSettlementInfo(Long userId, Long chatRoomId) {
+        log.info("Getting settlement info for userId: {}, chatRoomId: {}", userId, chatRoomId);
         try {
             MealAppointment meal = mealAppointmentRepository.findByChatRoomId(chatRoomId)
-                    .orElseThrow(() -> new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND));
+                    .orElseThrow(() -> {
+                        log.error("MealAppointment not found for chatRoomId: {}", chatRoomId);
+                        return new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND);
+                    });
 
             Settlement settlement = settlementRepository.findByMealAppointment(meal)
-                    .orElseThrow(() -> new HeybobException(ExceptionStatus.SETTLEMENT_NOT_FOUND));
+                    .orElseThrow(() -> {
+                        log.error("Settlement not found for mealAppointment: {}", meal.getId());
+                        return new HeybobException(ExceptionStatus.SETTLEMENT_NOT_FOUND);
+                    });
 
             if (settlement.getMealAppointment().getChatRoomId() == null) {
+                log.error("ChatRoomId is null for mealAppointment: {}", meal.getId());
                 throw new HeybobException(ExceptionStatus.NOT_FOUND_CHAT_ROOM_ID);
             }
 
