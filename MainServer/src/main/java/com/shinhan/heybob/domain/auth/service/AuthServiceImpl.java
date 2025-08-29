@@ -101,20 +101,24 @@ public class AuthServiceImpl implements AuthService {
         return new UserResponseDto(createdUser);
     }
 
+    @Transactional
     @Override
-    public AuthResponseDto login(UserLoginRequestDto userLoginRequestDto) {
+    public AuthResponseDto login(UserLoginRequestDto req) {
         User user = userRepository.findByUniversityAndStudentId(
-                        userLoginRequestDto.getUniversity(), userLoginRequestDto.getStudentId())
+                        req.getUniversity(), req.getStudentId())
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.USER_NOT_FOUND));
 
-        if (!passwordEncoder.matches(userLoginRequestDto.getPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(req.getPassword(), user.getPassword())) {
             throw new HeybobException(ExceptionStatus.INVALID_PASSWORD);
         }
 
         UserDetails userDetails = userDetailsService.loadUserById(user.getId());
 
-        String accessToken = jwtUtil.generateAccessToken((UserPrincipalDetails) userDetails);
+        String accessToken  = jwtUtil.generateAccessToken((UserPrincipalDetails) userDetails);
         String refreshToken = jwtUtil.generateRefreshToken((UserPrincipalDetails) userDetails);
+
+        // ✅ 로그인 시 refreshToken 저장/갱신
+        saveOrUpdateRefreshToken(user.getId(), refreshToken);
 
         return AuthResponseDto.builder()
                 .userId(user.getId())
@@ -157,4 +161,14 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    private void saveOrUpdateRefreshToken(Long userId, String token) {
+        refreshTokenRepository.findByUserId(userId)
+                .ifPresentOrElse(
+                        rt -> { rt.updateToken(token); refreshTokenRepository.save(rt); },
+                        () -> refreshTokenRepository.save(RefreshToken.builder()
+                                .userId(userId)
+                                .token(token)
+                                .build())
+                );
+    }
 }
