@@ -42,6 +42,9 @@ public class SettlementQueryService {
                 .map(sp -> new SettlementParticipantItemDto(
                         sp.getParticipantUser().getId(),
                         sp.getParticipantUser().getName(),
+                        sp.getParticipantUser().getStudentId(),
+                        sp.getParticipantUser().getDepartment(),
+                        sp.getParticipantUser().getProfileUrl(),
                         sp.getAmount(),
                         sp.getTransferStatus() == TransferStatus.SUCCESS,
                         sp.getTransferStatus().name()
