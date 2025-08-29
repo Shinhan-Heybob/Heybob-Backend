@@ -11,6 +11,8 @@ import com.shinhan.heybob.domain.meal.dto.response.MealAppointmentStatisticsResp
 import com.shinhan.heybob.domain.meal.entity.MealType;
 import com.shinhan.heybob.domain.notification.service.ChatIntegrationService;
 import com.shinhan.heybob.domain.meal.service.MealAppointmentService;
+import com.shinhan.heybob.domain.settlement.dto.SettlementPageResponseDto;
+import com.shinhan.heybob.domain.settlement.service.SettlementQueryService;
 import com.sun.security.auth.UserPrincipal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ import java.util.List;
 public class MealAppointmentController {
 
     private final MealAppointmentService mealAppointmentService;
+    private final SettlementQueryService settlementQueryService;
 
     @PostMapping
     public ResponseEntity<MealAppointmentIdResponse> createMealAppointment(

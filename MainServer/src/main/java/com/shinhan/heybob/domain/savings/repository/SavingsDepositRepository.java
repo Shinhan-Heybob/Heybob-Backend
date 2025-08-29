@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -26,4 +27,6 @@ public interface SavingsDepositRepository extends JpaRepository<SavingsDeposit, 
 
     Optional<SavingsDeposit> findBySavingsAccount_IdAndParticipantUser_IdAndCycleNo(
             Long accountId, Long userId, int cycleNo);
+
+    List<SavingsDeposit> findBySavingsAccount_Id(Long savingsAccountId);
 }
