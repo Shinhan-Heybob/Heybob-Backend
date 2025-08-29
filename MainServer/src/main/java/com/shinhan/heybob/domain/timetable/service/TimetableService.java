@@ -39,17 +39,15 @@ public class TimetableService {
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.USER_NOT_FOUND));
 
         Timetable timetable = Timetable.builder()
-                .timeTableName(timetableCreateRequestDto.timeTableName())
                 .user(user)
                 .build();
         Timetable savedTimetable = timetableRepository.save(timetable);
         return savedTimetable.getId();
     }
 
-    public TimetableGetResponseDto getTimeTable(Long timeTableId){
-        Timetable timetable = timetableRepository.findById(timeTableId)
-                .orElseThrow(() -> new HeybobException(ExceptionStatus.TIMETABLE_NOT_FOUND));
-        List<Lecture> lectures = lectureRepository.findAllByTimetableId(timeTableId);
+    public TimetableGetResponseDto getTimeTable(Long userId){
+        Timetable timetable = timetableRepository.findByUserId(userId);
+        List<Lecture> lectures = lectureRepository.findAllByTimetableId(timetable.getId());
         List<LectureDto> lectureDtoList = lectures.stream().map(
                 lecture -> LectureDto.builder()
                         .lectureId(lecture.getId())
@@ -65,7 +63,6 @@ public class TimetableService {
 
         return TimetableGetResponseDto.builder()
                 .id(timetable.getId())
-                .timeTableName(timetable.getTimeTableName())
                 .lectures(lectureDtoList)
                 .build();
     }
@@ -74,35 +71,35 @@ public class TimetableService {
         timetableRepository.deleteById(timeTableId);
     }
 
-    public List<TimetableGetResponseDto> getMyTimetables(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new HeybobException(ExceptionStatus.USER_NOT_FOUND));
-        
-        List<Timetable> timetables = user.getTimetableList();
-        
-        return timetables.stream()
-                .map(timetable -> {
-                    List<LectureDto> lectureDtos = timetable.getLectureList().stream()
-                            .map(lecture -> LectureDto.builder()
-                                    .lectureId(lecture.getId())
-                                    .lectureName(lecture.getName())
-                                    .subjectCode(lecture.getSubjectCode())
-                                    .dayOfWeek(lecture.getDayOfWeek())
-                                    .startTime(lecture.getStartTime())
-                                    .endTime(lecture.getEndTime())
-                                    .classroom(lecture.getClassroom())
-                                    .professor(lecture.getProfessor())
-                                    .build())
-                            .toList();
-                    
-                    return TimetableGetResponseDto.builder()
-                            .id(timetable.getId())
-                            .timeTableName(timetable.getTimeTableName())
-                            .lectures(lectureDtos)
-                            .build();
-                })
-                .collect(Collectors.toList());
-    }
+//    public List<TimetableGetResponseDto> getMyTimetables(Long userId) {
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(() -> new HeybobException(ExceptionStatus.USER_NOT_FOUND));
+//
+//        List<Timetable> timetables = user.getTimetableList();
+//
+//        return timetables.stream()
+//                .map(timetable -> {
+//                    List<LectureDto> lectureDtos = timetable.getLectureList().stream()
+//                            .map(lecture -> LectureDto.builder()
+//                                    .lectureId(lecture.getId())
+//                                    .lectureName(lecture.getName())
+//                                    .subjectCode(lecture.getSubjectCode())
+//                                    .dayOfWeek(lecture.getDayOfWeek())
+//                                    .startTime(lecture.getStartTime())
+//                                    .endTime(lecture.getEndTime())
+//                                    .classroom(lecture.getClassroom())
+//                                    .professor(lecture.getProfessor())
+//                                    .build())
+//                            .toList();
+//
+//                    return TimetableGetResponseDto.builder()
+//                            .id(timetable.getId())
+//                            .timeTableName(timetable.getTimeTableName())
+//                            .lectures(lectureDtos)
+//                            .build();
+//                })
+//                .collect(Collectors.toList());
+//    }
 
     public TimetableCompareGetResponseDto compareTimetables(TimetableCompareGetRequestDto timetableCompareGetRequestDto){
         List<Long> userIdList = timetableCompareGetRequestDto.userIdList();

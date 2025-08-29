@@ -17,7 +17,7 @@ public class CorsConfig {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
 
         corsConfiguration.setAllowCredentials(true);
-        corsConfiguration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "https://*.heybob.com"));
+        corsConfiguration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "http://43.203.55.49:8080", "http://43.203.55.49:8081"));
         corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
         corsConfiguration.addExposedHeader("Authorization");

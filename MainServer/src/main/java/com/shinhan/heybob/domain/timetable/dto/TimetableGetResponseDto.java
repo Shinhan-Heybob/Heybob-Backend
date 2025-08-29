@@ -7,7 +7,6 @@ import lombok.Builder;
 @Builder
 public record TimetableGetResponseDto(
         Long id,
-        String timeTableName,
         List<LectureDto> lectures
 ) {
 }

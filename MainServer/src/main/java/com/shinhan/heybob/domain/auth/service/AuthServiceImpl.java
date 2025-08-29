@@ -12,6 +12,8 @@ import com.shinhan.heybob.domain.auth.repository.RefreshTokenRepository;
 import com.shinhan.heybob.domain.financePersonal.entity.ExternalFinanceUser;
 import com.shinhan.heybob.domain.financePersonal.service.ExternalFinanceUserService;
 import com.shinhan.heybob.domain.financePersonal.service.FinanceAccountService;
+import com.shinhan.heybob.domain.timetable.entity.Timetable;
+import com.shinhan.heybob.domain.timetable.repository.TimetableRepository;
 import com.shinhan.heybob.domain.user.dto.UserCreateRequestDto;
 import com.shinhan.heybob.domain.user.dto.UserResponseDto;
 import com.shinhan.heybob.domain.user.entity.User;
@@ -36,6 +38,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final ExternalFinanceUserService externalFinanceUserService;
     private final FinanceAccountService financeAccountService;
+    private final TimetableRepository timetableRepository;
 
     @Transactional
     @Override
@@ -80,6 +83,14 @@ public class AuthServiceImpl implements AuthService {
 
         User createdUser = userCreateRequestDto.toEntity(userCreateRequestDto, encryptedPassword);
 
+        userRepository.save(createdUser);
+
+        Timetable timetable = Timetable.builder()
+                .user(createdUser)
+                .build();
+        timetableRepository.save(timetable);
+
+        createdUser.setTimetable(timetable);
         userRepository.save(createdUser);
 
         log.info("[User] 사용자 생성 완료");

@@ -40,11 +40,15 @@ public class User extends BaseTime {
     @Column(name = "user_department", nullable = false, updatable = false)
     private String department;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Timetable> timetableList;
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "timetable_id")
+    private Timetable timetable;
 
     public void updateProfileUrl(String newProfileUrl) {
         this.profileUrl = newProfileUrl;
     }
 
+    public void setTimetable(Timetable timetable) {
+        this.timetable = timetable;
+    }
 }

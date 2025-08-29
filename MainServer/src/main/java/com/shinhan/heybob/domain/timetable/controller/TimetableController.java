@@ -29,14 +29,14 @@ public class TimetableController {
         return ResponseEntity.status(HttpStatus.CREATED).body(timetableId);
     }
 
-    @GetMapping("/list")
-    public ResponseEntity<List<TimetableGetResponseDto>> getMyTimetables(@UserId Long userId) {
-        return ResponseEntity.ok(timetableService.getMyTimetables(userId));
-    }
+//    @GetMapping("/list")
+//    public ResponseEntity<List<TimetableGetResponseDto>> getMyTimetables(@UserId Long userId) {
+//        return ResponseEntity.ok(timetableService.getMyTimetables(userId));
+//    }
 
-    @GetMapping("/{timeTableId}")
-    public ResponseEntity<TimetableGetResponseDto> getTimetable(@PathVariable Long timeTableId) {
-        return ResponseEntity.ok(timetableService.getTimeTable(timeTableId));
+    @GetMapping
+    public ResponseEntity<TimetableGetResponseDto> getTimetable(@UserId Long userId) {
+        return ResponseEntity.ok(timetableService.getTimeTable(userId));
     }
 
     @DeleteMapping("/{timeTableId}")

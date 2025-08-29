@@ -12,4 +12,5 @@ import java.util.List;
 public interface TimetableRepository extends JpaRepository<Timetable, Long> {
 
     List<Timetable> findByUserIdIn(List<Long> userIds);
+    Timetable findByUserId(Long userId);
 }
