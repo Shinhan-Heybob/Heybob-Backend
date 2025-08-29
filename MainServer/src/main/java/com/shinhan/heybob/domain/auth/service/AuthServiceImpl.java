@@ -17,7 +17,7 @@ import com.shinhan.heybob.domain.user.dto.UserResponseDto;
 import com.shinhan.heybob.domain.user.entity.User;
 import com.shinhan.heybob.domain.user.repository.UserRepository;
 import com.shinhan.heybob.domain.user.service.UserDetailsServiceImpl;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;

@@ -20,7 +20,7 @@ import com.shinhan.heybob.domain.settlement.repository.SettlementParticipantRepo
 import com.shinhan.heybob.domain.settlement.repository.SettlementRepository;
 import com.shinhan.heybob.domain.user.entity.User;
 import com.shinhan.heybob.domain.user.repository.UserRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -201,7 +201,7 @@ public class SettlementServiceImpl implements SettlementService {
     }
 
 
-    @Transactional
+    @Transactional(readOnly = true)
     @Override
     public SettlementResponseDto getSettlementInfo(Long userId, Long chatRoomId) {
         log.info("Getting settlement info for userId: {}, chatRoomId: {}", userId, chatRoomId);
