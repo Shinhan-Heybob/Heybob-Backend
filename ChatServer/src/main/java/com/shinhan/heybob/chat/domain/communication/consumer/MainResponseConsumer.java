@@ -78,7 +78,7 @@ public class MainResponseConsumer {
                 );
             
             // 항상 로그 출력 (디버깅용)
-            log.info("🔍 Redis Stream 읽기 결과: messages={}", messages != null ? messages.size() : "null");
+            // log.info("🔍 Redis Stream 읽기 결과: messages={}", messages != null ? messages.size() : "null");
             
             if (messages != null && !messages.isEmpty()) {
                 log.info("📨 Main 서버로부터 {} 개 메시지 수신", messages.size());
