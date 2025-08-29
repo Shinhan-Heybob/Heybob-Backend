@@ -6,6 +6,7 @@ import com.shinhan.heybob.domain.timetable.dto.TimetableCreateRequestDto;
 import com.shinhan.heybob.domain.timetable.dto.TimetableGetResponseDto;
 import com.shinhan.heybob.domain.timetable.service.TimetableService;
 import java.net.URI;
+import java.util.List;
 
 import com.shinhan.heybob.domain.user.annotation.UserId;
 import lombok.RequiredArgsConstructor;
@@ -21,11 +22,16 @@ public class TimetableController {
     private final TimetableService timetableService;
 
     @PostMapping
-    public ResponseEntity<Void> createTimetable(@RequestBody TimetableCreateRequestDto timetableCreateRequestDto,
+    public ResponseEntity<Long> createTimetable(@RequestBody TimetableCreateRequestDto timetableCreateRequestDto,
                                                 @UserId Long userId) {
         System.out.print(userId);
-        timetableService.createTimetable(timetableCreateRequestDto, userId);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        Long timetableId = timetableService.createTimetable(timetableCreateRequestDto, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(timetableId);
+    }
+
+    @GetMapping("/list")
+    public ResponseEntity<List<TimetableGetResponseDto>> getMyTimetables(@UserId Long userId) {
+        return ResponseEntity.ok(timetableService.getMyTimetables(userId));
     }
 
     @GetMapping("/{timeTableId}")
@@ -39,7 +45,7 @@ public class TimetableController {
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
-    @GetMapping("/compare")
+    @PostMapping("/compare")
     public ResponseEntity<TimetableCompareGetResponseDto> compareTimetables(@RequestBody TimetableCompareGetRequestDto timetableCompareGetRequestDto){
         return ResponseEntity.ok(timetableService.compareTimetables(timetableCompareGetRequestDto));
     }

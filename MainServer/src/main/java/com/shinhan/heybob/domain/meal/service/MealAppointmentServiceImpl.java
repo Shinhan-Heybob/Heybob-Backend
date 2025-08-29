@@ -169,7 +169,7 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
         }
 
         List<MealAppointment> appointments = mealAppointmentRepository.findByUserIdWithParticipants(userId);
-        LocalDateTime now = LocalDateTime.now();
+        LocalDate today = LocalDate.now();
         
         return appointments.stream()
                 .sorted((a, b) -> {
@@ -179,11 +179,8 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
                     return aDateTime.compareTo(bDateTime);
                 })
                 .map(appointment -> {
-                    LocalDateTime appointmentDateTime = LocalDateTime.of(
-                            appointment.getAppointmentDate(), 
-                            appointment.getAppointmentTime()
-                    );
-                    boolean isActive = appointmentDateTime.isAfter(now);
+                    // 날짜 기준으로만 active/inactive 판단 (오늘 날짜 포함해서 이후면 active)
+                    boolean isActive = !appointment.getAppointmentDate().isBefore(today);
                     
                     User creator = appointment.getCreator();
                     return MealAppointmentListResponse.builder()
@@ -306,5 +303,25 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
                 .regularMeetingCount(regularMeetingCount)
                 .totalCount(totalCount)
                 .build();
+    }
+    
+    @Override
+    @Transactional
+    public void deleteMealAppointment(Long appointmentId, Long userId) {
+        if (appointmentId == null || userId == null) {
+            throw new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND);
+        }
+        
+        MealAppointment appointment = mealAppointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND));
+        
+        // 생성자만 삭제할 수 있도록 권한 체크
+        if (!appointment.getCreator().getId().equals(userId)) {
+            throw new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND);
+        }
+        
+        log.info("🗑️ 밥약 삭제: appointmentId={}, creatorId={}", appointmentId, userId);
+        mealAppointmentRepository.delete(appointment);
+        log.info("✅ 밥약 삭제 완료: appointmentId={}", appointmentId);
     }
 }

@@ -26,4 +26,6 @@ public interface MealAppointmentService {
     List<MealAppointmentListResponse> getUserMealAppointmentList(Long userId, String status, MealType type);
     
     MealAppointmentStatisticsResponse getUserMealAppointmentStatistics(Long userId);
+    
+    void deleteMealAppointment(Long appointmentId, Long userId);
 }

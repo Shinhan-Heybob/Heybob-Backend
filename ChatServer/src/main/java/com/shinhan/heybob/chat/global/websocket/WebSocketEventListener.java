@@ -234,6 +234,8 @@ public class WebSocketEventListener {
     }
 
     private void sendJoinMessage(UserSessionInfo userInfo) {
+        // 입장 메시지 주석 처리 - 너무 자주 표시되어 사용자 요청으로 비활성화
+        /*
         try {
             String messageId = java.util.UUID.randomUUID().toString();
             String content = userInfo.getUserName() + "님이 입장했습니다.";
@@ -265,6 +267,9 @@ public class WebSocketEventListener {
         } catch (Exception e) {
             log.error("❌ 입장 메시지 처리 실패: roomId={}, userName={}", userInfo.getRoomId(), userInfo.getUserName(), e);
         }
+        */
+        
+        log.info("입장 메시지 전송 건너뜀 (비활성화됨): roomId={}, userName={}", userInfo.getRoomId(), userInfo.getUserName());
     }
 
     private void sendLeaveMessage(UserSessionInfo userInfo) {
