@@ -22,6 +22,10 @@ public class UserResponseDto {
         this.profileUrl = user.getProfileUrl();
         this.university = user.getUniversity();
         this.department = user.getDepartment();
+
+        if (name == null) {
+            this.name = "헤이밥";
+        }
     }
 
     public User toEntity() {
