@@ -306,10 +306,10 @@ public class FinanceAccountServiceImpl implements FinanceAccountService{
                         .transactionUniqueNo((String) item.get("transactionUniqueNo"))
                         .transactionDate((String) item.get("transactionDate"))
                         .transactionTime((String) item.get("transactionTime"))
-                        .transactionTypeName((String) item.get("transactionBalance")) //transactionBalance와 transactionTypeName 일부러 둘이 바꿔놓음
-                        .transactionBalance((String) item.get("transactionTypeName"))
+                        .transactionTypeName(transactorName)
+                        .transactionBalance((String) item.get("transactionBalance"))
                         .transactionAfterBalance((String) item.get("transactionAfterBalance"))
-                        .transactorName(transactorName)
+                        .transactorName((String) item.get("transactionTypeName"))
                         .eventTitle((String) item.get("transactionMemo"))
                         .build();
                 })
