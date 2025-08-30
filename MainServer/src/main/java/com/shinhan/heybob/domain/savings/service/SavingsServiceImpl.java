@@ -116,14 +116,6 @@ public class SavingsServiceImpl implements SavingsService {
         MealAppointment mealAppointment = mealAppointmentRepository.findByChatRoomId(chatId)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND));
 
-        savingsAccountRepository.save(
-                SavingsAccount.builder()
-                        .accountNo(accountNo)
-                        .mealAppointment(mealAppointment)
-                        .ownerUser(creator)
-                        .build()
-        );
-
         int cycles = totalAmount / perAmount; // 회수 계산 (나머지는 정책에 따라 처리)
         if (cycles <= 0) throw new HeybobException(ExceptionStatus.BAD_REQUEST_SAVINGS_CYCLE);
 
@@ -182,7 +174,7 @@ public class SavingsServiceImpl implements SavingsService {
                                     creator.getStudentId(),                     // requesterStudentId
                                     creator.getProfileUrl(),                    // requesterProfileImg
                                     perAmount,                                   // requestAmount (이번 회차 1/N 금액)
-                                    "http://localhost:8080/savings/" + chatRoomId + "/pay"
+                                    "http://localhost:8080/api/savings/" + chatRoomId + "/pay"
                             );
                         }
                     }
