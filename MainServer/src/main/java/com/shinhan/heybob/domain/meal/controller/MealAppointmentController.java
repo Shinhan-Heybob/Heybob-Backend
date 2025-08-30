@@ -66,6 +66,7 @@ public class MealAppointmentController {
     @GetMapping("/{appointmentId}")
     public ResponseEntity<MealAppointmentDetailResponse> getMealAppointment(
             @PathVariable Long appointmentId) {
+        // 채팅 아이디임!!!!!!
         MealAppointmentDetailResponse response = mealAppointmentService.getMealAppointment(appointmentId);
         return ResponseEntity.ok(response);
     }

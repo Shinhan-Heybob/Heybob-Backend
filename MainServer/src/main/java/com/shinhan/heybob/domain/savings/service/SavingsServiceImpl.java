@@ -160,8 +160,13 @@ public class SavingsServiceImpl implements SavingsService {
         // ✅ 적금 요청 브로드캐스트 (방이 있는 경우에만)
         Long chatRoomId = mealAppointment.getChatRoomId();
         if (chatRoomId != null) {
+            String name = creator.getName();
+            if (name == null) {
+                name = "헤이밥";
+            }
+
             String content = String.format("%s님이 적금을 요청했습니다. 1/N 금액: %,d원",
-                    creator.getName(), perAmount);
+                    name, perAmount);
 
             // afterCommit으로 안전하게 전송
             TransactionSynchronizationManager.registerSynchronization(
