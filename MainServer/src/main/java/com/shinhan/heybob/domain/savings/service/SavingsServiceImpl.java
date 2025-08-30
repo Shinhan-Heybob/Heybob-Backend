@@ -6,6 +6,7 @@ import com.shinhan.heybob.common.util.KSTUtil;
 import com.shinhan.heybob.domain.financePersonal.dto.FinanceHeader;
 import com.shinhan.heybob.domain.financePersonal.repository.ExternalFinanceUserRepository;
 import com.shinhan.heybob.domain.financePersonal.repository.PersonalAccountRepository;
+import com.shinhan.heybob.domain.financePersonal.util.UserAccountUtil;
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
 import com.shinhan.heybob.domain.meal.repository.MealAppointmentRepository;
 import com.shinhan.heybob.domain.meal.repository.MealParticipantRepository;
@@ -50,6 +51,7 @@ public class SavingsServiceImpl implements SavingsService {
     private final MealParticipantRepository mealParticipantRepository;
     private final SavingsDepositRepository savingsDepositRepository;
     private final ChatBroadcastSenderImpl chatBroadcastSenderImpl;
+    private final UserAccountUtil userAccountUtil;
 
     @Value("${ssafy.finance.base-url}")
     private String baseUrl;
@@ -185,7 +187,9 @@ public class SavingsServiceImpl implements SavingsService {
     @Transactional
     @Override
     public void paySavingsAccount(Long userId, Long chatRoomId) {
-        String username = userRepository.findById(userId).get().getName();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new HeybobException(ExceptionStatus.USER_NOT_FOUND));
+        String username = user.getName();
 
         MealAppointment mealAppointment = mealAppointmentRepository.findByChatRoomId(chatRoomId)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND));
@@ -197,10 +201,11 @@ public class SavingsServiceImpl implements SavingsService {
             throw new HeybobException(ExceptionStatus.USER_NOT_FOUND);
         }
 
-        // 1) 계좌/플랜 조회
+        // 1) 적금생성자의 계좌로 송금한다
         SavingsAccount account = savingsAccountRepository.findByMealAppointment_Id(mealId)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.SAVINGS_ACCOUNT_NOT_FOUND));
 
+        // 회차 납입하기 위해 불러옴
         SavingsPlan plan = savingsPlanRepository.findBySavingsAccount_Id(account.getId())
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.SAVINGS_PLAN_NOT_FOUND));
 
@@ -226,10 +231,14 @@ public class SavingsServiceImpl implements SavingsService {
         Long extUserId = externalFinanceUserRepository.findIdByUserRealId(userId)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.FINANCE_API_NOT_FOUND));
 
+        // 보내는 사람 계좌
         String fromAccountNo = personalAccountRepository.findAccountNoByExternalFinanceUserId(extUserId)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.FINANCE_API_NOT_FOUND));
 
-        String toAccountNo = account.getAccountNo();
+        // 받는 사람 계좌 찾기
+        Long ownerUserId = account.getOwnerUser().getId();
+
+        String toAccountNo = userAccountUtil.getPersonalAccountNoByUserRealId(ownerUserId);
         int amount = plan.getPerHeadBalance();
         String idemKey = java.util.UUID.randomUUID().toString();
 
@@ -262,10 +271,10 @@ public class SavingsServiceImpl implements SavingsService {
         UpdateDemandDepositAccountTransferRequest request = new UpdateDemandDepositAccountTransferRequest(
                 header,
                 toAccountNo,
-                "1/N 모으기 " + username,
+                "입금",
                 String.valueOf(amount),
                 fromAccountNo,
-                "1/N 모으기 " + mealName
+                "출금"
         );
 
         var entity = new org.springframework.http.HttpEntity<>(request, jsonHeaders());
