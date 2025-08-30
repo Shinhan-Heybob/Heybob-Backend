@@ -306,7 +306,7 @@ public class FinanceAccountServiceImpl implements FinanceAccountService{
                         .transactionUniqueNo((String) item.get("transactionUniqueNo"))
                         .transactionDate((String) item.get("transactionDate"))
                         .transactionTime((String) item.get("transactionTime"))
-                        .transactionTypeName(transactorName)
+                        .transactionTypeName("transactionTypeName")
                         .transactionBalance((String) item.get("transactionBalance"))
                         .transactionAfterBalance((String) item.get("transactionAfterBalance"))
                         .transactorName((String) item.get("transactionTypeName"))
