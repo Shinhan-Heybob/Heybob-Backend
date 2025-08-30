@@ -23,6 +23,20 @@ public interface LectureRepository extends JpaRepository<Lecture, Long> {
             @Param("endTime") LocalTime endTime
     );
 
+    @Query("SELECT CASE WHEN COUNT(l) > 0 THEN true ELSE false END FROM Lecture l " +
+            "WHERE l.timetable.id = :timetableId " +
+            "AND l.dayOfWeek = :dayOfWeek " +
+            "AND l.startTime < :endTime " +
+            "AND l.endTime > :startTime " +
+            "AND l.id <> :lectureId")  // 자기 자신 제외 조건 추가
+    boolean existsByTimetableIdAndDayOfWeekAndTimeOverlapExcludingSelf(
+            @Param("timetableId") Long timetableId,
+            @Param("dayOfWeek") String dayOfWeek,
+            @Param("startTime") LocalTime startTime,
+            @Param("endTime") LocalTime endTime,
+            @Param("lectureId") Long lectureId   // 추가!
+    );
+
     List<Lecture> findAllByTimetableId(Long timetableId);
 
     List<Lecture> findByTimetableIdInAndDayOfWeek(List<Long> timetableIds, String day);

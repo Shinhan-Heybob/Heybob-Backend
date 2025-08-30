@@ -9,6 +9,8 @@ public record TimeslotDto(
 
         LocalTime endTime,
 
-        List<String> availablePeopleName
+        List<String> availablePeopleName,
+
+        boolean isAllAvailable
 ) {
 }
