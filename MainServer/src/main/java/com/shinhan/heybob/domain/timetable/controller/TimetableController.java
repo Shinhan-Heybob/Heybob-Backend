@@ -46,7 +46,8 @@ public class TimetableController {
     }
 
     @PostMapping("/compare")
-    public ResponseEntity<TimetableCompareGetResponseDto> compareTimetables(@RequestBody TimetableCompareGetRequestDto timetableCompareGetRequestDto){
-        return ResponseEntity.ok(timetableService.compareTimetables(timetableCompareGetRequestDto));
+    public ResponseEntity<TimetableCompareGetResponseDto> compareTimetables(@RequestBody TimetableCompareGetRequestDto timetableCompareGetRequestDto, 
+                                                                          @UserId Long userId){
+        return ResponseEntity.ok(timetableService.compareTimetables(timetableCompareGetRequestDto, userId));
     }
 }
