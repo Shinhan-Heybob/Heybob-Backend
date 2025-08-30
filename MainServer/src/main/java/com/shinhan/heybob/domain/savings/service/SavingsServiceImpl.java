@@ -6,7 +6,6 @@ import com.shinhan.heybob.common.util.KSTUtil;
 import com.shinhan.heybob.domain.financePersonal.dto.FinanceHeader;
 import com.shinhan.heybob.domain.financePersonal.repository.ExternalFinanceUserRepository;
 import com.shinhan.heybob.domain.financePersonal.repository.PersonalAccountRepository;
-import com.shinhan.heybob.domain.financePersonal.util.UserAccountUtil;
 import com.shinhan.heybob.domain.meal.entity.MealAppointment;
 import com.shinhan.heybob.domain.meal.repository.MealAppointmentRepository;
 import com.shinhan.heybob.domain.meal.repository.MealParticipantRepository;
@@ -21,7 +20,7 @@ import com.shinhan.heybob.domain.savings.repository.SavingsPlanRepository;
 import com.shinhan.heybob.domain.settlement.dto.UpdateDemandDepositAccountTransferRequest;
 import com.shinhan.heybob.domain.user.entity.User;
 import com.shinhan.heybob.domain.user.repository.UserRepository;
-
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,13 +29,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 @Slf4j
@@ -53,7 +50,6 @@ public class SavingsServiceImpl implements SavingsService {
     private final MealParticipantRepository mealParticipantRepository;
     private final SavingsDepositRepository savingsDepositRepository;
     private final ChatBroadcastSenderImpl chatBroadcastSenderImpl;
-    private final UserAccountUtil userAccountUtil;
 
     @Value("${ssafy.finance.base-url}")
     private String baseUrl;
@@ -154,9 +150,6 @@ public class SavingsServiceImpl implements SavingsService {
 
         savingsPlanRepository.save(plan);
 
-        // 🔥 생성자의 첫 회차 자동 납입
-        createInitialDeposit(saved, creator, plan.getPerHeadBalance());
-
         // ✅ 적금 요청 브로드캐스트 (방이 있는 경우에만)
         Long chatRoomId = mealAppointment.getChatRoomId();
         if (chatRoomId != null) {
@@ -197,9 +190,7 @@ public class SavingsServiceImpl implements SavingsService {
     @Transactional
     @Override
     public void paySavingsAccount(Long userId, Long chatRoomId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new HeybobException(ExceptionStatus.USER_NOT_FOUND));
-        String username = user.getName();
+        String username = userRepository.findById(userId).get().getName();
 
         MealAppointment mealAppointment = mealAppointmentRepository.findByChatRoomId(chatRoomId)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND));
@@ -211,11 +202,10 @@ public class SavingsServiceImpl implements SavingsService {
             throw new HeybobException(ExceptionStatus.USER_NOT_FOUND);
         }
 
-        // 1) 적금생성자의 계좌로 송금한다
+        // 1) 계좌/플랜 조회
         SavingsAccount account = savingsAccountRepository.findByMealAppointment_Id(mealId)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.SAVINGS_ACCOUNT_NOT_FOUND));
 
-        // 회차 납입하기 위해 불러옴
         SavingsPlan plan = savingsPlanRepository.findBySavingsAccount_Id(account.getId())
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.SAVINGS_PLAN_NOT_FOUND));
 
@@ -241,14 +231,10 @@ public class SavingsServiceImpl implements SavingsService {
         Long extUserId = externalFinanceUserRepository.findIdByUserRealId(userId)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.FINANCE_API_NOT_FOUND));
 
-        // 보내는 사람 계좌
         String fromAccountNo = personalAccountRepository.findAccountNoByExternalFinanceUserId(extUserId)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.FINANCE_API_NOT_FOUND));
 
-        // 받는 사람 계좌 찾기
-        Long ownerUserId = account.getOwnerUser().getId();
-
-        String toAccountNo = userAccountUtil.getPersonalAccountNoByUserRealId(ownerUserId);
+        String toAccountNo = account.getAccountNo();
         int amount = plan.getPerHeadBalance();
         String idemKey = java.util.UUID.randomUUID().toString();
 
@@ -281,10 +267,10 @@ public class SavingsServiceImpl implements SavingsService {
         UpdateDemandDepositAccountTransferRequest request = new UpdateDemandDepositAccountTransferRequest(
                 header,
                 toAccountNo,
-                "입금",
+                "1/N 모으기 " + username,
                 String.valueOf(amount),
                 fromAccountNo,
-                "출금"
+                "1/N 모으기 " + mealName
         );
 
         var entity = new org.springframework.http.HttpEntity<>(request, jsonHeaders());
@@ -306,13 +292,11 @@ public class SavingsServiceImpl implements SavingsService {
                 txId = rec.get("transactionUniqueNo");
             }
         }
-        String externalTxId = txId != null ? txId.toString() : "";
+        String externalTxId = txId != null ? txId.toString() : "";;
 
         // 6) 성공 처리
         deposit.markSuccess(externalTxId);
         savingsDepositRepository.save(deposit);
-
-        updatePlanProgressIfCycleCompleted(plan, account, mealId);
 
         // ✅ 적금 납입 완료 브로드캐스트
         User payer = userRepository.findById(userId)
@@ -348,89 +332,5 @@ public class SavingsServiceImpl implements SavingsService {
         h.setContentType(MediaType.APPLICATION_JSON);
         return h;
     }
-    private void createInitialDeposit(SavingsAccount account, User creator, int amount) {
-        // 이미 1회차 성공 납입이 있는지 확인
-        boolean alreadyPaid = savingsDepositRepository
-                .existsBySavingsAccount_IdAndParticipantUser_IdAndCycleNoAndStatus(
-                        account.getId(), creator.getId(), 1, SavingsDeposit.TransferStatus.SUCCESS);
 
-        if (alreadyPaid) {
-            log.info("생성자 1회차 납입이 이미 완료됨: userId={}", creator.getId());
-            return;
-        }
-
-        // 기존 PENDING 상태 레코드가 있는지 확인
-        Optional<SavingsDeposit> existingDeposit = savingsDepositRepository
-                .findBySavingsAccount_IdAndParticipantUser_IdAndCycleNo(
-                        account.getId(), creator.getId(), 1);
-
-        if (existingDeposit.isPresent()) {
-            // 기존 레코드를 SUCCESS로 업데이트
-            SavingsDeposit deposit = existingDeposit.get();
-            deposit.markSuccess("INITIAL_DEPOSIT_BY_CREATOR");
-            savingsDepositRepository.save(deposit);
-            log.info("기존 PENDING 레코드를 SUCCESS로 변경: userId={}", creator.getId());
-        } else {
-            // 새 레코드 생성
-            SavingsDeposit initialDeposit = SavingsDeposit.builder()
-                    .savingsAccount(account)
-                    .participantUser(creator)
-                    .cycleNo(1)
-                    .amount(amount)
-                    .idempotencyKey("CREATOR_INITIAL_" + account.getId() + "_" + creator.getId())
-                    .status(SavingsDeposit.TransferStatus.SUCCESS)
-                    .externalTxId("INITIAL_DEPOSIT_BY_CREATOR")
-                    .build();
-
-            savingsDepositRepository.save(initialDeposit);
-            log.info("적금 생성자 초기 납입 완료: userId={}, amount={}", creator.getId(), amount);
-        }
-    }
-
-    /**
-     * 해당 적금의 "현재 회차" 전원 납입 완료 시 sentCycles를 증가시키고,
-     * 모든 회차를 마치면 PlanStatus를 COMPLETED로 전환한다.
-     */
-    @Transactional // 같은 트랜잭션 안에서 호출되어도 AOP가 먹도록 public 메서드 권장(현재 클래스 내라 그냥 붙여도 OK)
-    public void updatePlanProgressIfCycleCompleted(SavingsPlan plan, SavingsAccount account, Long mealId) {
-        // 현재 회차 정의: 보낸 알림 수 + 1 (이미 pay에서 계산한 currentCycle를 써도 되지만, 여기선 방어적 계산)
-        int currentCycle = Math.min(plan.getSentCycles() + 1, plan.getTotalCycles());
-
-        // 참여자 총원
-        int totalParticipants = mealParticipantRepository.countByMealAppointment_Id(mealId);
-
-        // 이번 회차 납입 완료자 수
-        int paidCountThisCycle = savingsDepositRepository.countBySavingsAccount_IdAndCycleNoAndStatus(
-                account.getId(), currentCycle, SavingsDeposit.TransferStatus.SUCCESS
-        );
-
-        // 모두 냈으면 sentCycles++
-        if (paidCountThisCycle >= totalParticipants && plan.getSentCycles() < currentCycle) {
-            plan.increaseSentCycles(); // 엔티티에 sentCycles++ 하는 도메인 메서드가 없으면 setter 사용
-            // 다음 알림 예약 갱신(주기/정책에 맞게)
-            updateNextNotification(plan);
-            savingsPlanRepository.save(plan);
-        }
-
-        // 모든 회차를 마쳤는지 체크
-        if (plan.getSentCycles() >= plan.getTotalCycles()
-                && plan.getStatus() != SavingsPlan.PlanStatus.COMPLETED) {
-            plan.markCompleted(); // 없으면 plan.setStatus(PlanStatus.COMPLETED);
-            savingsPlanRepository.save(plan);
-        }
-    }
-
-    /** 다음 알림 시각 계산(정책에 맞게 주기/요일/시간 반영) */
-    private void updateNextNotification(SavingsPlan plan) {
-        // 예시: 주 1회, plan.notifyDayOfWeek / notifyTime 기준으로 다음 주 알림 스케줄
-        var zone = java.time.ZoneId.of("Asia/Seoul");
-        var now = java.time.ZonedDateTime.now(zone).toLocalDateTime();
-
-        // 다음 주 같은 요일/시간
-        var next = plan.getNextNotifyAt() != null ? plan.getNextNotifyAt() : now;
-        // 한 회차 끝났으니 일단 +1주 (매월 주기면 plusMonths(1), 너희 정책에 맞게 교체)
-        next = next.plusWeeks(1);
-
-        plan.setNextNotifyAt(next); // 세터/빌더 스타일에 맞춰 적용
-    }
 }

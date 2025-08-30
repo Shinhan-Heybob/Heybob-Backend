@@ -80,17 +80,4 @@ public class SavingsPlan extends BaseTime {
         this.status = PlanStatus.PAUSED;
         this.nextNotifyAt = when;
     }
-
-    public void increaseSentCycles() {
-        this.sentCycles = this.sentCycles + 1;
-    }
-
-    public void markCompleted() {
-        this.status = PlanStatus.COMPLETED;
-    }
-
-    public void setNextNotifyAt(LocalDateTime next) {
-        this.nextNotifyAt = next;
-    }
-
 }

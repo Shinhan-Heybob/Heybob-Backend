@@ -12,6 +12,4 @@ public interface MealParticipantRepository extends JpaRepository<MealParticipant
     List<MealParticipant> findByMealAppointment_Id(Long mealAppointmentId);
     
     boolean existsByMealAppointment_IdAndUser_Id(Long mealAppointmentId, Long userId);
-
-    int countByMealAppointment_Id(Long mealAppointmentId);
 }

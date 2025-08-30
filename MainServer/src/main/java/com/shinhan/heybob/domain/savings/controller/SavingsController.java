@@ -3,7 +3,6 @@ package com.shinhan.heybob.domain.savings.controller;
 import com.shinhan.heybob.common.user.UserPrincipalDetails;
 import com.shinhan.heybob.domain.savings.dto.RegularMeetingPageResponseDto;
 import com.shinhan.heybob.domain.savings.dto.SavingsAccountCreateRequestDto;
-import com.shinhan.heybob.domain.savings.dto.SavingsStatusResponseDto;
 import com.shinhan.heybob.domain.savings.service.SavingsQueryService;
 import com.shinhan.heybob.domain.savings.service.SavingsService;
 import jakarta.validation.Valid;
@@ -42,7 +41,7 @@ public class SavingsController {
     }
 
     @GetMapping("/{chatRoomId}/page")
-    public ResponseEntity<SavingsStatusResponseDto> getRegularMeetingPage(
+    public ResponseEntity<RegularMeetingPageResponseDto> getRegularMeetingPage(
             @AuthenticationPrincipal UserPrincipalDetails userPrincipal,
             @PathVariable Long chatRoomId) {
         return ResponseEntity.ok(savingsQueryService.getRegularMeetingPageByChatRoom(chatRoomId));
