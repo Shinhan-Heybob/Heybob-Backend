@@ -1,0 +1,46 @@
+version: '3'
+
+services:
+  mainserver:
+    image: lreowy/heybob-mainserver
+    container_name: heybob-mainserver
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    depends_on:
+      - redis
+
+  chatserver:
+    image: lreowy/heybob-chatserver
+    container_name: heybob-chatserver
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - mongodb
+
+  redis:
+    image: redis:7-alpine
+    container_name: heybob-redis
+    restart: unless-stopped
+    expose:
+      - "6379"
+    volumes:
+      - redis-data:/data
+
+  mongodb:
+    image: mongo:7
+    container_name: heybob-mongodb
+    restart: unless-stopped
+    expose:
+      - "27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: heybob
+      MONGO_INITDB_ROOT_PASSWORD: heybobssafy
+    volumes:
+      - mongodb-data:/data/db
+
+volumes:
+  redis-data:
+  mongodb-data:
