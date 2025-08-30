@@ -101,8 +101,12 @@ public class TimetableService {
 //                .collect(Collectors.toList());
 //    }
 
-    public TimetableCompareGetResponseDto compareTimetables(TimetableCompareGetRequestDto timetableCompareGetRequestDto){
-        List<Long> userIdList = timetableCompareGetRequestDto.userIdList();
+    public TimetableCompareGetResponseDto compareTimetables(TimetableCompareGetRequestDto timetableCompareGetRequestDto, Long currentUserId){
+        List<Long> userIdList = new ArrayList<>(timetableCompareGetRequestDto.userIdList());
+        // 현재 사용자도 비교 대상에 포함
+        if (!userIdList.contains(currentUserId)) {
+            userIdList.add(currentUserId);
+        }
         String targetDate = convertToKoreanDay(timetableCompareGetRequestDto.day());
 
         Map<Long, String> userNameMap = getUserNameMap(userIdList);
