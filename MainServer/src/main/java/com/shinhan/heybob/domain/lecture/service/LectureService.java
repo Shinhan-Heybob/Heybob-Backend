@@ -45,11 +45,10 @@ public class LectureService {
 
     public void updateLecture(Long timetableId, LectureUpdateRequestDto lectureUpdateRequestDto, Long lectureId) {
 
-        if(lectureRepository.existsByTimetableIdAndDayOfWeekAndTimeOverlapExcludingSelf(timetableId,
+        if(lectureRepository.existsByTimetableIdAndDayOfWeekAndTimeOverlap(timetableId,
                 lectureUpdateRequestDto.dayOfWeek(),
                 lectureUpdateRequestDto.startTime(),
-                lectureUpdateRequestDto.endTime(),
-                lectureId))
+                lectureUpdateRequestDto.endTime()))
             throw new HeybobException(ExceptionStatus.DUPLICATED_LECTURE_TIME);
 
         Lecture lecture = lectureRepository.findById(lectureId)

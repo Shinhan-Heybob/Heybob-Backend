@@ -93,10 +93,10 @@ public class MealAppointmentServiceImpl implements MealAppointmentService {
     @Override
     public MealAppointmentDetailResponse getMealAppointment(Long appointmentId) {
         if (appointmentId == null) {
-            throw new HeybobException(ExceptionStatus.NOT_FOUND_CHAT_ROOM_ID);
+            throw new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND);
         }
 
-        MealAppointment mealAppointment = mealAppointmentRepository.findByChatRoomId(appointmentId)
+        MealAppointment mealAppointment = mealAppointmentRepository.findByIdWithParticipants(appointmentId)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND));
 
         return convertToDetailResponse(mealAppointment);

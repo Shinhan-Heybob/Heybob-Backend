@@ -21,7 +21,3 @@ build/
 *.log
 
 docker-compose.yml
-
-# Node.js
-**/node_modules/
-**/package-lock.json

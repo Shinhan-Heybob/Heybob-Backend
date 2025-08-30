@@ -261,6 +261,7 @@ public class FinanceAccountServiceImpl implements FinanceAccountService{
         List<TransactionHistoryDto> dtoList = list.stream()
                 .map(item -> {
                     // 각 거래별로 상대방 계좌 정보 확인
+                    // 아래 두 필드 값 일부러 둘이 바꿔서 넣어놓음
                     String transactorAccountNo = (String) item.get("transactionAccountNo");
                     String transactionTypeName = (String) item.get("transactionTypeName");
                     String transactorName = null;
@@ -305,10 +306,10 @@ public class FinanceAccountServiceImpl implements FinanceAccountService{
                         .transactionUniqueNo((String) item.get("transactionUniqueNo"))
                         .transactionDate((String) item.get("transactionDate"))
                         .transactionTime((String) item.get("transactionTime"))
-                        .transactionTypeName((String) item.get("transactionTypeName"))
+                        .transactionTypeName("transactionTypeName")
                         .transactionBalance((String) item.get("transactionBalance"))
                         .transactionAfterBalance((String) item.get("transactionAfterBalance"))
-                        .transactorName(transactorName)
+                        .transactorName((String) item.get("transactionTypeName"))
                         .eventTitle((String) item.get("transactionMemo"))
                         .build();
                 })

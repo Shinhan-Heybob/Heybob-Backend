@@ -29,4 +29,6 @@ public interface SavingsDepositRepository extends JpaRepository<SavingsDeposit, 
             Long accountId, Long userId, int cycleNo);
 
     List<SavingsDeposit> findBySavingsAccount_Id(Long savingsAccountId);
+
+    int countBySavingsAccount_IdAndCycleNoAndStatus(Long savingsAccountId, int cycleNo, SavingsDeposit.TransferStatus status);
 }

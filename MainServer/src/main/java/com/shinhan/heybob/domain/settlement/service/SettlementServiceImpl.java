@@ -274,9 +274,9 @@ public class SettlementServiceImpl implements SettlementService {
         String transactionBalance = String.valueOf(settlement.getPerHeadAmount());
 
         // 거래요약내용: 입금계좌표시
-        String depositTransactionSummary = "1/N 정산하기 " + withdrawalUser.getName();
+        String depositTransactionSummary = "입금";
         // 거래요약내용: 출금계좌
-        String withdrawalTransactionSummary = "1/N 정산하기 " + initiator.getName();
+        String withdrawalTransactionSummary = "출금";
 
         String userKey = externalFinanceUserRepository.findUserKeyByUserRealId(userId)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.EMPTY_USER_KEY));
