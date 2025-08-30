@@ -21,7 +21,7 @@ import com.shinhan.heybob.domain.savings.repository.SavingsPlanRepository;
 import com.shinhan.heybob.domain.settlement.dto.UpdateDemandDepositAccountTransferRequest;
 import com.shinhan.heybob.domain.user.entity.User;
 import com.shinhan.heybob.domain.user.repository.UserRepository;
-import jakarta.transaction.Transactional;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +30,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.client.RestTemplate;
@@ -306,6 +307,8 @@ public class SavingsServiceImpl implements SavingsService {
         deposit.markSuccess(externalTxId);
         savingsDepositRepository.save(deposit);
 
+        updatePlanProgressIfCycleCompleted(plan, account, mealId);
+
         // ✅ 적금 납입 완료 브로드캐스트
         User payer = userRepository.findById(userId)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.USER_NOT_FOUND));
@@ -377,5 +380,52 @@ public class SavingsServiceImpl implements SavingsService {
             savingsDepositRepository.save(initialDeposit);
             log.info("적금 생성자 초기 납입 완료: userId={}, amount={}", creator.getId(), amount);
         }
+    }
+
+    /**
+     * 해당 적금의 "현재 회차" 전원 납입 완료 시 sentCycles를 증가시키고,
+     * 모든 회차를 마치면 PlanStatus를 COMPLETED로 전환한다.
+     */
+    @Transactional // 같은 트랜잭션 안에서 호출되어도 AOP가 먹도록 public 메서드 권장(현재 클래스 내라 그냥 붙여도 OK)
+    public void updatePlanProgressIfCycleCompleted(SavingsPlan plan, SavingsAccount account, Long mealId) {
+        // 현재 회차 정의: 보낸 알림 수 + 1 (이미 pay에서 계산한 currentCycle를 써도 되지만, 여기선 방어적 계산)
+        int currentCycle = Math.min(plan.getSentCycles() + 1, plan.getTotalCycles());
+
+        // 참여자 총원
+        int totalParticipants = mealParticipantRepository.countByMealAppointment_Id(mealId);
+
+        // 이번 회차 납입 완료자 수
+        int paidCountThisCycle = savingsDepositRepository.countBySavingsAccount_IdAndCycleNoAndStatus(
+                account.getId(), currentCycle, SavingsDeposit.TransferStatus.SUCCESS
+        );
+
+        // 모두 냈으면 sentCycles++
+        if (paidCountThisCycle >= totalParticipants && plan.getSentCycles() < currentCycle) {
+            plan.increaseSentCycles(); // 엔티티에 sentCycles++ 하는 도메인 메서드가 없으면 setter 사용
+            // 다음 알림 예약 갱신(주기/정책에 맞게)
+            updateNextNotification(plan);
+            savingsPlanRepository.save(plan);
+        }
+
+        // 모든 회차를 마쳤는지 체크
+        if (plan.getSentCycles() >= plan.getTotalCycles()
+                && plan.getStatus() != SavingsPlan.PlanStatus.COMPLETED) {
+            plan.markCompleted(); // 없으면 plan.setStatus(PlanStatus.COMPLETED);
+            savingsPlanRepository.save(plan);
+        }
+    }
+
+    /** 다음 알림 시각 계산(정책에 맞게 주기/요일/시간 반영) */
+    private void updateNextNotification(SavingsPlan plan) {
+        // 예시: 주 1회, plan.notifyDayOfWeek / notifyTime 기준으로 다음 주 알림 스케줄
+        var zone = java.time.ZoneId.of("Asia/Seoul");
+        var now = java.time.ZonedDateTime.now(zone).toLocalDateTime();
+
+        // 다음 주 같은 요일/시간
+        var next = plan.getNextNotifyAt() != null ? plan.getNextNotifyAt() : now;
+        // 한 회차 끝났으니 일단 +1주 (매월 주기면 plusMonths(1), 너희 정책에 맞게 교체)
+        next = next.plusWeeks(1);
+
+        plan.setNextNotifyAt(next); // 세터/빌더 스타일에 맞춰 적용
     }
 }
