@@ -35,6 +35,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -151,6 +152,9 @@ public class SavingsServiceImpl implements SavingsService {
                 .build();
 
         savingsPlanRepository.save(plan);
+
+        // 🔥 생성자의 첫 회차 자동 납입
+        createInitialDeposit(saved, creator, plan.getPerHeadBalance());
 
         // ✅ 적금 요청 브로드캐스트 (방이 있는 경우에만)
         Long chatRoomId = mealAppointment.getChatRoomId();
@@ -296,7 +300,7 @@ public class SavingsServiceImpl implements SavingsService {
                 txId = rec.get("transactionUniqueNo");
             }
         }
-        String externalTxId = txId != null ? txId.toString() : "";;
+        String externalTxId = txId != null ? txId.toString() : "";
 
         // 6) 성공 처리
         deposit.markSuccess(externalTxId);
@@ -336,5 +340,42 @@ public class SavingsServiceImpl implements SavingsService {
         h.setContentType(MediaType.APPLICATION_JSON);
         return h;
     }
+    private void createInitialDeposit(SavingsAccount account, User creator, int amount) {
+        // 이미 1회차 성공 납입이 있는지 확인
+        boolean alreadyPaid = savingsDepositRepository
+                .existsBySavingsAccount_IdAndParticipantUser_IdAndCycleNoAndStatus(
+                        account.getId(), creator.getId(), 1, SavingsDeposit.TransferStatus.SUCCESS);
 
+        if (alreadyPaid) {
+            log.info("생성자 1회차 납입이 이미 완료됨: userId={}", creator.getId());
+            return;
+        }
+
+        // 기존 PENDING 상태 레코드가 있는지 확인
+        Optional<SavingsDeposit> existingDeposit = savingsDepositRepository
+                .findBySavingsAccount_IdAndParticipantUser_IdAndCycleNo(
+                        account.getId(), creator.getId(), 1);
+
+        if (existingDeposit.isPresent()) {
+            // 기존 레코드를 SUCCESS로 업데이트
+            SavingsDeposit deposit = existingDeposit.get();
+            deposit.markSuccess("INITIAL_DEPOSIT_BY_CREATOR");
+            savingsDepositRepository.save(deposit);
+            log.info("기존 PENDING 레코드를 SUCCESS로 변경: userId={}", creator.getId());
+        } else {
+            // 새 레코드 생성
+            SavingsDeposit initialDeposit = SavingsDeposit.builder()
+                    .savingsAccount(account)
+                    .participantUser(creator)
+                    .cycleNo(1)
+                    .amount(amount)
+                    .idempotencyKey("CREATOR_INITIAL_" + account.getId() + "_" + creator.getId())
+                    .status(SavingsDeposit.TransferStatus.SUCCESS)
+                    .externalTxId("INITIAL_DEPOSIT_BY_CREATOR")
+                    .build();
+
+            savingsDepositRepository.save(initialDeposit);
+            log.info("적금 생성자 초기 납입 완료: userId={}, amount={}", creator.getId(), amount);
+        }
+    }
 }

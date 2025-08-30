@@ -6,10 +6,7 @@ import com.shinhan.heybob.domain.meal.entity.MealAppointment;
 import com.shinhan.heybob.domain.meal.entity.MealParticipant;
 import com.shinhan.heybob.domain.meal.repository.MealAppointmentRepository;
 import com.shinhan.heybob.domain.meal.repository.MealParticipantRepository;
-import com.shinhan.heybob.domain.savings.dto.CycleParticipantDto;
-import com.shinhan.heybob.domain.savings.dto.CycleStatusDto;
-import com.shinhan.heybob.domain.savings.dto.RegularMeetingPageResponseDto;
-import com.shinhan.heybob.domain.savings.dto.SavingsParticipantStatusDto;
+import com.shinhan.heybob.domain.savings.dto.*;
 import com.shinhan.heybob.domain.savings.entity.SavingsAccount;
 import com.shinhan.heybob.domain.savings.entity.SavingsDeposit;
 import com.shinhan.heybob.domain.savings.entity.SavingsPlan;
@@ -24,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -36,29 +34,7 @@ public class SavingsQueryService {
     private final SavingsPlanRepository savingsPlanRepository;
 
     @Transactional(readOnly = true)
-    public List<SavingsParticipantStatusDto> getCycleStatus(Long mealId, int cycleNo) {
-        // 1) 적금계좌 찾기 (mealId 기준)
-        SavingsAccount acc = savingsAccountRepository.findByMealAppointment_Id(mealId)
-                .orElseThrow(() -> new HeybobException(ExceptionStatus.SAVINGS_ACCOUNT_NOT_FOUND));
-
-        // 2) 모임 참가자 목록 (스냅샷 고정이 필요하면 SavingsMember 사용)
-        List<MealParticipant> participants = mealParticipantRepository.findByMealAppointment_Id(mealId);
-
-        // 3) 성공한 사용자 집합
-        Set<Long> paidIds = savingsDepositRepository.findPaidUserIds(acc.getId(), cycleNo);
-
-        // 4) DTO 매핑
-        return participants.stream()
-                .map(mp -> new SavingsParticipantStatusDto(
-                        mp.getUser().getId(),
-                        mp.getUser().getName(),
-                        paidIds.contains(mp.getUser().getId())
-                ))
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public RegularMeetingPageResponseDto getRegularMeetingPageByChatRoom(Long chatRoomId) {
+    public SavingsStatusResponseDto getRegularMeetingPageByChatRoom(Long chatRoomId) {
         // 정기 모임 정보 가져오기
         MealAppointment mealAppointment = mealAppointmentRepository.findByChatRoomId(chatRoomId)
                 .orElseThrow(() -> new HeybobException(ExceptionStatus.MEAL_APPOINTMENT_NOT_FOUND));
@@ -77,91 +53,129 @@ public class SavingsQueryService {
         // 모든 저금 내역 가져오기
         List<SavingsDeposit> deposits = savingsDepositRepository.findBySavingsAccount_Id(savingsAccount.getId());
 
-        // 회차별 저금 내역 그룹핑
-        Map<Integer, List<SavingsDeposit>> depositsByCycle = deposits.stream()
-                .collect(Collectors.groupingBy(SavingsDeposit::getCycleNo));
+        // 현재 회차
+        int currentCycle = savingsPlan.getSentCycles();
 
-        // 총 적립 금액 계산
+        // 총 적립 금액
         int totalSavedAmount = deposits.stream()
                 .filter(d -> d.getStatus() == SavingsDeposit.TransferStatus.SUCCESS)
                 .mapToInt(SavingsDeposit::getAmount)
                 .sum();
 
-        // 회차별 상태 매핑 (1부터 현재 회차까지)
-        List<CycleStatusDto> cycleDtos = List.of();
-        if (savingsPlan.getSentCycles() > 0) {
-            cycleDtos = java.util.stream.IntStream.rangeClosed(1, savingsPlan.getSentCycles())
-                    .mapToObj(cycleNo -> {
-                        List<SavingsDeposit> cycleDeposits = depositsByCycle.getOrDefault(cycleNo, List.of());
-                        Map<Long, SavingsDeposit> depositsByUserId = cycleDeposits.stream()
-                                .collect(Collectors.toMap(d -> d.getParticipantUser().getId(), d -> d));
+        // 목표 금액 계산
+        int targetAmount = savingsPlan.getPerHeadBalance() * participants.size() * savingsPlan.getTotalCycles();
 
-                        // 회차별 참여자 상태 매핑
-                        List<CycleParticipantDto> cycleParticipants = participants.stream()
-                                .map(p -> {
-                                    SavingsDeposit deposit = depositsByUserId.get(p.getUser().getId());
-                                    if (deposit != null) {
-                                        return new CycleParticipantDto(
-                                                p.getUser().getId(),
-                                                p.getUser().getName(),
-                                                p.getUser().getStudentId(),
-                                                p.getUser().getDepartment(),
-                                                p.getUser().getProfileUrl(),
-                                                deposit.getAmount(),
-                                                deposit.getStatus() == SavingsDeposit.TransferStatus.SUCCESS,
-                                                deposit.getStatus()
-                                        );
-                                    } else {
-                                        return new CycleParticipantDto(
-                                                p.getUser().getId(),
-                                                p.getUser().getName(),
-                                                p.getUser().getStudentId(),
-                                                p.getUser().getDepartment(),
-                                                p.getUser().getProfileUrl(),
-                                                savingsPlan.getPerHeadBalance(),
-                                                false,
-                                                SavingsDeposit.TransferStatus.PENDING
-                                        );
-                                    }
-                                })
-                                .toList();
+        // 현재 회차 납입 완료자 수
+        int currentCyclePaidCount = (int) deposits.stream()
+                .filter(d -> d.getCycleNo() == currentCycle &&
+                        d.getStatus() == SavingsDeposit.TransferStatus.SUCCESS)
+                .count();
 
-                        int expectedAmount = participants.size() * savingsPlan.getPerHeadBalance();
-                        int actualAmount = cycleDeposits.stream()
-                                .filter(d -> d.getStatus() == SavingsDeposit.TransferStatus.SUCCESS)
-                                .mapToInt(SavingsDeposit::getAmount)
-                                .sum();
-                        int paidCount = (int) cycleParticipants.stream().filter(CycleParticipantDto::paid).count();
+        // 참여자별 총 납입 금액과 현재 회차 납입 상태
+        Map<Long, Integer> totalPaidByUser = deposits.stream()
+                .filter(d -> d.getStatus() == SavingsDeposit.TransferStatus.SUCCESS)
+                .collect(Collectors.groupingBy(
+                        d -> d.getParticipantUser().getId(),
+                        Collectors.summingInt(SavingsDeposit::getAmount)
+                ));
 
-                        return new CycleStatusDto(
-                                cycleNo,
-                                expectedAmount,
-                                actualAmount,
-                                participants.size(),
-                                paidCount,
-                                cycleParticipants
-                        );
-                    })
-                    .toList();
-        }
+        Set<Long> currentCyclePaidUsers = deposits.stream()
+                .filter(d -> d.getCycleNo() == currentCycle &&
+                        d.getStatus() == SavingsDeposit.TransferStatus.SUCCESS)
+                .map(d -> d.getParticipantUser().getId())
+                .collect(Collectors.toSet());
 
-        return new RegularMeetingPageResponseDto(
+        // 참여자 요약 DTO 생성
+        List<ParticipantSummaryDto> participantSummaries = participants.stream()
+                .map(p -> {
+                    Long userId = p.getUser().getId();
+                    int totalPaid = totalPaidByUser.getOrDefault(userId, 0);
+                    boolean isPaidThisMonth = currentCyclePaidUsers.contains(userId);
+                    String status = isPaidThisMonth ? "PAID" : "PENDING";
+
+                    return new ParticipantSummaryDto(
+                            userId,
+                            p.getUser().getName(),
+                            p.getUser().getStudentId(),
+                            p.getUser().getDepartment(),
+                            p.getUser().getProfileUrl(),
+                            savingsPlan.getPerHeadBalance(),
+                            totalPaid,
+                            isPaidThisMonth,
+                            status
+                    );
+                })
+                .toList();
+
+        // 적금 이력 생성 (회차별)
+        Map<Integer, List<SavingsDeposit>> depositsByCycle = deposits.stream()
+                .collect(Collectors.groupingBy(SavingsDeposit::getCycleNo));
+
+        List<SavingsHistoryDto> savingsHistory = IntStream.rangeClosed(1, currentCycle)
+                .mapToObj(cycle -> {
+                    List<SavingsDeposit> cycleDeposits = depositsByCycle.getOrDefault(cycle, List.of());
+                    Map<Long, SavingsDeposit> depositsByUserId = cycleDeposits.stream()
+                            .collect(Collectors.toMap(d -> d.getParticipantUser().getId(), d -> d));
+
+                    int cycleTotal = cycleDeposits.stream()
+                            .filter(d -> d.getStatus() == SavingsDeposit.TransferStatus.SUCCESS)
+                            .mapToInt(SavingsDeposit::getAmount)
+                            .sum();
+
+                    int cyclePaidCount = (int) cycleDeposits.stream()
+                            .filter(d -> d.getStatus() == SavingsDeposit.TransferStatus.SUCCESS)
+                            .count();
+
+                    List<HistoryParticipantDto> historyParticipants = participants.stream()
+                            .map(p -> {
+                                SavingsDeposit deposit = depositsByUserId.get(p.getUser().getId());
+                                boolean isPaid = deposit != null &&
+                                        deposit.getStatus() == SavingsDeposit.TransferStatus.SUCCESS;
+                                String paidDate = isPaid ? deposit.getCreatedAt().toLocalDate().toString() : null;
+
+                                return new HistoryParticipantDto(
+                                        p.getUser().getId(),
+                                        p.getUser().getName(),
+                                        p.getUser().getStudentId(),
+                                        p.getUser().getDepartment(),
+                                        p.getUser().getProfileUrl(),
+                                        savingsPlan.getPerHeadBalance(),
+                                        isPaid,
+                                        paidDate
+                                );
+                            })
+                            .toList();
+
+                    return new SavingsHistoryDto(
+                            cycle,
+                            "2025-" + String.format("%02d", cycle) + "-31", // 실제 날짜 로직 필요
+                            cycleTotal,
+                            cyclePaidCount,
+                            participants.size(),
+                            historyParticipants
+                    );
+                })
+                .sorted((a, b) -> Integer.compare(b.round(), a.round())) // 최신순
+                .toList();
+
+        return new SavingsStatusResponseDto(
+                savingsAccount.getId(),
+                savingsPlan.getStatus().name(),
+                savingsAccount.getOwnerUser().getId(),
+                savingsAccount.getOwnerUser().getName(),
                 mealAppointment.getId(),
                 mealAppointment.getName(),
-                mealAppointment.getAppointmentDate(),
-                mealAppointment.getAppointmentTime(),
-                mealAppointment.getCreator().getId(),
-                mealAppointment.getCreator().getName(),
-                savingsAccount.getId(),
-                savingsAccount.getAccountNo(),
-                savingsPlan.getId(),
-                savingsPlan.getPerHeadBalance(),
-                savingsPlan.getSentCycles(),
-                savingsPlan.getTotalCycles(),
-                savingsPlan.getStatus(),
+                "우리 모두 함께 모아요!", // 기본 설명 또는 DB에서 가져오기
+                mealAppointment.getAppointmentDate().toString(),
+                mealAppointment.getAppointmentTime().toString(),
+                targetAmount,
                 totalSavedAmount,
+                savingsPlan.getPerHeadBalance(),
                 participants.size(),
-                cycleDtos
+                currentCyclePaidCount,
+                currentCycle,
+                participantSummaries,
+                savingsHistory
         );
     }
 }
