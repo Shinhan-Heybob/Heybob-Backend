@@ -166,7 +166,7 @@ public class SavingsServiceImpl implements SavingsService {
             }
 
             String content = String.format("%s님이 적금을 요청했습니다. 1/N 금액: %,d원",
-                    creator.getName(), perAmount);
+                    name, perAmount);
 
             // afterCommit으로 안전하게 전송
             TransactionSynchronizationManager.registerSynchronization(
