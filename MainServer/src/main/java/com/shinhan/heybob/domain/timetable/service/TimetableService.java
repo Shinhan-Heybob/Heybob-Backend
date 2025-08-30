@@ -180,8 +180,9 @@ public class TimetableService {
                     .map(userId -> userNameMap.getOrDefault(userId, "Unknown"))
                     .collect(Collectors.toList());
 
+            boolean isAllAvailable = busyUserIds.isEmpty();
             // TimeslotDto 생성
-            timeslots.add(new TimeslotDto(current, slotEnd, availablePeopleNames));
+            timeslots.add(new TimeslotDto(current, slotEnd, availablePeopleNames, isAllAvailable));
 
             current = slotEnd;
         }
